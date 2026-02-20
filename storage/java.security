@@ -1,0 +1,18 @@
+# Custom java.security to re-enable ALL legacy algorithms for P12 reading
+# This defeats security but is necessary for legacy certs on Java 21.
+
+# Disable the disabling mechanisms by setting them to empty
+jdk.certpath.disabledAlgorithms=
+jdk.jar.disabledAlgorithms=
+jdk.tls.disabledAlgorithms=
+jdk.security.legacyAlgorithms=
+
+# Alternatively, if empty implies default, we list harmless ones?
+# Better: Just override them to something minimal.
+
+jdk.certpath.disabledAlgorithms=MD2
+jdk.jar.disabledAlgorithms=MD2
+jdk.tls.disabledAlgorithms=SSLv3, RC4, MD5withRSA
+
+# Enable legacy standard names if relevant
+security.provider.1=sun.security.provider.Sun

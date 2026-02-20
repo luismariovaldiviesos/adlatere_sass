@@ -1,0 +1,105 @@
+pdfController linea 160 editada para enviar mail
+para poder enviar desde el server los correos revisar el .env de desarollo
+
+hace falta :
+*listado de notas de credito boton descargar archivo falta descargar pdf o sea construit el pdf
+*reportes diarios de ventas falta cnstruir
+* revisar detalle arque creo que no iría
+* notas de credito boton descargar pdf revisar y construir eso ?
+* hacer que se revierta el inventario cuando se genera la (ya esta )
+*NC  y ver si se genera pdf de la nc (? seria interno capaz)
+
+* boorar carrito desde factura
+* tenenat
+000000763  no se creo el pdf, considerar crear pdf cuando hay un error en el reset no se creo el pdf
+esto ya se creo, habria que poner un estado en la base para cuando no se cree el pdf, o sea en reprocesar
+
+
+PASO A PASO 17-11-2025
+primero instalar xampp y activar apache y mysql como servicio
+luego instalar composer 
+reiniciar 
+luego copiar toda la carpeta del proyecto en xampp/htdocs
+ingresa en la capeta y ejecuta  composer install, hay un script que crea los repositirios que son necesarios 
+y que esta en la carpeta scripts y se ejecuta en composer.json 
+luego 
+composer update si da el error de require maatwwebsite
+se soluciona incluyendo extension=gd en el archivo php.ini en la direccion xampp/php
+PASO A PASO 
+composer install
+composer update 
+luego archivo .env  
+php artisan migrate --seed
+php artisan key:generate
+php artisan storage:link
+
+para el error de que livewire no esta definido 
+
+php artisan livewire:publish
+php artisan vendor:publish --force --tag=livewire:assets
+
+i use this in my config/livewire.php file & and it perfectly works for me.
+'asset_url'  => "http://localhost/live_wire_1/public", 
+
+
+
+Host: smtp.gmail.com
+Puerto: 587
+Encriptación: tls
+Usuario: Tu correo completo (ej: tu_empresa@gmail.com).
+Contraseña: IMPORTANTE: No uses tu contraseña normal. 
+Debes ir a tu cuenta de Google -> Seguridad -> Verificación en 2 Pasos 
+-> Contraseñas de Aplicaciones. Genera una nueva y usa esa clave de 16 letras.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

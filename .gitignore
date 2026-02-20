@@ -1,0 +1,21 @@
+/node_modules
+/public/hot
+/public/storage
+/storage/*.key
+/vendor
+.env
+.env.backup
+.phpunit.result.cache
+Homestead.json
+Homestead.yaml
+npm-debug.log
+yarn-error.log
+/.idea
+
+# Ignore tenant sensitive data
+/storage/tenant*/app/certificados
+/storage/tenant*/app/comprobantes
+
+# Ignore central app sensitive data (if used)
+/storage/app/certificados
+/storage/app/comprobantes
