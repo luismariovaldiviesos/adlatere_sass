@@ -36,6 +36,11 @@
         </a>
         @endcan
 
+        
+       
+            
+        
+
         {{-- 1. FACTURACIÓN Y FINANZAS (Operativo + Reportes) --}}
         @can('menu_facturacion')
             @include('layouts.modules.billing_sidebar')
@@ -58,6 +63,7 @@
         {{-- 4. CONFIGURACIÓN (Sistema) --}}
         @can('menu_configuracion')
             @include('layouts.modules.settings_sidebar')
+            @include('layouts.modules.adlatere_sidebar')
         @endcan
 
     @endif

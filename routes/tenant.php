@@ -28,6 +28,8 @@ use App\Http\Livewire\Settings;
 use App\Http\Livewire\Users;
 use App\Http\Livewire\Roles;
 use App\Http\Livewire\XmlFiles;
+use App\Http\Livewire\Provincias;
+use App\Http\Livewire\Cantones;
 
 /*
 |--------------------------------------------------------------------------
@@ -89,6 +91,8 @@ Route::middleware([
         Route::get('impuestos', Impuestos::class)->name('impuestos');
 
         Route::get('/dashboard', [App\Http\Controllers\Tenant\TenantDebugController::class, 'dashboardRedirect'])->name('dashboard');
+        Route::get('provincias', Provincias::class)->name('provincias');
+        Route::get('cantones', Cantones::class)->name('cantones');
 
     });
 

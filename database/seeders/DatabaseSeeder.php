@@ -41,6 +41,7 @@ class DatabaseSeeder extends Seeder
             $this->call(UserSeeder::class);
             $this->call(InicialSeeder::class);
             $this->call(PermisosSistemaSeeder::class);
+            $this->call(AdlatereSeeder::class);
         } else {
             // Seeders para la CENTRAL (Landlord)
             $this->call(PlansTableSeeder::class);

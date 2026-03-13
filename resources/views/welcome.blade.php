@@ -206,7 +206,7 @@
 
                             <div class="card-body row pricing-block">
 
-
+                                {{-- este es el componente de planes --}}
                                  <livewire:payator />
 
                             </div>
