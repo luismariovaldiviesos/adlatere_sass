@@ -50,6 +50,14 @@ class Provincias extends Component
         if ($reset) $this->resetUI();
     }
 
+    public function addNew()
+    {
+        $this->resetUI();
+        $this->form = true;
+        $this->action = 'Agregar';
+    }
+
+
     public function CloseModal()
     {
         $this->resetUI();

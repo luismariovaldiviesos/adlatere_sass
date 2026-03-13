@@ -77,7 +77,7 @@ class Products extends Component
         if($reset) $this->resetUI();
     }
 
-    public function AddNew()
+    public function addNew()
     {
         $this->resetUI();
         $this->noty(null, 'open-modal');

@@ -20,12 +20,12 @@ class Canton extends Model
     {
         if ($id <= 0) {
             return [
-                'nombre' => 'required|unique:cantons',
+                'nombre' => 'required|unique:cantones',
                 'provincia_id' => 'required'
             ];
         } else {
             return [
-                'nombre' => "required|unique:cantons,nombre,{$id}",
+                'nombre' => "required|unique:cantones,nombre,{$id}",
                 'provincia_id' => 'required'
             ];
         }

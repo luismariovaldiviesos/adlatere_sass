@@ -58,6 +58,13 @@ class Cantones extends Component
         $this->dispatchBrowserEvent($eventName, ['msg' => $msg, 'type' => 'success', 'action' => $action]);
         if ($reset) $this->resetUI();
     }
+    public function addNew()
+    {
+        $this->resetUI();
+        $this->form = true;
+        $this->action = 'Agregar';
+    }
+
 
     public function CloseModal()
     {

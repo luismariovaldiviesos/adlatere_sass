@@ -55,7 +55,7 @@ class Categories extends Component
         if ($reset) $this->resetUI();
     }
 
-    public function AddNew()
+    public function addNew()
     {
         $this->resetUI();
         $this->form = true;
