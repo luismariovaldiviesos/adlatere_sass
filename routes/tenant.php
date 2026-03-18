@@ -30,6 +30,7 @@ use App\Http\Livewire\Roles;
 use App\Http\Livewire\XmlFiles;
 use App\Http\Livewire\Provincias;
 use App\Http\Livewire\Cantones;
+use App\Http\Livewire\Unidades;
 
 /*
 |--------------------------------------------------------------------------
@@ -93,6 +94,7 @@ Route::middleware([
         Route::get('/dashboard', [App\Http\Controllers\Tenant\TenantDebugController::class, 'dashboardRedirect'])->name('dashboard');
         Route::get('provincias', Provincias::class)->name('provincias');
         Route::get('cantones', Cantones::class)->name('cantones');
+        Route::get('unidades', Unidades::class)->name('unidades');
 
     });
 

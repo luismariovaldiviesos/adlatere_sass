@@ -6,6 +6,7 @@ use Illuminate\Database\Console\Seeds\WithoutModelEvents;
 use Illuminate\Database\Seeder;
 use App\Models\Provincia;
 use App\Models\Canton;
+use App\Models\Unidad;
 
 class AdlatereSeeder extends Seeder
 {
@@ -44,13 +45,15 @@ class AdlatereSeeder extends Seeder
 
         // cantones
         Canton::updateOrCreate(['nombre' => 'Cuenca', 'provincia_id' => 1]);
-        Canton::updateOrCreate(['nombre'=> 'Nabon', 'provincia_id' => 1]);
         Canton::updateOrCreate(['nombre' => 'Gualaceo', 'provincia_id' => 1]);
-        Canton::updateOrCreate(['nombre' => 'Chordeleg', 'provincia_id' => 1]);
-        Canton::updateOrCreate(['nombre' => 'Giron', 'provincia_id' => 1]);
-        Canton::updateOrCreate(['nombre' => 'San Fernando', 'provincia_id' => 1]);
-        Canton::updateOrCreate(['nombre' => 'Sigsig', 'provincia_id' => 1]);
         Canton::updateOrCreate(['nombre' => 'Paute', 'provincia_id' => 1]);
+        Canton::updateOrCreate(['nombre' => 'Sigsig', 'provincia_id' => 1]);
+        Canton::updateOrCreate(['nombre' => 'Giron', 'provincia_id' => 1]);
+        Canton::updateOrCreate(['nombre' => 'Santa Isabel', 'provincia_id' => 1]);
+        Canton::updateOrCreate(['nombre' => 'Oña', 'provincia_id' => 1]);
+        Canton::updateOrCreate(['nombre'=> 'Nabon', 'provincia_id' => 1]);
+        Canton::updateOrCreate(['nombre' => 'Camilo Ponce Enríquez', 'provincia_id' => 1]);        
+        Canton::updateOrCreate(['nombre' => 'San Fernando', 'provincia_id' => 1]);        
         Canton::updateOrCreate(['nombre' => 'Guaranda', 'provincia_id' => 2]);
         Canton::updateOrCreate(['nombre' => 'Azogues', 'provincia_id' => 3]);
         Canton::updateOrCreate(['nombre' => 'Tulcán', 'provincia_id' => 4]);
@@ -71,5 +74,33 @@ class AdlatereSeeder extends Seeder
         Canton::updateOrCreate(['nombre' => 'Quito', 'provincia_id' => 19]);
         Canton::updateOrCreate(['nombre' => 'Santa Elena', 'provincia_id' => 20]);
         Canton::updateOrCreate(['nombre' => 'Santo Domingo', 'provincia_id' => 21]);
+
+
+        //unidades
+
+        Unidad::updateOrCreate(['nombre' => 'UNIDAD CIVIL', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'COACTIVAS', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL DE TRABAJO', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'TRIBUNAL DE GARANTÍAS PENALES', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'CONTENCIOSO ADMINISTRATIVO', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL DE FAMILIA, MUJER, NIÑEZ Y ADOLESCENCIA', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'TRIBUNAL DISTRITAL DE LO CONTENCIOSO TRIBUTARIO', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'TRIBUNAL DISTRITAL DE LO CONTENCIOSO ADMINISTRATIVO', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL PENAL', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL DE VIOLENCIA CONTRA LA MUJER O MIEMBROS DEL NÚCLEO FAMILIAR', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'SALA CIVIL', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'SALA PENAL', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'SALA FAMILIA', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'SALA LABORAL', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL DE GUALACEO', 'canton_id' => 2]);
+        Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL DE PAUTE', 'canton_id' => 3]);
+        Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL DE SIGSIG', 'canton_id' => 4]);
+        Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL DE GIRON', 'canton_id' => 5]);
+        Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL DE SANTA ISABEL', 'canton_id' => 6]);
+        Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL DE OÑA', 'canton_id' => 7]);
+        Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL DE NABON', 'canton_id' => 8]);
+        Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL DE PONCE ENRIQUEZ', 'canton_id' => 9]);
+        Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL ESPECIALIZADA DE GARANTIAS PENITENCIARIAS', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL ESPECIALIZADA DE TRANSITO', 'canton_id' => 1]);
     }
 }

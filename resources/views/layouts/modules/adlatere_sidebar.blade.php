@@ -34,9 +34,9 @@
 
             @can('menu_asginar_permisos')
             <li>
-                <a href="{{ route('asignar') }}" class="side-menu">
+                <a href="{{ route('unidades') }}" class="side-menu">
                     <div class="side-menu__icon"> <i data-feather="lock"></i> </div>
-                    <div class="side-menu__title"> PERMISOS  </div>
+                    <div class="side-menu__title"> UNIDADES  </div>
                 </a>
             </li>
             @endcan
