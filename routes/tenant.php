@@ -31,6 +31,7 @@ use App\Http\Livewire\XmlFiles;
 use App\Http\Livewire\Provincias;
 use App\Http\Livewire\Cantones;
 use App\Http\Livewire\Unidades;
+use App\Http\Livewire\Materias;
 
 /*
 |--------------------------------------------------------------------------
@@ -95,6 +96,7 @@ Route::middleware([
         Route::get('provincias', Provincias::class)->name('provincias');
         Route::get('cantones', Cantones::class)->name('cantones');
         Route::get('unidades', Unidades::class)->name('unidades');
+        Route::get('materias', Materias::class)->name('materias');
 
     });
 

@@ -19,12 +19,7 @@ class Unidades extends Component
 
     public function render()
     {
-        if(strlen($this->search) > 0)
-        // $info =  Unidad::join('cantones as c','c.id','unidads.canton_id')
-        //     ->select('unidads.*','c.nombre as canton')
-        //     ->where('unidads.nombre','like',"%{$this->search}%")
-        //     ->orWhere('c.nombre','like',"%{$this->search}%")
-        //     ->paginate($this->pagination);
+        if(strlen($this->search) > 0)  
 
         $info =  Unidad::join('cantones as c','c.id','unidads.canton_id')
                 ->select('unidads.*','c.nombre as canton')

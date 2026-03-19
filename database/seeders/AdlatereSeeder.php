@@ -7,6 +7,7 @@ use Illuminate\Database\Seeder;
 use App\Models\Provincia;
 use App\Models\Canton;
 use App\Models\Unidad;
+use App\Models\Materia;
 
 class AdlatereSeeder extends Seeder
 {
@@ -102,5 +103,21 @@ class AdlatereSeeder extends Seeder
         Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL DE PONCE ENRIQUEZ', 'canton_id' => 9]);
         Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL ESPECIALIZADA DE GARANTIAS PENITENCIARIAS', 'canton_id' => 1]);
         Unidad::updateOrCreate(['nombre' => 'UNIDAD JUDICIAL ESPECIALIZADA DE TRANSITO', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'GARANTIAS JURISDICCIONALES EN MATERIA CIVIL', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'GARANTIAS JURISDICCIONALES EN MATERIA PENAL', 'canton_id' => 1]);
+        Unidad::updateOrCreate(['nombre' => 'GARANTIAS JURISDICCIONALES EN MATERIA FAMILIA', 'canton_id' => 1]);
+
+        //materias
+        Materia::updateOrCreate(['nombre' => 'Civil', 'unidad_id' => 1]);
+        Materia::updateOrCreate(['nombre' => 'Penal', 'unidad_id' => 9]);
+        Materia::updateOrCreate(['nombre' => 'Familia, Niñez y Adolescencia', 'unidad_id' => 6]);
+        Materia::updateOrCreate(['nombre' => 'Laboral', 'unidad_id' => 3]);
+        Materia::updateOrCreate(['nombre' => 'Inquilinato', 'unidad_id' => 1]);
+        Materia::updateOrCreate(['nombre' => 'Constitucional', 'unidad_id' => 25]);
+        Materia::updateOrCreate(['nombre' => 'Contencioso Administrativo', 'unidad_id' => 5]);
+        Materia::updateOrCreate(['nombre' => 'Contencioso Tributario', 'unidad_id' => 7]);
+        Materia::updateOrCreate(['nombre' => 'Contencioso Tributario', 'unidad_id' => 7]);
+        Materia::updateOrCreate(['nombre' => 'Violencia contra la Mujer y Miembros del Núcleo Familiar', 'unidad_id' => 6]);
+        
     }
 }

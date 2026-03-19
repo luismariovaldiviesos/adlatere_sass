@@ -9,7 +9,7 @@
         <meta name="description" content="Sistema FAstFooD">
         <meta name="keywords" content="ventas,sistema,web,envio,comida,restaurante,ordenes,express,pantalla,táctil">
         <meta name="author" content="khipu.com">
-        <title>{{ $title ?? 'Facta SaaS' }}</title>
+        <title>{{ $title ?? 'Adlatere SaaS' }}</title>
         <meta name="referrer" content="strict-origin-when-cross-origin">
         <!-- BEGIN: CSS Assets-->
         <link rel="stylesheet" href="{{ asset('dist/css/app.css')}}" />
