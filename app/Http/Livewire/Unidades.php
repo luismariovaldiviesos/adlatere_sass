@@ -19,26 +19,26 @@ class Unidades extends Component
 
     public function render()
     {
-        if(strlen($this->search) > 0)  
+        $query = Unidad::join('cantones as c', 'c.id', 'unidads.canton_id')
+            ->select('unidads.*', 'c.nombre as canton')
+            // Validamos si tiene procesos vinculados para el botón eliminar
+            ->withCount('materias') ;
+           // ->orderBy('unidads.nombre', 'asc');
 
-        $info =  Unidad::join('cantones as c','c.id','unidads.canton_id')
-                ->select('unidads.*','c.nombre as canton')
-                ->where(function ($query){
-                    $searchTerm =  strtolower($this->search);
-                    $query->whereRaw('LOWER(unidads.nombre) LIKE ?', ["%{$searchTerm}%"])
-          ->orWhereRaw('LOWER(c.nombre) LIKE ?', ["%{$searchTerm}%"]);
-                })->paginate($this->pagination);
-        else
+        if (strlen($this->search) > 0) {
+            $searchTerm = strtolower(trim($this->search));
+            $query->where(function ($q) use ($searchTerm) {
+                $q->whereRaw('LOWER(unidads.nombre) LIKE ?', ["%{$searchTerm}%"])
+                ->orWhereRaw('LOWER(c.nombre) LIKE ?', ["%{$searchTerm}%"]);
+            });
+        }
 
-        $info =  Unidad::join('cantones as c','c.id','unidads.canton_id')
-        ->select('unidads.*','c.nombre as canton')
-         ->paginate($this->pagination);
-
+        $info = $query->paginate($this->pagination);
 
         return view('livewire.unidades.component', [
-        'unidades' => $info,
-        'cantones' => Canton::orderBy('id','asc')->get(),
-           ])->layout('layouts.theme.app');
+            'unidades' => $info,
+            'cantones' => Canton::orderBy('nombre', 'asc')->get(),
+        ])->layout('layouts.theme.app');
     }
 
     public $listeners = [

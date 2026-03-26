@@ -18,25 +18,26 @@ class Cantones extends Component
 
     public function render()
     {
-        if(strlen($this->search) > 0)
-        $info =  Canton::join('provincias as p','p.id','cantones.provincia_id')
-            ->select('cantones.*','p.nombre as provincia')
-            ->where('cantones.nombre','like',"%{$this->search}%")
-            ->orWhere('p.nombre','like',"%{$this->search}%")
-            ->paginate($this->pagination);
-        else
+        $query = Canton::join('provincias as p', 'p.id', 'cantones.provincia_id')
+            ->select('cantones.*', 'p.nombre as provincia')
+            // Suponiendo que la relación en el modelo Canton se llama 'unidades'
+            ->withCount('unidades') 
+            ->orderBy('cantones.nombre', 'asc');
 
-        $info =  Canton::join('provincias as p','p.id','cantones.provincia_id')
-            ->select('cantones.*','p.nombre as provincia')
-            ->paginate($this->pagination);
+        if (strlen($this->search) > 0) {
+            $searchTerm = "%{$this->search}%";
+            $query->where(function($q) use ($searchTerm) {
+                $q->where('cantones.nombre', 'like', $searchTerm)
+                ->orWhere('p.nombre', 'like', $searchTerm);
+            });
+        }
 
+        $info = $query->paginate($this->pagination);
 
-    return view('livewire.cantones.component', [
-        'cantones' => $info,
-        'provincias' => Provincia::orderBy('id','asc')->get(),
-        //'ivas' => Impuesto::where('nombre','IVA')->get()
-
-    ])->layout('layouts.theme.app');
+        return view('livewire.cantones.component', [
+            'cantones' => $info,
+            'provincias' => Provincia::orderBy('nombre', 'asc')->get(),
+        ])->layout('layouts.theme.app');
     }
 
     public $listeners = [

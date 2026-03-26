@@ -33,17 +33,15 @@ class Unidad extends Model
     ];
 
 
-    //relaciones
+public function canton()
+    {
+        return $this->belongsTo(Canton::class);
+    }
 
-    //una unidad tiene muchas pcs, impresoras, laptos,, etc
-
-    // public function unidades()
-    // {
-    //     return $this->hasMany(Unidad::class);
-    // }
-
-
-    // una unidad  pertennece a un edificio
+     public function materias()
+    {
+        return $this->hasMany(Materia::class);
+    }
 
    
 

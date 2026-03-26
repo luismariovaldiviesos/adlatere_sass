@@ -31,5 +31,10 @@ class Provincia extends Model
         'nombre.unique' => 'La provincia ya existe en sistema'
     ];
 
+    public function cantones()
+    {
+        return $this->hasMany(Canton::class);
+    }
+
 
 }

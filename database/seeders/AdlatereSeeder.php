@@ -8,6 +8,8 @@ use App\Models\Provincia;
 use App\Models\Canton;
 use App\Models\Unidad;
 use App\Models\Materia;
+use App\Models\Procedimiento;
+use App\Models\Asunto;
 
 class AdlatereSeeder extends Seeder
 {
@@ -118,6 +120,95 @@ class AdlatereSeeder extends Seeder
         Materia::updateOrCreate(['nombre' => 'Contencioso Tributario', 'unidad_id' => 7]);
         Materia::updateOrCreate(['nombre' => 'Contencioso Tributario', 'unidad_id' => 7]);
         Materia::updateOrCreate(['nombre' => 'Violencia contra la Mujer y Miembros del Núcleo Familiar', 'unidad_id' => 6]);
+
+        //procedimientos
+        Procedimiento::updateOrCreate(['nombre' => 'Ordinario', 'materia_id' => 1]); // materia civil 1
+        Procedimiento::updateOrCreate(['nombre' => 'Sumario', 'materia_id' => 1]);   // materia civil 2
+        Procedimiento::updateOrCreate(['nombre' => 'Ejecutivo', 'materia_id' => 1]);// materia civil 3
+        Procedimiento::updateOrCreate(['nombre' => 'Monitorio', 'materia_id' => 1]);// materia civil 4
+        Procedimiento::updateOrCreate(['nombre' => 'Voluntario', 'materia_id' => 1]);// materia civil 5
+        Procedimiento::updateOrCreate(['nombre' => 'Ejecución', 'materia_id' => 1]);// materia civil 6
+
+        Procedimiento::updateOrCreate(['nombre' => 'Sumario', 'materia_id' => 3]);  //materia familia 7
+        Procedimiento::updateOrCreate(['nombre' => 'Voluntario', 'materia_id' => 3]);  //materia familia 8
+        Procedimiento::updateOrCreate(['nombre' => 'Ejecutivo', 'materia_id' => 3]);  //materia familia 9
+
+        Procedimiento::updateOrCreate(['nombre' => 'Sumario', 'materia_id' => 4]);  //materia laboral 10
+        Procedimiento::updateOrCreate(['nombre' => 'Ordinario', 'materia_id' => 4]);  //materia laboral 11
+        Procedimiento::updateOrCreate(['nombre' => 'Ejecutivo', 'materia_id' => 4]);  //materia laboral 12
+
+        Procedimiento::updateOrCreate(['nombre' => 'Inquilinato', 'materia_id' => 5]);  //materia inquilinato 13
+        Procedimiento::updateOrCreate(['nombre' => 'Sumario', 'materia_id' => 5]);  //materia inquilinato 14
+        Procedimiento::updateOrCreate(['nombre' => 'Monitorio', 'materia_id' => 5]);  //materia inquilinato 15
+
+
+        Procedimiento::updateOrCreate(['nombre' => 'Instrucción Fiscal / Ordinario', 'materia_id' => 2]); //materia penal 16
+        Procedimiento::updateOrCreate(['nombre' => 'Directo', 'materia_id' => 2]); //materia penal 17
+        Procedimiento::updateOrCreate(['nombre' => 'Abreviado', 'materia_id' => 2]); //materia penal 18
+        Procedimiento::updateOrCreate(['nombre' => 'Expedito', 'materia_id' => 2]); //materia penal 19
+        Procedimiento::updateOrCreate(['nombre' => 'Ejercicio Privado de la Acción', 'materia_id' => 2]); //materia penal    20      
+        
+        Procedimiento::updateOrCreate(['nombre' => 'Acción de Protección', 'materia_id' => 6]); //materia constitucional 21
+        Procedimiento::updateOrCreate(['nombre' => 'Medidas Cautelares', 'materia_id' => 6]); //materia constitucional 22
+        Procedimiento::updateOrCreate(['nombre' => 'Hábeas Corpus', 'materia_id' => 6]); //materia constitucional  23
+
+        Procedimiento::updateOrCreate(['nombre' => 'Ordinario', 'materia_id' => 7]); //contencioso administrativo 24
+        Procedimiento::updateOrCreate(['nombre' => 'Sumario', 'materia_id' => 7]); //contencioso administrativo 25
+        
+
+
+        
+
+
+        Asunto::updateOrCreate(['nombre' => 'Cobro de Letra de Cambio', 'procedimiento_id' => 3]); //procedimiento ejecutivo materia civil
+        Asunto::updateOrCreate(['nombre' => 'Cobro de Cheque', 'procedimiento_id' => 3]); //procedimiento ejecutivo materia civil
+        Asunto::updateOrCreate(['nombre' => 'Cobro de Pagaré', 'procedimiento_id' => 3]); //procedimiento ejecutivo materia civil
+        Asunto::updateOrCreate(['nombre'    => 'Cobro de Contrato de Arrendamiento', 'procedimiento_id' => 3]); //procedimiento ejecutivo materia civil
+        Asunto::updateOrCreate(['nombre' => 'Cobro de Contrato de Compra Venta', 'procedimiento_id' => 3]); //procedimiento ejecutivo materia civil
+        Asunto::updateOrCreate(['nombre' => 'Cobro de Contrato de Prestamo', 'procedimiento_id' => 3]); //procedimiento ejecutivo materia civil
+        
+        Asunto::updateOrCreate(['nombre' => 'Daños y Perjuicios', 'procedimiento_id' => 1]); //procedimiento ordinario  materia civil
+        Asunto::updateOrCreate(['nombre'    => 'Prescripción Adquisitiva de Dominio', 'procedimiento_id' => 1]); //procedimiento ordinario  materia civil
+        Asunto::updateOrCreate(['nombre' => 'Reivindicación de Bien Inmueble', 'procedimiento_id' => 1]); //procedimiento ordinario  materia civil
+        Asunto::updateOrCreate(['nombre' => 'Nulidad de Contrato', 'procedimiento_id' => 1]); //procedimiento ordinario  materia civil
+        
+        Asunto::updateOrCreate(['nombre'    => 'Cobro de Facturas', 'procedimiento_id' => 4]); //procedimiento monitorio  materia civil
+        Asunto::updateOrCreate(['nombre' => 'Cobro de Alícuotas de Condominios', 'procedimiento_id' => 4]); //procedimiento monitorio  materia civil
+        Asunto::updateOrCreate(['nombre' => 'Deudas de Menor Cuantía sin Título', 'procedimiento_id' => 4]); //procedimiento monitorio  materia civil
+
+
+        Asunto::updateOrCreate(['nombre' => 'Fijación de Pensión Alimenticia', 'procedimiento_id' => 7]); //procedimiento ejecutivo materia familia
+        Asunto::updateOrCreate(['nombre' => 'Aumento de Pensión Alimenticia', 'procedimiento_id' => 7]); //procedimiento ejecutivo materia familia
+        Asunto::updateOrCreate(['nombre' => 'Rebaja de Pensión Alimenticia', 'procedimiento_id' => 7]); //procedimiento ejecutivo materia familia
+        Asunto::updateOrCreate(['nombre' => 'Extensión  de Pensión Alimenticia', 'procedimiento_id' => 7]); //procedimiento ejecutivo materia familia
+        Asunto::updateOrCreate(['nombre' => 'Régimen de visitas', 'procedimiento_id' => 7]); //procedimiento ejecutivo materia familia
+        Asunto::updateOrCreate(['nombre' => 'Tenencia y cuidado de menores', 'procedimiento_id' => 7]); //procedimiento ejecutivo materia familia
+        Asunto::updateOrCreate(['nombre' => 'Divorcio Contecioso', 'procedimiento_id' => 7]); //procedimiento ejecutivo materia familia
+        Asunto::updateOrCreate(['nombre' => 'Autorización de Salid del País', 'procedimiento_id' => 7]); //procedimiento ejecutivo materia familia
+        Asunto::updateOrCreate(['nombre' => 'Divorcio por Mutuo Acuerdo', 'procedimiento_id' => 8]); //procedimiento voluntario materia familia
+        Asunto::updateOrCreate(['nombre' => 'Terminación de la Unión de Hecho por Mutuo Acuerdo', 'procedimiento_id' => 8]); //procedimiento voluntario materia familia
+        Asunto::updateOrCreate(['nombre' => 'Inventarios de Bienes Sucesorios', 'procedimiento_id' => 8]); //procedimiento voluntario materia familia
+        
+        
+        
+        Asunto::updateOrCreate(['nombre' => 'Despido Intempestivo', 'procedimiento_id' => 10]); //procedimiento sumario materia laboral
+        Asunto::updateOrCreate(['nombre' => 'Pago de Haberes Laborales', 'procedimiento_id' => 10]); //procedimiento sumario materia laboral
+        Asunto::updateOrCreate(['nombre' => 'Visto Bueno', 'procedimiento_id' => 10]); //procedimiento sumario materia laboral
+        Asunto::updateOrCreate(['nombre' => 'Accidente de Trabajo', 'procedimiento_id' => 10]); //procedimiento sumario materia laboral
+        
+        Asunto::updateOrCreate(['nombre' => 'Vulneración de Derechos Constitucionales', 'procedimiento_id' => 21]); //procedimiento accion de proteccion materia constitucional
+        Asunto::updateOrCreate(['nombre' => 'Acción de Protección contra Acto Administrativo', 'procedimiento_id' => 21]); //procedimiento accion de proteccion materia constitucional
+        Asunto::updateOrCreate(['nombre' => 'Privación Ilegal de la Libertad', 'procedimiento_id' => 23]); //procedimiento habeas corpus materia constitucional
+        Asunto::updateOrCreate(['nombre' => 'Integridad Física del Detenido', 'procedimiento_id' => 23]); //procedimiento habeas corpus materia constitucional
+       
+       
+        
+        
+
+         
+        
+        
+        
         
     }
 }

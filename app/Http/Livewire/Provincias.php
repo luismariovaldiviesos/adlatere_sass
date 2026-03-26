@@ -17,15 +17,27 @@ class Provincias extends Component
     private $pagination = 10;
     protected $paginationTheme = 'tailwind';
 
-    public function render()
-    {
-        if (strlen($this->search) > 0)
-        $info = Provincia::where('nombre', 'like', "%{$this->search}%")->paginate($this->pagination);
-    else
-        $info = Provincia::paginate($this->pagination);
+    //public function render()
+    // {
+    //     if (strlen($this->search) > 0)
+    //     $info = Provincia::where('nombre', 'like', "%{$this->search}%")->paginate($this->pagination);
+    // else
+    //     $info = Provincia::paginate($this->pagination);
 
 
-    return view('livewire.provincias.component', ['provincias' => $info])
+    // return view('livewire.provincias.component', ['provincias' => $info])
+    //     ->layout('layouts.theme.app');
+    // }
+
+    public function render(){
+        if (strlen($this->search) > 0){
+            $searchTerm = '%' . trim($this->search) . '%';
+            $info =  Provincia::where('nombre', 'like', $searchTerm)
+            ->withCount('cantones')->paginate($this->pagination);
+        }           
+        else
+            $info = Provincia::withCount('cantones')->paginate($this->pagination);
+        return view('livewire.provincias.component', ['provincias' => $info])
         ->layout('layouts.theme.app');
     }
 

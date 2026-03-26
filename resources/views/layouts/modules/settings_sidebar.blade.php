@@ -66,18 +66,18 @@
 
             @can('menu_roles')
             <li>
-                <a href="{{ route('roles') }}" class="side-menu">
+                <a href="{{ route('procedimientos') }}" class="side-menu">
                     <div class="side-menu__icon"> <i data-feather="shield"></i> </div>
-                    <div class="side-menu__title"> ROLES  </div>
+                    <div class="side-menu__title"> PROCEDIMIENTOS  </div>
                 </a>
             </li>
             @endcan
 
             @can('menu_asginar_permisos')
             <li>
-                <a href="{{ route('asignar') }}" class="side-menu">
+                <a href="{{ route('asuntos') }}" class="side-menu">
                     <div class="side-menu__icon"> <i data-feather="lock"></i> </div>
-                    <div class="side-menu__title"> PERMISOS  </div>
+                    <div class="side-menu__title"> ASUNTOS  </div>
                 </a>
             </li>
             @endcan

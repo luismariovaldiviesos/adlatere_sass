@@ -18,33 +18,32 @@ use WithPagination;
     private $pagination = 20;
     protected $paginationTheme = 'tailwind';
     
-    // public function mount(){
-    //     dd($this->materia, $this->nombre, $this->unidad_id, $this->unidad, $this->selected_id, $this->action, $this->componentName, $this->search, $this->form  );
-    // }
+  
 
-      public function render()
+    public function render()
     {
-        
-        if(strlen($this->search) > 0)  
-           
-        $info =  Materia::join('unidads as u','u.id','materias.unidad_id')
-                ->select('materias.*','u.nombre as unidad')
-                ->where(function ($query){
-                    $searchTerm =  strtolower($this->search);
-                    $query->whereRaw('LOWER(materias.nombre) LIKE ?', ["%{$searchTerm}%"])
-          ->orWhereRaw('LOWER(u.nombre) LIKE ?', ["%{$searchTerm}%"]);
-                })->paginate($this->pagination);
-        else
+        // 1. Iniciamos la consulta base con el Join y el conteo de procedimientos
+        $query = Materia::join('unidads as u', 'u.id', 'materias.unidad_id')
+            ->select('materias.*', 'u.nombre as unidad')
+            ->withCount('procedimientos'); // Relación que debe estar en el modelo Materia
+           // ->orderBy('materias.nombre', 'asc');
 
-        $info =  Materia::join('unidads as u','u.id','materias.unidad_id')
-        ->select('materias.*','u.nombre as unidad')
-         ->paginate($this->pagination);
+        // 2. Aplicamos el filtro de búsqueda solo si hay texto
+        if (strlen($this->search) > 0) {
+            $searchTerm = strtolower(trim($this->search));
+            $query->where(function ($q) use ($searchTerm) {
+                $q->whereRaw('LOWER(materias.nombre) LIKE ?', ["%{$searchTerm}%"])
+                ->orWhereRaw('LOWER(u.nombre) LIKE ?', ["%{$searchTerm}%"]);
+            });
+        }
 
+        // 3. Ejecutamos la paginación
+        $info = $query->paginate($this->pagination);
 
         return view('livewire.materias.component', [
-        'materias' => $info,
-        'unidades' => Unidad::orderBy('id','asc')->get(),
-           ])->layout('layouts.theme.app');
+            'materias' => $info,
+            'unidades' => Unidad::orderBy('nombre', 'asc')->get(),
+        ])->layout('layouts.theme.app');
     }
 
      public $listeners = [

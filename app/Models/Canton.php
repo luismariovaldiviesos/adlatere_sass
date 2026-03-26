@@ -36,4 +36,15 @@ class Canton extends Model
         'nombre.unique' => 'La provincia ya existe en sistema',
         'provincia_id.required' => 'provincia cantón requerido',
     ];
+
+
+    public function provincia()
+    {
+        return $this->belongsTo(Provincia::class);
+    }
+
+     public function unidades()
+    {
+        return $this->hasMany(Unidad::class);
+    }
 }

@@ -31,4 +31,15 @@ class Materia extends Model
         'nombre.unique' => ' Materia ya existe en sistema',
         'unidad_id.required' => 'Unidad requerida',
     ];
+
+
+    public function unidad()
+    {
+        return $this->belongsTo(Unidad::class);
+    }
+
+     public function procedimientos()
+    {
+        return $this->hasMany(Procedimiento::class);
+    }
 }
