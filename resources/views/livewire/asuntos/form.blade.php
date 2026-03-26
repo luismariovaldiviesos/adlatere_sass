@@ -25,7 +25,7 @@
                                 <select wire:model='procedimiento_id' class="form-select form-select-lg sm:mr-2">
                                    <option selected="elegir">Elegir</option>
                                    @foreach ($procedimientos as $procedimiento )
-                                   <option value="{{ $procedimiento->id }}">{{ $procedimiento->nombre }}</option>
+                                   <option value="{{ $procedimiento->id }}">{{ $procedimiento->nombre }} - {{ $procedimiento->materia->nombre }}   </option>
                                     @endforeach
 
                                 </select>
