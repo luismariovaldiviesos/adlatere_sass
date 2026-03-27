@@ -2,18 +2,16 @@
 
 namespace App\Http\Livewire;
 
-use App\Models\Provincia;
 use Livewire\Component;
+use App\Models\Fase;
 use Livewire\WithPagination;
+use Livewire\WithFileUploads;
 
-class Provincias extends Component
+class Fases extends Component
 {
-
-    use WithPagination;
-
-
+     use WithPagination;
     public $nombre = '', $selected_id = 0;
-    public $action = 'Listado', $componentName = 'Listado de Provincias', $search, $form = false;
+    public $action = 'Listado', $componentName = 'Listado de Fases', $search, $form = false;
     private $pagination = 10;
     protected $paginationTheme = 'tailwind';
 
@@ -22,12 +20,12 @@ class Provincias extends Component
     public function render(){
         if (strlen($this->search) > 0){
             $searchTerm = '%' . trim($this->search) . '%';
-            $info =  Provincia::where('nombre', 'like', $searchTerm)
-            ->withCount('cantones')->paginate($this->pagination);
+            $info =  Fase::where('nombre', 'like', $searchTerm)
+            ->withCount('estados_procesales')->paginate($this->pagination);
         }           
         else
-            $info = Provincia::withCount('cantones')->paginate($this->pagination);
-        return view('livewire.provincias.component', ['provincias' => $info])
+            $info = Fase::withCount('estados_procesales')->paginate($this->pagination);
+        return view('livewire.fases.component', ['fases' => $info])
         ->layout('layouts.theme.app');
     }
 
@@ -76,10 +74,10 @@ class Provincias extends Component
         $this->reset('nombre', 'selected_id', 'search', 'action', 'componentName', 'form');
     }
 
-    public function Edit(Provincia $provincia)
+    public function Edit(Fase $fase)
     {
-        $this->selected_id = $provincia->id;
-        $this->nombre = $provincia->nombre;
+        $this->selected_id = $fase->id;
+        $this->nombre = $fase->nombre;
         $this->action = 'Editar';
         $this->form = true;
 
@@ -89,22 +87,22 @@ class Provincias extends Component
     {
         sleep(1);
 
-        $this->validate(Provincia::rules($this->selected_id), Provincia::$messages);
+        $this->validate(Fase::rules($this->selected_id), Fase::$messages);
 
-        $provincia = Provincia::updateOrCreate(
+        $fase = Fase::updateOrCreate(
             ['id' => $this->selected_id],
             ['nombre' => $this->nombre]
         );
 
         // image
 
-        $this->noty($this->selected_id < 1 ? 'Provincia Registrada' : 'Provincia Actualizada', 'noty', false, 'close-modal');
+        $this->noty($this->selected_id < 1 ? 'Fase Registrada' : 'Fase Actualizada', 'noty', false, 'close-modal');
         $this->resetUI();
     }
 
-    public function Destroy(Provincia $provincia)
+    public function Destroy(Fase $fase)
     {
-        $provincia->delete();
-        $this->noty('Se eliminó la Provincia');
+        $fase->delete();
+        $this->noty('Se eliminó la Fase');
     }
 }

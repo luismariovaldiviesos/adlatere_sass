@@ -2,3 +2,7 @@ para generar toda la bbdd del tenant :
 php artisan tenants:migrate-fresh
 seeder del tenant :
 php artisan tenants:seed
+
+php artisan make:migration create_estados_procesales_table --path=database/tenant
+php artisan make:livewire Asuntos
+php artisan make:model Asunto

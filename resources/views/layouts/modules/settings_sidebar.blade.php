@@ -81,6 +81,22 @@
                 </a>
             </li>
             @endcan
+            @can('menu_asginar_permisos')
+            <li>
+                <a href="{{ route('fases-procesales') }}" class="side-menu">
+                    <div class="side-menu__icon"> <i data-feather="lock"></i> </div>
+                    <div class="side-menu__title"> FASES PROCESALES  </div>
+                </a>
+            </li>
+            @endcan
+            @can('menu_asginar_permisos')
+            <li>
+                <a href="{{ route('estados-procesales') }}" class="side-menu">
+                    <div class="side-menu__icon"> <i data-feather="lock"></i> </div>
+                    <div class="side-menu__title"> EST PROCESALES  </div>
+                </a>
+            </li>
+            @endcan
         </ul>
     </li>
 </ul>

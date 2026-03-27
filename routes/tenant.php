@@ -34,6 +34,8 @@ use App\Http\Livewire\Unidades;
 use App\Http\Livewire\Materias;
 use App\Http\Livewire\Procedimientos;
 use App\Http\Livewire\Asuntos;
+use App\Http\Livewire\Fases;
+use App\Http\Livewire\EstadosProcesales;
 
 /*
 |--------------------------------------------------------------------------
@@ -101,6 +103,8 @@ Route::middleware([
         Route::get('materias', Materias::class)->name('materias');
         Route::get('procedimientos', Procedimientos::class)->name('procedimientos');
         Route::get('asuntos', Asuntos::class)->name('asuntos');
+        Route::get('fases-procesales', Fases::class)->name('fases-procesales');
+        Route::get('estados-procesales', EstadosProcesales::class)->name('estados-procesales');
 
     });
 
