@@ -34,6 +34,13 @@
                             @enderror
                             </div>
                         </div>
+                         <div>
+                            <label  class="form-label">Descripción</label>
+                            <input wire:model='descripcion' id="descripcion" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
+                            @error('descripcion')
+                                <x-alert msg="{{ $message }}" />
+                            @enderror
+                        </div>
 
 
                     </div>

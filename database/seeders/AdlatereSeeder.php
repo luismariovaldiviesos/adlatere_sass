@@ -212,46 +212,46 @@ class AdlatereSeeder extends Seeder
         Fase::updateOrCreate(['nombre'=> 'Archivo']); //7
         
 
-        EstadoProcesal::updateOrCreate(['nombre' => 'Demanda Presentada', 'fase_id' => 1]); // fase postulación
-        EstadoProcesal::updateOrCreate(['nombre' => 'Por Subsanar', 'fase_id' => 1]); // fase postulación
-        EstadoProcesal::updateOrCreate(['nombre' => 'Inadmitida', 'fase_id' => 1]); // fase postulación
-        EstadoProcesal::updateOrCreate(['nombre' => 'Calificada (Auto Inicial)', 'fase_id' => 1]); // fase postulación
+        EstadoProcesal::updateOrCreate(['nombre' => 'Demanda Presentada', 'fase_id' => 1, 'descripcion' => 'La demanda ha sido presentada.']); // fase postulación
+        EstadoProcesal::updateOrCreate(['nombre' => 'Por Subsanar', 'fase_id' => 1, 'descripcion' => 'La demanda requiere subsanación.']); // fase postulación
+        EstadoProcesal::updateOrCreate(['nombre' => 'Inadmitida', 'fase_id' => 1, 'descripcion' => 'La demanda ha sido inadmitida.']); // fase postulación
+        EstadoProcesal::updateOrCreate(['nombre' => 'Calificada (Auto Inicial)', 'fase_id' => 1, 'descripcion' => 'La demanda ha sido calificada.']); // fase postulación
 
-        EstadoProcesal::updateOrCreate(['nombre' => 'Gestión de Citación', 'fase_id' => 2]); // fase Citación
-        EstadoProcesal::updateOrCreate(['nombre' => 'Citado por Prensa', 'fase_id' => 2]); // fase Citación
-        EstadoProcesal::updateOrCreate(['nombre' => 'Citado por Boletas', 'fase_id' => 2]); // fase Citación
-        EstadoProcesal::updateOrCreate(['nombre' => 'Razón de Citación Sentada.', 'fase_id' => 2]); // fase Citación
+        EstadoProcesal::updateOrCreate(['nombre' => 'Gestión de Citación', 'fase_id' => 2, 'descripcion' => 'Se está gestionando la citación.']); // fase Citación
+        EstadoProcesal::updateOrCreate(['nombre' => 'Citado por Prensa', 'fase_id' => 2, 'descripcion' => 'El actor ha sido citado por prensa.']); // fase Citación
+        EstadoProcesal::updateOrCreate(['nombre' => 'Citado por Boletas', 'fase_id' => 2, 'descripcion' => 'El actor ha sido citado por boletas.']); // fase Citación
+        EstadoProcesal::updateOrCreate(['nombre' => 'Razón de Citación Sentada.', 'fase_id' => 2, 'descripcion' => 'La razón de citación ha sido sentada.']); // fase Citación
         
-        EstadoProcesal::updateOrCreate(['nombre' => 'Término para Contestar', 'fase_id' => 3]); // fase Traba de la Litis
-        EstadoProcesal::updateOrCreate(['nombre' => 'Contestada', 'fase_id' => 3]); // fase Traba de la Litis
-        EstadoProcesal::updateOrCreate(['nombre' => 'Reconvención Presentada', 'fase_id' => 3]); // fase Traba de la Litis
-        EstadoProcesal::updateOrCreate(['nombre' => 'Contestación a Reconvención', 'fase_id' => 3]); // fase Traba de la Litis
+        EstadoProcesal::updateOrCreate(['nombre' => 'Término para Contestar', 'fase_id' => 3, 'descripcion' => 'El término para contestar ha llegado.']); // fase Traba de la Litis
+        EstadoProcesal::updateOrCreate(['nombre' => 'Contestada', 'fase_id' => 3, 'descripcion' => 'La contestación ha sido presentada.']); // fase Traba de la Litis
+        EstadoProcesal::updateOrCreate(['nombre' => 'Reconvención Presentada', 'fase_id' => 3, 'descripcion' => 'La reconvención ha sido presentada.']); // fase Traba de la Litis
+        EstadoProcesal::updateOrCreate(['nombre' => 'Contestación a Reconvención', 'fase_id' => 3, 'descripcion' => 'La contestación a la reconvención ha sido presentada.']); // fase Traba de la Litis
         
-        EstadoProcesal::updateOrCreate(['nombre' => 'Convocado a Audiencia', 'fase_id' => 3]); // fase probatoria / audiencia
-        EstadoProcesal::updateOrCreate(['nombre' => 'Audiencia Preliminar', 'fase_id' => 3]); // fase probatoria / audiencia
-        EstadoProcesal::updateOrCreate(['nombre' => 'Audiencia Única', 'fase_id' => 3]); // fase probatoria / audiencia
-        EstadoProcesal::updateOrCreate(['nombre' => 'Audiencia de Juicio', 'fase_id' => 3]); // fase probatoria / audiencia
-        EstadoProcesal::updateOrCreate(['nombre' => 'Suspendida', 'fase_id' => 3]); // fase probatoria / audiencia
+        EstadoProcesal::updateOrCreate(['nombre' => 'Convocado a Audiencia', 'fase_id' => 3, 'descripcion' => 'El actor ha sido convocado a audiencia.']); // fase probatoria / audiencia
+        EstadoProcesal::updateOrCreate(['nombre' => 'Audiencia Preliminar', 'fase_id' => 3, 'descripcion' => 'La audiencia preliminar ha sido programada.']); // fase probatoria / audiencia
+        EstadoProcesal::updateOrCreate(['nombre' => 'Audiencia Única', 'fase_id' => 3, 'descripcion' => 'La audiencia única ha sido programada.']); // fase probatoria / audiencia
+        EstadoProcesal::updateOrCreate(['nombre' => 'Audiencia de Juicio', 'fase_id' => 3, 'descripcion' => 'La audiencia de juicio ha sido programada.']); // fase probatoria / audiencia
+        EstadoProcesal::updateOrCreate(['nombre' => 'Suspendida', 'fase_id' => 3, 'descripcion' => 'La causa ha sido suspendida.']); // fase probatoria / audiencia
         
-        EstadoProcesal::updateOrCreate(['nombre' => 'Sentencia Oral', 'fase_id' => 4]); // fase resolucion
-        EstadoProcesal::updateOrCreate(['nombre' => 'Sentencia Escrita Notificada', 'fase_id' => 4]); // fase resolucion
-        EstadoProcesal::updateOrCreate(['nombre' => 'Aclaración/Ampliación Solicitada', 'fase_id' => 4]); // fase resolucion
+        EstadoProcesal::updateOrCreate(['nombre' => 'Sentencia Oral', 'fase_id' => 4, 'descripcion' => 'La sentencia oral ha sido dictada.']); // fase resolucion
+        EstadoProcesal::updateOrCreate(['nombre' => 'Sentencia Escrita Notificada', 'fase_id' => 4, 'descripcion' => 'La sentencia escrita ha sido notificada.']); // fase resolucion
+        EstadoProcesal::updateOrCreate(['nombre' => 'Aclaración/Ampliación Solicitada', 'fase_id' => 4, 'descripcion' => 'Se ha solicitado aclaración o ampliación de la sentencia.']); // fase resolucion
         
-        EstadoProcesal::updateOrCreate(['nombre' => 'Apelación Interpuesta', 'fase_id' => 5]); // fase Impugnación (Recursos)
-        EstadoProcesal::updateOrCreate(['nombre' => 'Elevado a Corte Provincial', 'fase_id' => 5]); // fase Impugnación (Recursos)
-        EstadoProcesal::updateOrCreate(['nombre' => 'Casación', 'fase_id' => 5]); // fase Impugnación (Recursos)
-        EstadoProcesal::updateOrCreate(['nombre' => 'Acción Extraordinaria', 'fase_id' => 5]); // fase Impugnación (Recursos)
+        EstadoProcesal::updateOrCreate(['nombre' => 'Apelación Interpuesta', 'fase_id' => 5, 'descripcion' => 'Se ha interpuesto apelación.']); // fase Impugnación (Recursos)
+        EstadoProcesal::updateOrCreate(['nombre' => 'Elevado a Corte Provincial', 'fase_id' => 5, 'descripcion' => 'El caso ha sido elevado a la Corte Provincial.']); // fase Impugnación (Recursos)
+        EstadoProcesal::updateOrCreate(['nombre' => 'Casación', 'fase_id' => 5, 'descripcion' => 'Se ha interpuesto casación.']); // fase Impugnación (Recursos)
+        EstadoProcesal::updateOrCreate(['nombre' => 'Acción Extraordinaria', 'fase_id' => 5, 'descripcion' => 'Se ha interpuesto acción extraordinaria.']); // fase Impugnación (Recursos)
         
-        EstadoProcesal::updateOrCreate(['nombre' => 'Sentencia Ejecutoriada', 'fase_id' => 6]); // fase Ejecución
-        EstadoProcesal::updateOrCreate(['nombre' => 'Mandamiento de Ejecución', 'fase_id' => 6]); // fase Ejecución
-        EstadoProcesal::updateOrCreate(['nombre' => 'Embargo de Bienes', 'fase_id' => 6]); // fase Ejecución
-        EstadoProcesal::updateOrCreate(['nombre' => 'Remate', 'fase_id' => 6]); // fase Ejecución
-        EstadoProcesal::updateOrCreate(['nombre' => 'Pago Total', 'fase_id' => 6]); // fase Ejecución
+        EstadoProcesal::updateOrCreate(['nombre' => 'Sentencia Ejecutoriada', 'fase_id' => 6, 'descripcion' => 'La sentencia ha sido ejecutoriada.']); // fase Ejecución
+        EstadoProcesal::updateOrCreate(['nombre' => 'Mandamiento de Ejecución', 'fase_id' => 6, 'descripcion' => 'El mandamiento de ejecución ha sido emitido.']); // fase Ejecución
+        EstadoProcesal::updateOrCreate(['nombre' => 'Embargo de Bienes', 'fase_id' => 6, 'descripcion' => 'Se ha decretado embargo de bienes.']); // fase Ejecución
+        EstadoProcesal::updateOrCreate(['nombre' => 'Remate', 'fase_id' => 6, 'descripcion' => 'Se ha realizado el remate.']); // fase Ejecución
+        EstadoProcesal::updateOrCreate(['nombre' => 'Pago Total', 'fase_id' => 6, 'descripcion' => 'Se ha realizado el pago total.']); // fase Ejecución
         
-        EstadoProcesal::updateOrCreate(['nombre' => 'Archivado', 'fase_id' => 7]); // fase Finalización
-        EstadoProcesal::updateOrCreate(['nombre' => 'Desistimiento', 'fase_id' => 7]); // fase Finalización
-        EstadoProcesal::updateOrCreate(['nombre' => 'Abandono', 'fase_id' => 7]); // fase Finalización
-        EstadoProcesal::updateOrCreate(['nombre' => 'Conciliación Sentada.', 'fase_id' => 7]); // fase Finalización
+        EstadoProcesal::updateOrCreate(['nombre' => 'Archivado', 'fase_id' => 7, 'descripcion' => 'El caso ha sido archivado.']); // fase Finalización
+        EstadoProcesal::updateOrCreate(['nombre' => 'Desistimiento', 'fase_id' => 7, 'descripcion' => 'Se ha realizado el desistimiento.']); // fase Finalización
+        EstadoProcesal::updateOrCreate(['nombre' => 'Abandono', 'fase_id' => 7, 'descripcion' => 'El caso ha sido abandonado.']); // fase Finalización
+        EstadoProcesal::updateOrCreate(['nombre' => 'Conciliación Sentada.', 'fase_id' => 7, 'descripcion' => 'Se ha celebrado la conciliación sentada.']); // fase Finalización
 
         
 

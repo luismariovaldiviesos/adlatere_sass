@@ -6,3 +6,8 @@ php artisan tenants:seed
 php artisan make:migration create_estados_procesales_table --path=database/tenant
 php artisan make:livewire Asuntos
 php artisan make:model Asunto
+
+
+TODO
+en estados procesales hay que cambiar el select del render inicial cuando haya tabla juicios
+lo mismo en Asuntos

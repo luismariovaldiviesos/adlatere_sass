@@ -22,7 +22,8 @@
                                 <tr class="text-theme-1">
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >ID</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >NOMBRE</th>
-                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >FASE</th>
+                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >DESCRIPCIÓN</th>
+                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >FASE</th>                                   
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap text-center" >ACCIONES</th>
                                 </tr>
                             </thead>
@@ -39,18 +40,21 @@
                                             <h6 class="mb-1 font-medium">{{ $estado->nombre }}</h6>
                                             {{-- <small class="font-normal">{{ $MATERI->unidades->count() }} unidades en este edificio</small> --}}
                                         </td>
+                                         <td class="dark:border-dark-5">
+                                            <h6 class="mb-1 font-medium">{{ $estado->descripcion }}</h6>
+                                        </td>
 
                                         <td class="dark:border-dark-5">
                                             <h6 class="mb-1 font-medium">{{ $estado->fase->nombre }}</h6>
                                         </td>
 
-                                     
+                                       
 
                                         <td class="dark:border-dark-5 text-center">
                                             <div class="d-flex justify-content-center">
                                                 {{-- @if ($procedimiento->asuntos->count() < 1) --}}
                                                     <button class="btn btn-danger text-white border-0"
-                                                    onclick="destroy('estados','Destroy', {{ $estado->id }})"
+                                                    onclick="destroy('estados-procesales','Destroy', {{ $estado->id }})"
                                                     type="button">
                                                         <i class=" fas fa-trash f-2x"></i>
                                                     </button>
