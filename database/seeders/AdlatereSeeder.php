@@ -12,6 +12,7 @@ use App\Models\Procedimiento;
 use App\Models\Asunto;
 use App\Models\Fase;
 use App\Models\EstadoProcesal;
+use App\Models\Especialidad;
 
 class AdlatereSeeder extends Seeder
 {
@@ -253,7 +254,25 @@ class AdlatereSeeder extends Seeder
         EstadoProcesal::updateOrCreate(['nombre' => 'Abandono', 'fase_id' => 7, 'descripcion' => 'El caso ha sido abandonado.']); // fase Finalización
         EstadoProcesal::updateOrCreate(['nombre' => 'Conciliación Sentada.', 'fase_id' => 7, 'descripcion' => 'Se ha celebrado la conciliación sentada.']); // fase Finalización
 
+        Especialidad::updateOrCreate(['nombre' => 'Derecho Mercantil', 'materia_id' => 1, 'descripcion' => 'Especialidad en materia civil.']);
+        Especialidad::updateOrCreate(['nombre' => 'Derecho Societario', 'materia_id' => 1, 'descripcion' => 'Especialidad en materia civil.']);
+        Especialidad::updateOrCreate(['nombre' => 'Sucesiones', 'materia_id' => 1, 'descripcion' => 'Especialidad en materia civil.']);
+
+         Especialidad::updateOrCreate(['nombre' => 'Narcotráfico / Sustancias Catalogadas', 'materia_id' => 2, 'descripcion' => 'Especialidad en materia penal.']);
+         Especialidad::updateOrCreate(['nombre' => 'Tránsito y Seguridad Vial', 'materia_id' => 2, 'descripcion' => 'Especialidad en materia penal.']);
+         Especialidad::updateOrCreate(['nombre' => 'Adolescentes Infractores', 'materia_id' => 2, 'descripcion' => 'Especialidad en materia penal.']);
         
+         Especialidad::updateOrCreate(['nombre' => 'Pensiones Alimenticias', 'materia_id' => 3, 'descripcion' => 'Especialidad en materia familia.']);
+         Especialidad::updateOrCreate(['nombre' => 'Adopciones e Impugnación de Paternidad', 'materia_id' => 3, 'descripcion' => 'Especialidad en materia familia.']);
+         Especialidad::updateOrCreate(['nombre' => 'Violencia Intrafamiliar', 'materia_id' => 3, 'descripcion' => 'Especialidad en materia familia.']);
+        
+         Especialidad::updateOrCreate(['nombre' => 'Derecho Laboral Privado', 'materia_id' => 4, 'descripcion' => 'Especialidad en materia laboral.']);
+         Especialidad::updateOrCreate(['nombre' => 'Derecho Laboral Público (LOSEP/LOSNCP)', 'materia_id' => 4, 'descripcion' => 'Especialidad en materia laboral.']);
+         Especialidad::updateOrCreate(['nombre' => 'Seguridad Social (IESS)', 'materia_id' => 4, 'descripcion' => 'Especialidad en materia laboral.']);
+         
+         Especialidad::updateOrCreate(['nombre' => 'Garantías Jurisdiccionales', 'materia_id' => 6, 'descripcion' => 'Especialidad en materia laboral.']);
+         Especialidad::updateOrCreate(['nombre' => 'Derechos Humanos y Protección Internacional', 'materia_id' => 6, 'descripcion' => 'Especialidad en materia laboral.']);
+         Especialidad::updateOrCreate(['nombre' => 'Control Constitucional', 'materia_id' => 6, 'descripcion' => 'Especialidad en materia laboral.']);
 
          
         

@@ -36,6 +36,7 @@ use App\Http\Livewire\Procedimientos;
 use App\Http\Livewire\Asuntos;
 use App\Http\Livewire\Fases;
 use App\Http\Livewire\EstadosProcesales;
+use App\Http\Livewire\Especialidades;
 
 /*
 |--------------------------------------------------------------------------
@@ -105,6 +106,7 @@ Route::middleware([
         Route::get('asuntos', Asuntos::class)->name('asuntos');
         Route::get('fases-procesales', Fases::class)->name('fases-procesales');
         Route::get('estados-procesales', EstadosProcesales::class)->name('estados-procesales');
+        Route::get('especialidades', Especialidades::class)->name('especialidades');
 
     });
 

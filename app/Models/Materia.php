@@ -42,4 +42,8 @@ class Materia extends Model
     {
         return $this->hasMany(Procedimiento::class);
     }
+        public function especialidades()
+        {
+            return $this->hasMany(Especialidad::class);
+        }
 }
