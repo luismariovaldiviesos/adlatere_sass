@@ -115,7 +115,7 @@ class Product extends Model
   // Product.php
 public function impuestos()
 {
-    return $this->belongsToMany(Impuesto::class, 'impuesto_producto', 'producto_id', 'impuesto_id');
+    return $this->belongsToMany(Impuesto::class, 'impuesto_producto', 'producto_id', 'impuesto_id'); //table campo campo
 }
 
 

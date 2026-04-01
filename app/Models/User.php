@@ -166,5 +166,9 @@ class User extends Authenticatable
        return $this->hasMany(Arqueo::class);
    }
 
+   public function especialidades(){
+    return $this->belongsToMany(Especialidad::class, 'especialidad_usuario', 'usuario_id', 'especialidad_id');
+   }
+
 
 }

@@ -80,11 +80,72 @@
                     </div>
                 </div>
 
+             <div class="mt-4">
+                <div class="flex items-center justify-between">
+                    <div class="relative text-gray-700">
+                        <input wire:model.live="searchEspecialidad" type="text" 
+                            class="form-control form-control-sm w-56 box pr-10" 
+                            placeholder="Buscar especialidad o materia...">
+                        <i class="w-4 h-4 absolute my-auto inset-y-0 mr-3 right-0 fas fa-search text-gray-500"></i>
+                    </div>
+                </div>
+                <br>
+                <label class="form-label font-bold text-theme-1">Especialidades del Usuario</label>
+        
+                <div class="border border-gray-200 rounded-md overflow-hidden mt-2" style="max-height: 400px; overflow-y: auto;">
+                    <table class="table table-report table-sm mb-0">
+                        <thead>
+                            <tr class="bg-gray-100">
+                                <th class="whitespace-nowrap w-10">
+                                    <i class="fas fa-check-square"></i>
+                                </th>
+                                <th class="whitespace-nowrap">MATERIA / ESPECIALIDAD</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {{-- Agrupamos las especialidades por el nombre de la materia --}}
+                            @foreach($especialidades->groupBy('nombre_materia') as $materia => $items)
+                                <tr class="bg-gray-50">
+                                    <td colspan="2" class="font-bold text-theme-1 py-2 px-4">
+                                        <i class="fas fa-gavel mr-2"></i> {{ $materia }}
+                                    </td>
+                                </tr>
+                                
+                                @foreach($items as $esp)
+                                    <tr class="hover:bg-gray-100 transition duration-200">
+                                        <td class="w-10 text-center border-b dark:border-dark-5">
+                                            <input 
+                                                type="checkbox" 
+                                                wire:model="especialidadesSeleccionadas" 
+                                                value="{{ $esp->id }}" 
+                                                id="esp_{{ $esp->id }}"
+                                                class="form-check-input"
+                                            >
+                                        </td>
+                                        <td class="border-b dark:border-dark-5">
+                                            <label for="esp_{{ $esp->id }}" class="cursor-pointer block w-full text-sm py-1">
+                                                {{ $esp->nombre }}
+                                            </label>
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            @endforeach
+                        </tbody>
+                    </table>
                 </div>
 
+            <div class="mt-2 text-right text-xs font-medium text-gray-600">
+                {{ count($especialidadesSeleccionadas) }} especialidades seleccionadas
+            </div>
 
+            @error('especialidadesSeleccionadas')
+                <x-alert msg="{{ $message }}" />
+            @enderror
+         </div>
 
-                <div class="mt-5">
+    </div>
+
+    <div class="mt-5">
                     <x-back />
 
                     <x-save />

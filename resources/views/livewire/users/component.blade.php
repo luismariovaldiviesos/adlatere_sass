@@ -24,6 +24,7 @@
                                 <tr class="text-theme-1">
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >NOMBRE</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >CORREO</th>
+                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >ESPECIALIDAD</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >PERFIL</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap text-center" >ACCIONES</th>
                                 </tr>
@@ -37,6 +38,10 @@
                                         </td>
                                         <td class="dark:border-dark-5">
                                             <h6 class="mb-1 font-medium">{{ $user->email }}</h6>
+                                        </td>
+                                        <td class="dark:border-dark-5">
+                                            <h6 class="mb-1 font-medium">{{ $user->especialidades->pluck('nombre')->implode(', ') ? : 'Sin especialidad' }} </h6>
+                                           
                                         </td>
                                         <td class="dark:border-dark-5">
                                             <h6 class="mb-1 font-medium">{{ $user->profile }}</h6>

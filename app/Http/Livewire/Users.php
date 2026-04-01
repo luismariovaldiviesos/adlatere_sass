@@ -6,6 +6,8 @@ use App\Models\User;
 use Livewire\Component;
 use Livewire\WithPagination;
 use Spatie\Permission\Models\Role;
+use App\Models\Especialidad;
+use App\Models\Materia;
 
 class Users extends Component
 {
@@ -19,6 +21,8 @@ class Users extends Component
     public $action = 'Listado';
     protected $paginationTheme = 'tailwind';
     private $pagination = 10;
+    public $especialidadesSeleccionadas = [];
+    public $searchEspecialidad = '';
 
 
     public function render()
@@ -38,7 +42,13 @@ class Users extends Component
         return view('livewire.users.component',
         [
             'users' => $users,
-            'roles' => Role::orderBy('name','asc')->get()
+            'roles' => Role::orderBy('name','asc')->get(),
+            'especialidades' => Especialidad::join('materias as m', 'm.id', 'especialidades.materia_id')
+            ->select('especialidades.*', 'm.nombre as materia')
+            ->when($this->searchEspecialidad, function($q){
+                $q->where('especialidades.nombre', 'like', "%{$this->searchEspecialidad}%")
+                  ->orWhere('m.nombre', 'like', "%{$this->searchEspecialidad}%");
+            })->orderBy('m.nombre','asc')->get(),
         ])
         ->layout('layouts.theme.app');
     }
@@ -65,7 +75,7 @@ class Users extends Component
     {
         $this->resetValidation();
         $this->resetPage();
-        $this->reset('name','ci','phone', 'status','selected_id','temppass','search','componentName', 'email','password','profile','form');
+        $this->reset('name','ci','phone', 'status','selected_id','temppass','search','componentName', 'email','password','profile','form','especialidadesSeleccionadas','searchEspecialidad');
     }
 
     public function Edit(User $user)
@@ -80,6 +90,7 @@ class Users extends Component
         $this->status = $user->status;
         $this->password = null;
         $this->temppass = $user->password;
+         $this->especialidadesSeleccionadas = $user->especialidades->pluck('id')->toArray();
         $this->form = true;
         $this->action = 'Editar';
     }
@@ -92,6 +103,7 @@ class Users extends Component
         $this->validate(User::rules($this->selected_id), User::$messages);
 
         //$user = User::find($this->selected_id);
+        //dd($this->especialidadesSeleccionadas);
         $user =  User::updateOrCreate(
             ['id' => $this->selected_id],
             [
@@ -106,6 +118,7 @@ class Users extends Component
         );
 
         $user->syncRoles($this->profile);
+        $user->especialidades()->sync($this->especialidadesSeleccionadas);
         $this->noty($this->selected_id > 0 ? 'Usuario actualizado' : 'Usuario registrado');
         $this->resetUI();
     }
@@ -113,11 +126,12 @@ class Users extends Component
 
     public function Destroy(User $user)
     {
-        if ($user->sales->count() < 1) {
+        if ($user->sales->count() < 1 && $user->especialidades->count() < 1) {     
+            $user->especialidades()->detach(); // Elimina relaciones en la tabla pivote
             $user->delete();
             $this->noty("El usuario <b>$user->name</b> fue eliminado del sistema");
         } else{
-            $this->noty('no es posible eliminar el usuario, tiene ventas asociadas');
+            $this->noty('no es posible eliminar el usuario, tiene ventas o especialidades asociadas');
         }
     }
 
