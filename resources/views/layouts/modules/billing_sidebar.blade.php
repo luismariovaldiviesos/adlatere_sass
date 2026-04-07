@@ -10,6 +10,14 @@
         </a>
     </li>
     @endcan
+    @can('menu_facturar')
+    <li>
+        <a href="{{ route('juicios') }}" class="side-menu">
+            <div class="side-menu__icon"> <i data-feather="dollar-sign"></i> </div>
+            <div class="side-menu__title"> JUICIOS  </div>
+        </a>
+    </li>
+    @endcan
 
     <li>
         <a href="javascript:;" class="side-menu">

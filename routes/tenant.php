@@ -38,6 +38,7 @@ use App\Http\Livewire\Fases;
 use App\Http\Livewire\EstadosProcesales;
 use App\Http\Livewire\Especialidades;
 use App\Http\Livewire\Funcionarios;
+use App\Http\Livewire\Juicios;
 
 /*
 |--------------------------------------------------------------------------
@@ -109,6 +110,7 @@ Route::middleware([
         Route::get('estados-procesales', EstadosProcesales::class)->name('estados-procesales');
         Route::get('especialidades', Especialidades::class)->name('especialidades');
         Route::get('funcionarios', Funcionarios::class)->name('funcionarios');
+        Route::get('juicios', Juicios::class)->name('juicios');
 
     });
 
