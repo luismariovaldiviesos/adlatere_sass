@@ -59,7 +59,12 @@ class Juicio extends Model
         return $this->belongsTo(EstadoProcesal::class, 'estado_procesal_id');
     }
 
-    
+    public function actores (){
+        return $this->participantes()->wherePivot('rol', 'actor');
+    }
+    public function demandados (){
+        return $this->participantes()->wherePivot('rol', 'demandado');
+    }
 
     
 }
