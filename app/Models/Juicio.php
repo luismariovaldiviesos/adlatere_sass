@@ -60,4 +60,6 @@ class Juicio extends Model
     }
 
     
+
+    
 }

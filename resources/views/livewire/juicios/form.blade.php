@@ -24,17 +24,19 @@
                 @include('livewire.juicios.tabs.juicio')
             </div>
 
-            {{-- sujetos procesales--}}
-            <div class="intro-y box" x-show="tab==='sujetos'" x-cloak>
+             {{-- sujetos prpcesales --}}
+            <div class="intro-y box" x-show="tab==='lesiones'" x-cloak>
                 @include('livewire.juicios.tabs.sujetos')
+            </div>
+
+            {{-- lesiones --}}
+            <div class="intro-y box" x-show="tab==='sujetos'" x-cloak>
+                @include('livewire.juicios.tabs.lesiones')
             </div>
 
           
 
-            {{-- LESIONES --}}
-            <div class="intro-y box" x-show="tab==='lesiones'" x-cloak>
-                @include('livewire.juicios.tabs.lesiones')
-            </div>
+           
 
             {{-- REPRESENTANTE --}}
             <div class="intro-y box" x-show="tab==='rep'" x-cloak>
