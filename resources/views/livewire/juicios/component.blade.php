@@ -21,9 +21,11 @@
                             <thead>
                                 <tr class="text-theme-1">
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >SATJE</th>
+                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >MATERIA</th>
+                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >PROCEDIMIENTO</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >ASUNTO</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >ESTADO PROCESAL</th>
-                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >MATERIA</th>
+                                    
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >FECHA INICIO</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap text-center" >ACCIONES</th>
                                 </tr>
@@ -37,13 +39,23 @@
                                         </td> --}}
 
                                         <td class="dark:border-dark-5">
-                                            <h6 class="mb-1 font-medium">{{ $alumno->nombres }}</h6>
+                                            <h6 class="mb-1 font-medium">{{ $juicio->cod_satje }}</h6>
+                                        </td>
+                                         <td class="dark:border-dark-5">
+                                            <h6 class="mb-1 font-medium">{{ $juicio->asunto->procedimiento->materia->nombre ?? '—' }}</h6>
                                         </td>
                                         <td class="dark:border-dark-5">
-                                            <h6 class="mb-1 font-medium">{{ $alumno->ci }}</h6>
+                                            <h6 class="mb-1 font-medium">{{ $juicio->asunto->procedimiento->nombre ?? '—' }}</h6>   
                                         </td>
                                         <td class="dark:border-dark-5">
-                                            <h6 class="mb-1 font-medium">{{ $alumno->representante->businame ?? '—' }}</h6>
+                                            <h6 class="mb-1 font-medium">{{ $juicio->asunto->nombre ?? '—' }}</h6>
+                                        </td>
+                                        <td class="dark:border-dark-5">
+                                            <h6 class="mb-1 font-medium">{{ $juicio->estadoProcesal->nombre ?? '—' }}</h6>
+                                        </td>
+                                       
+                                        <td class="dark:border-dark-5">
+                                            <h6 class="mb-1 font-medium">{{ $juicio->fecha_inicio ?? '—' }}</h6>
                                         </td>
 
 
@@ -51,13 +63,13 @@
                                             <div class="d-flex justify-content-center">
                                                 {{-- @if ($customer->orders->count() < 1) --}}
                                                     <button class="btn btn-danger text-white border-0"
-                                                    onclick="destroy('customers','Destroy', {{ $alumno->id }})"
+                                                    onclick="destroy('juicios','Destroy', {{ $juicio->id }})"
                                                     type="button">
                                                         <i class=" fas fa-trash f-2x"></i>
                                                     </button>
                                                 {{-- @endif --}}
                                                 <button class="btn btn-warning text-white border-0 ml-3"
-                                                    wire:click.prevent="Edit({{ $alumno->id }})"
+                                                    wire:click.prevent="Edit({{ $juicio->id }})"
                                                     type="button">
                                                         <i class=" fas fa-edit f-2x"></i>
                                                     </button>

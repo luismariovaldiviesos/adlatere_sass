@@ -4,8 +4,8 @@
     {{-- BARRA DE PESTAÑAS --}}
     <div class="intro-y box p-6">
         <div class="flex flex-wrap gap-3">
-            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='perfil' }"  @click="tab='perfil'">Perfil</button>
-            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='ficha' }"   @click="tab='ficha'">Ficha deportiva</button>
+            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='juicio' }"  @click="tab='juicio'">Juicio</button>
+            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='sujetos' }"   @click="tab='sujetos'">Sujetos Procesales</button>
             <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='lesiones' }"@click="tab='lesiones'">Lesiones</button>
             <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='rep' }"     @click="tab='rep'">Representante</button>
             <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='matri' }"   @click="tab='matri'">Matrícula</button>
@@ -19,15 +19,17 @@
     <div class="grid grid-cols-12 gap-8 items-start">
         {{-- IZQUIERDA: CONTENIDO DE LAS PESTAÑAS (más ancho) --}}
         <div class="col-span-12 xl:col-span-8 2xl:col-span-9 space-y-8">
-            {{-- PERFIL --}}
-            <div class="intro-y box" x-show="tab==='perfil'" x-cloak>
-                @include('livewire.juicios.tabs.perfil')
+            {{-- juicio --}}
+            <div class="intro-y box" x-show="tab==='juicio'" x-cloak>
+                @include('livewire.juicios.tabs.juicio')
             </div>
 
-            {{-- FICHA DEPORTIVA --}}
-            <div class="intro-y box" x-show="tab==='ficha'" x-cloak>
-                @include('livewire.juicios.tabs.ficha')
+            {{-- sujetos procesales--}}
+            <div class="intro-y box" x-show="tab==='sujetos'" x-cloak>
+                @include('livewire.juicios.tabs.sujetos')
             </div>
+
+          
 
             {{-- LESIONES --}}
             <div class="intro-y box" x-show="tab==='lesiones'" x-cloak>
