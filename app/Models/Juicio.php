@@ -59,6 +59,13 @@ class Juicio extends Model
         return $this->belongsTo(EstadoProcesal::class, 'estado_procesal_id');
     }
 
+    //relacion principal con participantes (clientes)
+    public function participantes(){
+        return $this->belongsToMany(Customer::class, 'juicio_participante')
+                    ->withPivot('rol') // para acceder al rol del participante en el juicio
+                    ->withTimestamps();
+    }
+
     public function actores (){
         return $this->participantes()->wherePivot('rol', 'actor');
     }
