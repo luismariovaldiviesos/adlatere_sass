@@ -48,6 +48,10 @@ class Juicios extends Component
     // --- CREACIÓN RÁPIDA (QUICK CUSTOMER) ---
     public $showCreateCustomer = false; 
     public $q_businame, $q_valueidenti, $q_typeidenti = 'cedula', $q_address, $q_phone, $q_email;
+    // --- EDICIÓN DE PARTICIPANTE ---
+    public $editModeSujeto = false;
+    public $editModeJuicio = false;
+
 
 
 
@@ -132,6 +136,7 @@ class Juicios extends Component
        public function  addNew()
     {
         $this->resetUI();
+        $this->editModeJuicio = false;
         $this->form = true;
         $this->action = 'Agregar';
     }
@@ -160,9 +165,24 @@ class Juicios extends Component
             'prioridad' => $this->prioridad ?? 'Baja'
         ]);
         $this->selected_id = $juicio->id;
-        // Llamamos a noty con reset = false para que NO cierre el formulario
-        $this->noty($this->selected_id ? 'Juicio actualizado' : 'Juicio registrado', 'noty', false);
-        $this->tab = 'ficha'; // avanzar a Ficha
+        // Mensaje dinámico según el modo
+        // RE-HIDRATAR las propiedades para que la vista las vea actualizadas
+        $this->cod_satje = $juicio->cod_satje;
+        $this->fecha_inicio = \Carbon\Carbon::parse($juicio->fecha_inicio)->format('Y-m-d');
+        $this->prioridad = $juicio->prioridad;
+        $this->estado_procesal_id = $juicio->estado_procesal_id;
+        // Sincronizar selectores jerárquicos
+        $this->materia_id = $juicio->asunto->procedimiento->materia_id;
+        $this->procedimiento_id = $juicio->asunto->procedimiento_id;
+        $this->asunto_id = $juicio->asunto_id;
+
+         $this->editModeJuicio = true;
+
+        $mensaje = $this->editModeJuicio ? 'Juicio actualizado' : 'Juicio registrado';
+        $this->noty($mensaje, 'noty', false);
+        // Si era nuevo, ahora pasamos a modo edición por si quiere seguir editando la carátula
+       
+        //$this->tab = 'ficha'; // avanzar a Ficha
     }
 
     public function addParticipante(){
@@ -191,7 +211,7 @@ class Juicios extends Component
         $juicio->participantes()->attach($this->cliente_id, ['rol' => $this->rol]);
          $this->noty('Sujeto procesal agregado con éxito.', 'noty', false);
           // Limpiamos los cajones para agregar otro
-        $this->reset(['cliente_id', 'cliente_nombre', 'searchCustomer', 'rol', 'customers']);
+        $this->reset(['cliente_id', 'searchCustomer', 'rol', 'customers']);
         $this->customers = [];
 
     }
@@ -259,8 +279,22 @@ class Juicios extends Component
         $this->procedimiento_id = $juicio->asunto->procedimiento_id;
         $this->asuntos = Asunto::where('procedimiento_id', $this->procedimiento_id)->orderBy('nombre', 'asc')->get();
         $this->asunto_id = $juicio->asunto_id;
-         $this->action = 'Editar';
+        $this->editModeJuicio = true;
+         $this->action = 'Editar';       
         $this->form = true;
+    }
+
+
+    public function editParticipante($id){
+        //dd($id);
+            $participante = \App\Models\Customer::find($id);
+            $pivotData = $participante->juicios()->where('juicio_id', $this->selected_id)->first()->pivot;
+            $this->cliente_id = $participante->id;
+            $this->searchCustomer = $participante->businame;
+            $this->rol = $pivotData->rol;
+            $this->editModeSujeto = true;
+            //dd($this->cliente_id, $this->searchCustomer, $this->rol);
+             $this->noty('lesion cargada para editar', 'noty', false);
     }
 
 
@@ -269,6 +303,16 @@ class Juicios extends Component
         $juicio->participantes()->detach($id);
         $this->noty('Sujeto procesal removido con éxito.', 'noty', false);
     }
+
+   public function  editParticipanteEnJuicio($id){
+        $juicio = Juicio::find($this->selected_id);
+        $juicio->participantes()->updateExistingPivot($id, ['rol' => $this->rol]);
+        $this->noty('Rol del sujeto procesal actualizado con éxito.', 'noty', false);
+        // Limpiamos los cajones para agregar otro
+        $this->reset(['cliente_id', 'searchCustomer', 'rol', 'customers']);
+        $this->editModeSujeto = false;
+         $this->customers = [];
+   }
 
 
 }

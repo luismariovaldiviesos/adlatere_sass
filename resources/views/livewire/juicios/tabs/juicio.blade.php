@@ -75,9 +75,19 @@
         </div>
 
         <div class="col-span-12 flex justify-end mt-4">
-            <button class="btn btn-primary text-lg px-10 py-3" wire:click="saveJuicio">
-                Crear Carátula de Juicio
-            </button>
+            @if($editModeJuicio)
+                <button type="button" 
+                        class="btn btn-primary text-lg px-10 py-3 shadow-md" 
+                        wire:click.prevent="saveJuicio">
+                    <i class="fas fa-save mr-2"></i> Actualizar Carátula
+                </button>
+            @else
+                <button type="button" 
+                        class="btn btn-primary text-lg px-10 py-3 shadow-md" 
+                        wire:click.prevent="saveJuicio">
+                    <i class="fas fa-check mr-2"></i> Registrar y Continuar
+                </button>
+            @endif
         </div>
     </div>
 </div>

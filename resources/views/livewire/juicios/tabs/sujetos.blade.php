@@ -127,10 +127,20 @@
         </div>
 
         {{-- BOTON AGREGAR AL JUICIO --}}
+       
         <div class="col-span-12 md:col-span-2">
-            <button type="button" class="btn btn-primary w-full h-12 shadow-md" wire:click="addParticipante">
-                <i class="fas fa-plus mr-2"></i> Agregar
-            </button>
+             @if(!$editModeSujeto)
+                <button class="btn btn-primary text-lg px-8 py-2.5" wire:click="addParticipante">
+                    <i class="fas fa-plus mr-2"></i> Agregar
+                </button>
+                @else
+                 <button type="button"
+                class="btn btn-primary text-lg px-8 py-2.5"
+                wire:click="editParticipanteEnJuicio({{ $cliente_id }})">
+                 <i class="fas fa-edit mr-2"></i >
+                Editar Sujeto
+              </button>
+                @endif
         </div>
     </div>
 
@@ -161,6 +171,10 @@
                         </span>
                     </td>
                     <td class="p-4 text-center border-b">
+                        <button class="btn btn-outline-primary btn-sm mr-2" wire:click="editParticipante({{ $p->id }})" title="Editar Rol">
+                            <i class="fas fa-edit"></i>
+
+                        </button>
                         <button class="btn btn-outline-danger btn-sm" wire:click="removeParticipante({{ $p->id }})" title="Remover del Juicio">
                             <i class="fas fa-trash"></i>
                         </button>
