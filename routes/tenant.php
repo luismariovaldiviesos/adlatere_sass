@@ -39,6 +39,7 @@ use App\Http\Livewire\EstadosProcesales;
 use App\Http\Livewire\Especialidades;
 use App\Http\Livewire\Funcionarios;
 use App\Http\Livewire\Juicios;
+use App\http\Livewire\TiposActividades;
 
 /*
 |--------------------------------------------------------------------------
@@ -111,6 +112,7 @@ Route::middleware([
         Route::get('especialidades', Especialidades::class)->name('especialidades');
         Route::get('funcionarios', Funcionarios::class)->name('funcionarios');
         Route::get('juicios', Juicios::class)->name('juicios');
+        Route::get('tipoactividad', TiposActividades::class)->name('tipoactividad');
 
     });
 

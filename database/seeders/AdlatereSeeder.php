@@ -14,6 +14,7 @@ use App\Models\Fase;
 use App\Models\EstadoProcesal;
 use App\Models\Especialidad;
 use App\Models\Funcionario;
+use App\Models\TipoActividad;
 
 class AdlatereSeeder extends Seeder
 {
@@ -280,8 +281,14 @@ class AdlatereSeeder extends Seeder
             Funcionario::updateOrCreate(['nombre' => 'María Gómez', 'cargo' => 'Secretario', 'telefono' => '0988888888', 'email' => 'maria.gomez@example.com']);    
             Funcionario::updateOrCreate(['nombre' => 'Piedad Ortega', 'cargo' => 'Ayudante', 'telefono' => '0988888888', 'email' => 'piedad.ortega@example.com']);    
 
-
-        
+            //tipo actividades
+            TipoActividad::updateOrCreate(['nombre' => 'Escrito']);
+            TipoActividad::updateOrCreate(['nombre' => 'Providencia']);
+            TipoActividad::updateOrCreate(['nombre' => 'Audiencia']);
+            TipoActividad::updateOrCreate(['nombre' => 'Oficio']);        
+            TipoActividad::updateOrCreate(['nombre' => 'Contrato']);        
+            TipoActividad::updateOrCreate(['nombre' => 'Notificación']);        
+            TipoActividad::updateOrCreate(['nombre' => 'Diligencia']);        
         
         
         
