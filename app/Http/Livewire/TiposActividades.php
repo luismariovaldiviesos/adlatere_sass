@@ -52,6 +52,9 @@ class TiposActividades extends Component
         $this->resetUI();
         $this->form = true;
         $this->action = 'Agregar';
+        $this->contenido = '';
+        //por si acaso emitimos para limpiar el editor de texto enriquecido
+        $this->dispatchBrowserEvent('set-editor-content',['content' => '']);
     }
 
 

@@ -23,7 +23,6 @@
         <link rel="stylesheet" href="{{ asset('css/apexcharts.css') }}" />
         <script src="{{ asset('js/apexcharts.js') }}"></script>
 
-
         {{-- estilos personalizados  --}}
         <style>
             .image-fit>img{

@@ -113,6 +113,14 @@
                 </a>
             </li>
             @endcan
+            @can('menu_asginar_permisos')
+            <li>
+                <a href="{{ route('plantillas-tipos-actividad') }}" class="side-menu">
+                    <div class="side-menu__icon"> <i data-feather="lock"></i> </div>
+                    <div class="side-menu__title"> PLANTILLAS TIPOS ACTIVIDADES  </div>
+                </a>
+            </li>
+            @endcan
         </ul>
     </li>
 </ul>
