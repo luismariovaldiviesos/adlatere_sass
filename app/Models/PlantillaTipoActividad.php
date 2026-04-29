@@ -20,7 +20,7 @@ class PlantillaTipoActividad extends Model
         if($id <=0 ){
             return [
                 'nombre' => 'required|min:3|unique:plantillas_tipos_actividad',
-                'tipo_actividad_id' => 'required|exists:tipo_actividad,id',
+                'tipo_actividad_id' => 'required|exists:tipos_actividades,id',
                 'contenido' => 'required',
             ];
         }
@@ -28,7 +28,7 @@ class PlantillaTipoActividad extends Model
         else{
             return [
                 'nombre' => "required|min:3|string|unique:plantillas_tipos_actividad,nombre,{$id}",
-                'tipo_actividad_id' => 'required|exists:tipo_actividad,id',
+                'tipo_actividad_id' => 'required|exists:tipos_actividades,id',
                 'contenido' => 'required',
             ];
 

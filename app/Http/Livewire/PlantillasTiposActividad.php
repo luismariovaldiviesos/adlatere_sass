@@ -114,6 +114,10 @@ use WithPagination;
 
     public function Destroy(PlantillaTipoActividad $plantilla)
     {
+        if ($plantilla->tipoActividad()->count() > 0) {
+            $this->noty('No se puede eliminar la Plantilla de Actividad porque tiene actividades asociadas', 'noty', false);
+            return;
+        }
         $plantilla->delete();
         $this->noty('Plantilla de Actividad Eliminada');
     }

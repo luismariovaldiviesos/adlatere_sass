@@ -16,7 +16,7 @@ return new class extends Migration
         Schema::create('plantillas_tipos_actividad', function (Blueprint $table) {
             $table->id();
             $table->string('nombre');
-            $table->foreignId('tipo_actividad_id')->constrained('tipo_actividad')->onDelete('cascade');
+            $table->foreignId('tipo_actividad_id')->constrained('tipos_actividades')->onDelete('cascade');
             $table->longText('contenido');
             $table->boolean('activo')->default(true);
             $table->timestamps();

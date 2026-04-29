@@ -95,6 +95,10 @@ class TiposActividades extends Component
       public function Destroy(TipoActividad $tipo)
     {
         //dd($tipo);
+        if ($tipo->actividades()->count() > 0) {
+            $this->noty('No se puede eliminar el Tipo de Actividad porque tiene actividades asociadas', 'noty', false);
+            return;
+        }
         $tipo->delete();
         $this->noty('Se eliminó el Tipo de Actividad');
     }

@@ -4,24 +4,25 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use App\Models\Actividad;
 
 class TipoActividad extends Model
 {
     use HasFactory;
-    protected $table = 'tipo_actividad';
+    protected $table = 'tipos_actividades';
     protected $fillable = ['nombre'];
 
 
     public static function rules($id){
         if($id <=0 ){
             return [
-                'nombre' => 'required|min:3|unique:tipo_actividad'
+                'nombre' => 'required|min:3|unique:tipos_actividades'
             ];
         }
 
         else{
             return [
-                'nombre' => "required|min:3|string|unique:tipo_actividad,nombre,{$id}"
+                'nombre' => "required|min:3|string|unique:tipos_actividades,nombre,{$id}"
             ];
 
         }
