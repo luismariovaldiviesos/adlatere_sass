@@ -8,13 +8,13 @@
 
         <div class="p-5 bg-slate-100 dark:bg-dark-1">
             <div class="grid grid-cols-12 gap-5">
-                <div class="col-span-12 md:col-span-8">
+                <div class="col-span-12 md:col-span-6">
                     <label class="form-label font-bold">Nombre de la Plantilla</label>
                     <input wire:model.defer='nombre' type="text" class="form-control form-control-lg kioskboard" maxlength="250">
                     @error('nombre') <x-alert msg="{{ $message }}" /> @enderror
                 </div>
 
-                <div class="col-span-12 md:col-span-4">
+                <div class="col-span-12 md:col-span-6">
                     <label class="form-label font-bold">Tipo de Actividad</label>
                     <select wire:model.defer='tipo_actividad_id' class="form-select form-control-lg">
                         <option value="">Seleccione...</option>
