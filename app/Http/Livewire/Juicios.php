@@ -29,8 +29,11 @@ class Juicios extends Component
        //alumno para todas las fichas
     public $juicio;
     // Propiedades para los selects
+    public $provincias = [], $cantones = [], $unidades_judiciales = [];
     public $materias = [], $procedimientos = [], $asuntos = [];
+    
     // Propiedades para los IDs seleccionados
+    public $provincia_id, $canton_id, $unidad_id;
     public $materia_id, $procedimiento_id;
 
     // variables para las pesteñas
@@ -56,6 +59,10 @@ class Juicios extends Component
     //propiedades para las actividades
     public $actividades = [];
     public $tipo_actividad_id, $origen = 'Interno', $fecha_actividad, $descripcion, $contenido, $nuevo_estado_id;
+    public $archivo;
+    public $tiene_plantilla_disponible = false;
+    public $plantillas_disponibles = [];
+    public $plantilla_seleccionada_id = null;
     public $editModeActividad = false, $selected_actividad_id;
     public $estados_procesales = [];
 
@@ -66,6 +73,7 @@ class Juicios extends Component
 
     public function mount()
     {
+        $this->provincias = \App\Models\Provincia::orderBy('nombre', 'asc')->get();
         // Solo cargamos Materias al inicio. Es una lista corta y fija.
         $this->materias = Materia::orderBy('nombre', 'asc')->get();
         $this->estados_procesales = EstadoProcesal::orderBy('id', 'asc')->get();
@@ -99,13 +107,27 @@ class Juicios extends Component
          $this->showDropdown = false; // FORZAR QUE SE CIERRE LA CAJA
     }
 
+    public function updatedProvinciaId($value)
+    {
+        $this->cantones = \App\Models\Canton::where('provincia_id', $value)->orderBy('nombre', 'asc')->get();
+        $this->canton_id = null;
+        $this->unidad_id = null;
+        $this->unidades_judiciales = [];
+    }
+
+    public function updatedCantonId($value)
+    {
+        $this->unidades_judiciales = \App\Models\Unidad::where('canton_id', $value)->orderBy('nombre', 'asc')->get();
+        $this->unidad_id = null;
+    }
+
     // para actualizar materia buscamos los procedimientos relacionados
     public function updatedMateriaId($value)
     {
         $this->procedimientos = Procedimiento::where('materia_id', $value)->orderBy('nombre', 'asc')->get();
         //reseteamos los hijos para que no queden huerfanos
         $this->procedimiento_id = null;
-        $this_asunto_id = null;
+        $this->asunto_id = null;
         $this->asuntos = [];
     }
 
@@ -160,15 +182,20 @@ class Juicios extends Component
     {
         $this->resetPage();
         $this->resetValidation();
-        $this->reset('cod_satje','asunto_id','estado_procesal_id','fecha_inicio','prioridad','selected_id','search');
+        $this->reset('cod_satje','asunto_id','unidad_id','provincia_id','canton_id','materia_id','procedimiento_id','estado_procesal_id','fecha_inicio','prioridad','selected_id','search');
+        $this->cantones = [];
+        $this->unidades_judiciales = [];
+        $this->procedimientos = [];
+        $this->asuntos = [];
     }
 
     public function saveJuicio(){
         $this->validate(Juicio::rules($this->selected_id), Juicio::messages());
-        //dd($this->cod_satje, $this->asunto_id, $this->estado_procesal_id, $this->fecha_inicio, $this->prioridad);
+        
        $juicio =  Juicio::updateOrCreate(['id' => $this->selected_id], [
             'cod_satje' => $this->cod_satje,
             'asunto_id' => $this->asunto_id,
+            'unidad_id' => $this->unidad_id,
             'estado_procesal_id' => $this->estado_procesal_id,
             'fecha_inicio' => $this->fecha_inicio,
             'prioridad' => $this->prioridad ?? 'Baja'
@@ -180,10 +207,19 @@ class Juicios extends Component
         $this->fecha_inicio = \Carbon\Carbon::parse($juicio->fecha_inicio)->format('Y-m-d');
         $this->prioridad = $juicio->prioridad;
         $this->estado_procesal_id = $juicio->estado_procesal_id;
+        
         // Sincronizar selectores jerárquicos
+        $this->unidad_id = $juicio->unidad_id;
+        $this->canton_id = $juicio->unidadJudicial->canton_id ?? null;
+        $this->provincia_id = $juicio->unidadJudicial->canton->provincia_id ?? null;
+        if($this->provincia_id) $this->cantones = \App\Models\Canton::where('provincia_id', $this->provincia_id)->orderBy('nombre', 'asc')->get();
+        if($this->canton_id) $this->unidades_judiciales = \App\Models\Unidad::where('canton_id', $this->canton_id)->orderBy('nombre', 'asc')->get();
+
         $this->materia_id = $juicio->asunto->procedimiento->materia_id;
         $this->procedimiento_id = $juicio->asunto->procedimiento_id;
         $this->asunto_id = $juicio->asunto_id;
+        if($this->materia_id) $this->procedimientos = Procedimiento::where('materia_id', $this->materia_id)->orderBy('nombre', 'asc')->get();
+        if($this->procedimiento_id) $this->asuntos = Asunto::where('procedimiento_id', $this->procedimiento_id)->orderBy('nombre', 'asc')->get();
 
          $this->editModeJuicio = true;
 
@@ -274,15 +310,18 @@ class Juicios extends Component
     public function Edit(Juicio $juicio){
         //dd($juicio->asunto->procedimiento->materia->nombre);
         $this->selected_id = $juicio->id;
-        //dd($this->selected_id);
         $this->cod_satje = $juicio->cod_satje;
         $this->asunto_id = $juicio->asunto_id;
         $this->estado_procesal_id = $juicio->estado_procesal_id;
         $this->fecha_inicio = Carbon::parse($juicio->fecha_inicio)->format('Y-m-d');
         $this->prioridad = $juicio->prioridad;
-        // $this->materia = $juicio->asunto->procedimiento->materia->nombre;
-        // $this->procedimiento = $juicio->asunto->procedimiento->nombre;
-        // $this->asunto = $juicio->asunto->nombre;
+        
+        $this->unidad_id = $juicio->unidad_id;
+        $this->canton_id = $juicio->unidadJudicial->canton_id ?? null;
+        $this->provincia_id = $juicio->unidadJudicial->canton->provincia_id ?? null;
+        if($this->provincia_id) $this->cantones = \App\Models\Canton::where('provincia_id', $this->provincia_id)->orderBy('nombre', 'asc')->get();
+        if($this->canton_id) $this->unidades_judiciales = \App\Models\Unidad::where('canton_id', $this->canton_id)->orderBy('nombre', 'asc')->get();
+
         $this->materia_id = $juicio->asunto->procedimiento->materia_id;
        $this->procedimientos = Procedimiento::where('materia_id', $this->materia_id)->orderBy('nombre', 'asc')->get();
         $this->procedimiento_id = $juicio->asunto->procedimiento_id;
@@ -325,29 +364,85 @@ class Juicios extends Component
 
    // mtodos actividades 
    public function updatedTipoActividadId($value){
-    if($value && $this->origen == 'Interno'){
-        $plantilla = \App\Models\PlantillaTipoActividad::where('tipo_actividad_id', $value)->first();
-        if($plantilla){
-            $this->contenido = $plantilla->contenido;
-            // Emitimos al navegador para actualizar el CKEditor
-           $this->dispatchBrowserEvent('set-editor-content', ['content' => $this->contenido]);
-        } else{
-            $this->contenido = '';
-            $this->dispatchBrowserEvent('set-editor-content', ['content' => '']);
+    $this->tiene_plantilla_disponible = false;
+    $this->plantillas_disponibles = [];
+    $this->plantilla_seleccionada_id = null;
+    
+    // Limpiar el contenido del editor al cambiar de actividad
+    $this->contenido = '';
+    $this->dispatchBrowserEvent('set-actividad-editor-content', ['content' => '']);
+
+    if($value){
+        $plantillas = \App\Models\PlantillaTipoActividad::where('tipo_actividad_id', $value)->where('activo', true)->get();
+        if($plantillas->count() > 0){
+            $this->tiene_plantilla_disponible = true;
+            $this->plantillas_disponibles = $plantillas;
+            
+            // Si solo hay una plantilla, la pre-seleccionamos
+            if($plantillas->count() == 1){
+                $this->plantilla_seleccionada_id = $plantillas->first()->id;
+            }
         }
     }
+   }
+
+   private function reemplazarVariables($textoHtml) {
+       $juicio = Juicio::with(['unidadJudicial.canton.provincia', 'asunto.procedimiento.materia', 'actores', 'demandados'])->find($this->selected_id);
+       if(!$juicio) return $textoHtml;
+
+       $actores = $juicio->actores->pluck('businame')->implode(', ');
+       $demandados = $juicio->demandados->pluck('businame')->implode(', ');
+
+       $variables = [
+           'COD_SATJE' => $juicio->cod_satje ?? '',
+           'FECHA_INICIO' => $juicio->fecha_inicio ? \Carbon\Carbon::parse($juicio->fecha_inicio)->format('d/m/Y') : '',
+           'MATERIA' => $juicio->asunto->procedimiento->materia->nombre ?? '',
+           'PROCEDIMIENTO' => $juicio->asunto->procedimiento->nombre ?? '',
+           'ASUNTO' => $juicio->asunto->nombre ?? '',
+           'UNIDAD_JUDICIAL' => $juicio->unidadJudicial->nombre ?? '',
+           'CIUDAD' => $juicio->unidadJudicial->canton->nombre ?? '',
+           'PROVINCIA' => $juicio->unidadJudicial->canton->provincia->nombre ?? '',
+           'ACTORES' => $actores,
+           'DEMANDADOS' => $demandados,
+           'FECHA_ACTUAL' => \Carbon\Carbon::now()->translatedFormat('d \d\e F \d\e Y'),
+       ];
+
+       foreach($variables as $key => $value) {
+           // Soporta [VARIABLE], {VARIABLE}, [variable], {variable}
+           $textoHtml = str_ireplace('[' . $key . ']', $value, $textoHtml);
+           $textoHtml = str_ireplace('{' . $key . '}', $value, $textoHtml);
+       }
+
+       return $textoHtml;
+   }
+
+   public function cargarPlantilla(){
+       if($this->plantilla_seleccionada_id){
+            $plantilla = \App\Models\PlantillaTipoActividad::find($this->plantilla_seleccionada_id);
+            if($plantilla){
+                $this->contenido = $this->reemplazarVariables($plantilla->contenido);
+                $this->dispatchBrowserEvent('set-actividad-editor-content', ['content' => $this->contenido]);
+                $this->noty('Plantilla cargada ('.strlen($this->contenido).' caracteres)', 'noty', false);
+            }
+       } else {
+           $this->noty('Por favor seleccione una plantilla primero', 'noty', false);
+       }
    }
 
   
 
    public function addActividad(){
 
-    dd("aca va el método para agregar actividad al juicio con ID: {$this->selected_id}");
     $this->validate([
         'tipo_actividad_id' => 'required',
         'fecha_actividad' => 'required',
         'origen' => 'required'
     ]);
+
+    $archivoPath = null;
+    if ($this->archivo) {
+        $archivoPath = $this->archivo->store('actividades_juicios', 'public');
+    }
 
     // Registro de la actividad vinculada al juicio actual
     $actividad = \App\Models\Actividad::create([
@@ -357,7 +452,8 @@ class Juicios extends Component
         'origen' => $this->origen,
         'fecha_actividad' => $this->fecha_actividad,
         'descripcion' => $this->descripcion,
-        'contenido' => $this->contenido
+        'contenido' => $this->contenido,
+        'archivo' => $archivoPath // asegurando que el modelo tenga este campo si existe
     ]);
 
     // MEJORA: Si se seleccionó un nuevo estado, actualizar la carátula del juicio
@@ -373,8 +469,8 @@ class Juicios extends Component
    }
 
    public function resetActividadInputs(){
-    $this->reset(['tipo_actividad_id', 'descripcion', 'contenido', 'nuevo_estado_id']);
-    $this->dispatchBrowserEvent('set-editor-content', ['content' => '']);
+    $this->reset(['tipo_actividad_id', 'descripcion', 'contenido', 'nuevo_estado_id', 'archivo', 'tiene_plantilla_disponible', 'plantillas_disponibles', 'plantilla_seleccionada_id']);
+    $this->dispatchBrowserEvent('set-actividad-editor-content', ['content' => '']);
    }
 
 

@@ -8,13 +8,14 @@ use Illuminate\Database\Eloquent\Model;
 class Juicio extends Model
 {
     use HasFactory;
-    protected $fillable = ['cod_satje', 'asunto_id','estado_procesal_id', 'fecha_inicio', 'prioridad'];
+    protected $fillable = ['cod_satje', 'asunto_id','estado_procesal_id', 'fecha_inicio', 'prioridad', 'unidad_id'];
 
     public static function rules($id){
        if($id <=0 ){
             return [
                'cod_satje' => 'required|unique:juicios',
                 'asunto_id' => 'required|exists:asuntos,id',
+                'unidad_id' => 'required|exists:unidads,id',
                 'estado_procesal_id' => 'required|exists:estados_procesales,id',
                 'fecha_inicio' => 'required|date',
                 
@@ -25,6 +26,7 @@ class Juicio extends Model
             return [
                 'cod_satje' => "required|unique:juicios,cod_satje,{$id}",
                 'asunto_id' => "required|exists:asuntos,id",
+                'unidad_id' => "required|exists:unidads,id",
                 'estado_procesal_id' => "required|exists:estados_procesales,id",
                 'fecha_inicio' => 'required|date',
                 'prioridad' => 'required|in:Baja,Media,Alta,Urgente'
@@ -39,6 +41,8 @@ class Juicio extends Model
             'cod_satje.unique' => 'El código SATJE ya existe. Por favor, ingrese uno diferente.',
             'asunto_id.required' => 'El asunto es obligatorio.',
             'asunto_id.exists' => 'El asunto seleccionado no es válido.',
+            'unidad_id.required' => 'La Unidad Judicial es obligatoria.',
+            'unidad_id.exists' => 'La Unidad Judicial seleccionada no es válida.',
             'estado_procesal_id.required' => 'El estado procesal es obligatorio.',
             'estado_procesal_id.exists' => 'El estado procesal seleccionado no es válido.',
             'fecha_inicio.required' => 'La fecha de inicio es obligatoria.',
@@ -48,11 +52,12 @@ class Juicio extends Model
         ];
     }
 
-
-
-
     public function asunto(){
         return $this->belongsTo(Asunto::class);
+    }
+
+    public function unidadJudicial(){
+        return $this->belongsTo(\App\Models\Unidad::class, 'unidad_id');
     }
 
     public function estadoProcesal(){
@@ -71,6 +76,10 @@ class Juicio extends Model
     }
     public function demandados (){
         return $this->participantes()->wherePivot('rol', 'demandado');
+    }
+
+    public function actividades(){
+        return $this->hasMany(Actividad::class);
     }
 
     

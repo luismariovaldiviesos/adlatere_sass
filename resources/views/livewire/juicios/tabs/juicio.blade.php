@@ -37,6 +37,39 @@
         <div class="col-span-12 border-t border-gray-200 my-2"></div>
 
         <div class="col-span-12 md:col-span-4">
+            <label class="form-label text-base font-bold">Provincia</label>
+            <select wire:model.live='provincia_id' class="form-select h-12 text-lg">
+                <option value="">Seleccione Provincia...</option>
+                @foreach($provincias as $p)
+                    <option value="{{ $p->id }}">{{ $p->nombre }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="col-span-12 md:col-span-4">
+            <label class="form-label text-base font-bold">Cantón</label>
+            <select wire:model.live='canton_id' class="form-select h-12 text-lg" {{ empty($cantones) ? 'disabled' : '' }}>
+                <option value="">Seleccione Cantón...</option>
+                @foreach($cantones as $c)
+                    <option value="{{ $c->id }}">{{ $c->nombre }}</option>
+                @endforeach
+            </select>
+        </div>
+
+        <div class="col-span-12 md:col-span-4">
+            <label class="form-label text-base font-bold">Unidad Judicial</label>
+            <select wire:model.live='unidad_id' class="form-select h-12 text-lg" {{ empty($unidades_judiciales) ? 'disabled' : '' }}>
+                <option value="">Seleccione Unidad...</option>
+                @foreach($unidades_judiciales as $u)
+                    <option value="{{ $u->id }}">{{ $u->nombre }}</option>
+                @endforeach
+            </select>
+            @error('unidad_id') <x-alert msg="{{ $message }}" /> @enderror
+        </div>
+
+        <div class="col-span-12 border-t border-gray-200 my-2"></div>
+
+        <div class="col-span-12 md:col-span-4">
             <label class="form-label text-base font-bold">Materia</label>
             <select wire:model.live='materia_id' class="form-select h-12 text-lg">
                 <option value="">Seleccione Materia...</option>

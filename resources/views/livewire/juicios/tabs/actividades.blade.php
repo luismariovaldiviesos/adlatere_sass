@@ -13,23 +13,44 @@
         </div>
 
         {{-- TIPO ACTIVIDAD (Vinculado a Plantillas) --}}
-        <div class="col-span-12 md:col-span-4">
-            <label class="form-label text-base">Tipo Actividad</label>
-            <select wire:model="tipo_actividad_id" class="form-select h-12 text-lg">
-                <option value="">Seleccione…</option>
-                @foreach($tipos_actividades as $tipo)
-                    <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
-                @endforeach
-            </select>
-            @error('tipo_actividad_id') <x-alert msg="{{ $message }}" /> @enderror
+        <div class="col-span-12 md:col-span-4 flex items-end gap-2">
+            <div class="flex-1">
+                <label class="form-label text-base">Tipo Actividad</label>
+                <select wire:model="tipo_actividad_id" class="form-select h-12 text-lg">
+                    <option value="">Seleccione…</option>
+                    @foreach($tipos_actividades as $tipo)
+                        <option value="{{ $tipo->id }}">{{ $tipo->nombre }}</option>
+                    @endforeach
+                </select>
+                @error('tipo_actividad_id') <x-alert msg="{{ $message }}" /> @enderror
+            </div>
+            
+            <div class="col-span-12 md:col-span-6 flex items-end gap-2">
+                @if($tiene_plantilla_disponible)
+                    @if(count($plantillas_disponibles) > 1)
+                        <div class="flex-grow">
+                            <label class="form-label font-bold text-base text-warning">Seleccione la Plantilla a Cargar</label>
+                            <select wire:model.defer="plantilla_seleccionada_id" class="form-select h-12 text-lg border-warning">
+                                <option value="">Seleccione una plantilla...</option>
+                                @foreach($plantillas_disponibles as $plantilla)
+                                    <option value="{{ $plantilla->id }}">{{ $plantilla->nombre }}</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    @endif
+                    <button type="button" wire:click.prevent="cargarPlantilla" class="btn btn-warning h-12 px-4 shadow-md text-white font-bold whitespace-nowrap {{ count($plantillas_disponibles) > 1 ? '' : 'mt-auto' }}" title="Cargar plantilla seleccionada al editor">
+                        Cargar Plantilla
+                    </button>
+                @endif
+            </div>
         </div>
 
         {{-- ORIGEN --}}
         <div class="col-span-12 md:col-span-4">
             <label class="form-label text-base">Origen Actividad</label>
             <select wire:model="origen" class="form-select h-12 text-lg">
-                <option value="Interno">Interno (Usar Plantilla)</option>
-                <option value="Externo">Externo (Cargar Documento)</option>
+                <option value="Interno">Interno </option>
+                <option value="Externo">Externo </option>
             </select>
         </div>
 
@@ -47,15 +68,12 @@
         </div>
 
         {{-- ZONA DEL EDITOR DE PLANTILLA (ESTILO WORD) --}}
-        <div class="col-span-12 mt-4" x-show="$wire.origen == 'Interno'">
+        <div class="col-span-12 mt-4">
             <label class="form-label text-base font-bold">Documento de la Actividad</label>
-            <div wire:ignore class="document-editor-wrapper">
-                {{-- Barra de herramientas fija --}}
-                <div id="toolbar-actividad"></div>
-                
-                {{-- Hoja de trabajo --}}
-                <div class="editable-scroll-container">
-                    <div id="editor-actividad">
+            <div wire:ignore class="document-editor" x-data="{}" x-on:set-actividad-editor-content.window="if(window.actividadEditorInstance) { window.actividadEditorInstance.root.innerHTML = $event.detail.content || ''; }">
+                <div id="toolbar-actividad-container" class="border-b border-gray-300"></div>
+                <div class="editable-container">
+                    <div id="editor-actividad-hoja">
                         {!! $contenido !!}
                     </div>
                 </div>
@@ -69,47 +87,86 @@
         </div>
 
         <div class="col-span-12 flex justify-end mt-6">
-            <button type="button" class="btn btn-primary text-lg px-8 py-2.5" wire:click.prevent="Store">
+            <button type="button" class="btn btn-primary text-lg px-8 py-2.5" wire:click.prevent="addActividad">
                 Registrar Actuación y Actualizar Juicio
             </button>
         </div>
     </div>
 </div>
 
-{{-- Scripts para manejar el editor Decoupled que configuramos antes --}}
-<script src="https://cdn.ckeditor.com/ckeditor5/40.0.0/decoupled-document/ckeditor.js" onload="initActividadEditor()"></script>
-
+{{-- Scripts para manejar el editor Quill --}}
 <script>
-    function initActividadEditor() {
-        const dom = document.querySelector('#editor-actividad');
-        if (!dom) return;
+    function loadActividadQuillEditor() {
+        if (typeof Quill !== 'undefined') {
+            startActividadWordEditor();
+            return;
+        }
 
-        DecoupledEditor
-            .create(dom)
-            .then(editor => {
-                const toolbar = document.querySelector('#toolbar-actividad');
-                toolbar.appendChild(editor.ui.view.toolbar.element);
-                window.actividadEditor = editor;
+        if (!document.querySelector('#quill-css')) {
+            let link = document.createElement('link');
+            link.id = 'quill-css';
+            link.rel = 'stylesheet';
+            link.href = 'https://cdn.quilljs.com/1.3.6/quill.snow.css';
+            document.head.appendChild(link);
+        }
 
-                editor.model.document.on('change:data', () => {
-                    @this.set('contenido', editor.getData());
-                });
+        let script = document.querySelector('#quill-script');
+        if (!script) {
+            script = document.createElement('script');
+            script.id = 'quill-script';
+            script.src = 'https://cdn.quilljs.com/1.3.6/quill.js';
+            document.head.appendChild(script);
+        }
 
-                // Este evento es clave para cargar la plantilla automáticamente
-                window.addEventListener('set-editor-content', event => {
-                    editor.setData(event.detail.content);
-                });
-            });
+        script.addEventListener('load', () => {
+            startActividadWordEditor();
+        });
     }
 
-    document.addEventListener('livewire:load', () => {
-        if (typeof DecoupledEditor !== 'undefined') initActividadEditor();
-    });
+    function startActividadWordEditor() {
+        const editorDom = document.querySelector('#editor-actividad-hoja');
+        if (!editorDom) return;
+        if (editorDom.classList.contains('ql-container')) return;
+
+        var quill = new Quill('#editor-actividad-hoja', {
+            theme: 'snow',
+            placeholder: 'Redacte el documento aquí...',
+            modules: {
+                toolbar: [
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'align': [] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    ['clean']
+                ]
+            }
+        });
+
+        const toolbarContainer = document.querySelector('#toolbar-actividad-container');
+        const quillToolbar = document.querySelector('.ql-toolbar');
+        if (toolbarContainer && quillToolbar) {
+            toolbarContainer.appendChild(quillToolbar);
+        }
+
+        window.actividadEditorInstance = quill;
+
+        quill.on('text-change', function() {
+            @this.set('contenido', quill.root.innerHTML);
+        });
+    }
+
+    setTimeout(() => {
+        loadActividadQuillEditor();
+    }, 100);
 </script>
 
 <style>
-    .document-editor-wrapper { border: 1px solid #cbd5e1; background: white; border-radius: 0.5rem; overflow: hidden; }
-    #toolbar-actividad { background: #f8fafc; border-bottom: 1px solid #cbd5e1; }
-    .editable-scroll-container { background: #f1f5f9; padding: 20px; max-height: 600px; overflow-y: auto; display: flex; justify-content: center; }
-    #editor-actividad { width: 21cm; min-height: 29.7cm; padding: 2cm; background: white; box-shadow: 0 0 10px rgba(0,0,0,0.1); outline: none; cursor: text !important; }
+    .document-editor { border: 1px solid #cbd5e1; background: white; display: flex; flex-direction: column; border-radius: 0.5rem; overflow: hidden; height: 800px; }
+    .editable-container { flex-grow: 1; overflow-y: auto; background: #f1f5f9; padding: 40px 10px; }
+    #editor-actividad-hoja { width: 21cm; min-height: 29.7cm; margin: 0 auto; padding: 2.5cm; background: white; box-shadow: 0 4px 20px rgba(0,0,0,0.1); color: black; font-family: 'Times New Roman', serif; font-size: 12pt; line-height: 1.6; }
+    .ql-container.ql-snow { border: none !important; }
+    .ql-editor { padding: 0 !important; min-height: 100%; }
+    #toolbar-actividad-container { background: #f8fafc !important; border-bottom: 1px solid #cbd5e1; }
+    .ql-toolbar.ql-snow { border: none !important; padding: 10px !important; }
 </style>
