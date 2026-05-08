@@ -53,6 +53,13 @@ class Juicios extends Component
     public $editModeJuicio = false;
 
 
+    //propiedades para las actividades
+    public $actividades = [];
+    public $tipo_actividad_id, $origen = 'Interno', $fecha_actividad, $descripcion, $contenido, $nuevo_estado_id;
+    public $editModeActividad = false, $selected_actividad_id;
+    public $estados_procesales = [];
+
+
 
 
     // 
@@ -122,7 +129,9 @@ class Juicios extends Component
             ->paginate($this->pagination);
 
         return view('livewire.juicios.component', [
-            'juicios' => $info
+            'juicios' => $info,
+            'tipos_actividades' => \App\Models\TipoActividad::orderBy('nombre', 'asc')->get(),
+           'lista_actividadades' => \App\Models\Actividad::orderBy('fecha_actividad', 'desc')->get()
         ])->layout('layouts.theme.app');
     }
 
@@ -312,6 +321,60 @@ class Juicios extends Component
         $this->reset(['cliente_id', 'searchCustomer', 'rol', 'customers']);
         $this->editModeSujeto = false;
          $this->customers = [];
+   }
+
+   // mtodos actividades 
+   public function updatedTipoActividadId($value){
+    if($value && $this->origen == 'Interno'){
+        $plantilla = \App\Models\PlantillaTipoActividad::where('tipo_actividad_id', $value)->first();
+        if($plantilla){
+            $this->contenido = $plantilla->contenido;
+            // Emitimos al navegador para actualizar el CKEditor
+           $this->dispatchBrowserEvent('set-editor-content', ['content' => $this->contenido]);
+        } else{
+            $this->contenido = '';
+            $this->dispatchBrowserEvent('set-editor-content', ['content' => '']);
+        }
+    }
+   }
+
+  
+
+   public function addActividad(){
+
+    dd("aca va el método para agregar actividad al juicio con ID: {$this->selected_id}");
+    $this->validate([
+        'tipo_actividad_id' => 'required',
+        'fecha_actividad' => 'required',
+        'origen' => 'required'
+    ]);
+
+    // Registro de la actividad vinculada al juicio actual
+    $actividad = \App\Models\Actividad::create([
+        'juicio_id' => $this->selected_id,
+        'tipo_actividad_id' => $this->tipo_actividad_id,
+        'user_id' => auth()->id(),
+        'origen' => $this->origen,
+        'fecha_actividad' => $this->fecha_actividad,
+        'descripcion' => $this->descripcion,
+        'contenido' => $this->contenido
+    ]);
+
+    // MEJORA: Si se seleccionó un nuevo estado, actualizar la carátula del juicio
+    if ($this->nuevo_estado_id) {
+        $juicio = Juicio::find($this->selected_id);
+        $juicio->update(['estado_procesal_id' => $this->nuevo_estado_id]);
+        $this->estado_procesal_id = $this->nuevo_estado_id; // Sincronizar UI
+    }
+
+    $this->noty('Actividad registrada y juicio actualizado', 'noty', false);
+    $this->resetActividadInputs();
+
+   }
+
+   public function resetActividadInputs(){
+    $this->reset(['tipo_actividad_id', 'descripcion', 'contenido', 'nuevo_estado_id']);
+    $this->dispatchBrowserEvent('set-editor-content', ['content' => '']);
    }
 
 

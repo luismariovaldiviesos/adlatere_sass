@@ -6,7 +6,7 @@
         <div class="flex flex-wrap gap-3">
             <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='juicio' }"  @click="tab='juicio'">Juicio</button>
             <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='sujetos' }"   @click="tab='sujetos'">Sujetos Procesales</button>
-            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='lesiones' }"@click="tab='lesiones'">Lesiones</button>
+            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='actividades' }"@click="tab='actividades'">Actividades</button>
             <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='rep' }"     @click="tab='rep'">Representante</button>
             <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='matri' }"   @click="tab='matri'">Matrícula</button>
             <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='fin' }"     @click="tab='fin'">Finanzas</button>
@@ -29,9 +29,9 @@
                 @include('livewire.juicios.tabs.sujetos')
             </div>
 
-            {{-- lesiones --}}
-            <div class="intro-y box" x-show="tab==='lesiones'" x-cloak>
-                @include('livewire.juicios.tabs.lesiones')
+            {{-- actividades --}}
+            <div class="intro-y box" x-show="tab==='actividades'" x-cloak>
+                @include('livewire.juicios.tabs.actividades')
             </div>
 
           
