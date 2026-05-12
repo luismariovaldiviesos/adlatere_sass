@@ -200,6 +200,8 @@ class Juicios extends Component
             'fecha_inicio' => $this->fecha_inicio,
             'prioridad' => $this->prioridad ?? 'Baja'
         ]);
+        
+        $this->juicio = Juicio::with(['asunto.procedimiento.materia', 'unidadJudicial.canton.provincia', 'actores', 'demandados', 'estadoProcesal'])->find($juicio->id);
         $this->selected_id = $juicio->id;
         // Mensaje dinámico según el modo
         // RE-HIDRATAR las propiedades para que la vista las vea actualizadas
@@ -309,6 +311,8 @@ class Juicios extends Component
 
     public function Edit(Juicio $juicio){
         //dd($juicio->asunto->procedimiento->materia->nombre);
+        $this->juicio = Juicio::with(['asunto.procedimiento.materia', 'unidadJudicial.canton.provincia', 'actores', 'demandados', 'estadoProcesal'])->find($juicio->id);
+        
         $this->selected_id = $juicio->id;
         $this->cod_satje = $juicio->cod_satje;
         $this->asunto_id = $juicio->asunto_id;
