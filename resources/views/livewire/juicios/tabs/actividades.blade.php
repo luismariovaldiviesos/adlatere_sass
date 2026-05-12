@@ -87,11 +87,67 @@
         </div>
 
         <div class="col-span-12 flex justify-end mt-6">
-            <button type="button" class="btn btn-primary text-lg px-8 py-2.5" wire:click.prevent="addActividad">
-                Registrar Actuación y Actualizar Juicio
-            </button>
+            @if($editModeActividad)
+                <button type="button" class="btn btn-outline-secondary text-lg px-8 py-2.5 mr-2" wire:click.prevent="cancelEditActividad">
+                    Cancelar Edición
+                </button>
+                <button type="button" class="btn btn-primary text-lg px-8 py-2.5" wire:click.prevent="addActividad">
+                    <i class="fas fa-save mr-2"></i> Actualizar Actuación
+                </button>
+            @else
+                <button type="button" class="btn btn-primary text-lg px-8 py-2.5" wire:click.prevent="addActividad">
+                    <i class="fas fa-plus mr-2"></i> Registrar Actuación y Actualizar Juicio
+                </button>
+            @endif
         </div>
     </div>
+
+    {{-- LISTADO DE ACTIVIDADES --}}
+    @if(isset($juicio) && $juicio->actividades->count() > 0)
+    <div class="mt-8 border-t border-gray-200 pt-8">
+        <h3 class="text-xl font-bold mb-4">Historial de Actividades</h3>
+        <div class="overflow-x-auto">
+            <table class="table table-report">
+                <thead>
+                    <tr>
+                        <th class="whitespace-nowrap">FECHA</th>
+                        <th class="whitespace-nowrap">TIPO</th>
+                        <th class="whitespace-nowrap">ORIGEN</th>
+                        <th class="whitespace-nowrap">DESCRIPCIÓN</th>
+                        <th class="text-center whitespace-nowrap">ACCIONES</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach($juicio->actividades->sortByDesc('fecha_actividad') as $act)
+                    <tr class="intro-x">
+                        <td class="font-medium whitespace-nowrap">{{ \Carbon\Carbon::parse($act->fecha_actividad)->format('d/m/Y H:i') }}</td>
+                        <td class="whitespace-nowrap font-medium">{{ $act->tipoActividad->nombre ?? 'N/A' }}</td>
+                        <td>
+                            @if($act->origen == 'Interno')
+                                <span class="text-blue-600 bg-blue-100 px-2 py-1 rounded text-xs font-bold uppercase">Interno</span>
+                            @else
+                                <span class="text-orange-600 bg-orange-100 px-2 py-1 rounded text-xs font-bold uppercase">Externo</span>
+                            @endif
+                        </td>
+                        <td class="text-slate-500">{{ $act->descripcion }}</td>
+                        <td class="table-report__action w-56">
+                            <div class="flex justify-center items-center">
+                                <a class="flex items-center mr-3 text-primary" href="javascript:;" wire:click="editActividad({{ $act->id }})">
+                                    <i data-lucide="edit" class="w-4 h-4 mr-1"></i> Editar
+                                </a>
+                                <a class="flex items-center text-danger" href="javascript:;" onclick="confirm('¿Está seguro de eliminar esta actividad?') || event.stopImmediatePropagation()" wire:click="destroyActividad({{ $act->id }})">
+                                    <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> Eliminar
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                    @endforeach
+                </tbody>
+            </table>
+        </div>
+    </div>
+    @endif
+
 </div>
 
 {{-- Scripts para manejar el editor Quill --}}

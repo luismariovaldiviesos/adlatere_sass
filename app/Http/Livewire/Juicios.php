@@ -201,7 +201,7 @@ class Juicios extends Component
             'prioridad' => $this->prioridad ?? 'Baja'
         ]);
         
-        $this->juicio = Juicio::with(['asunto.procedimiento.materia', 'unidadJudicial.canton.provincia', 'actores', 'demandados', 'estadoProcesal'])->find($juicio->id);
+        $this->juicio = Juicio::with(['asunto.procedimiento.materia', 'unidadJudicial.canton.provincia', 'actores', 'demandados', 'estadoProcesal', 'actividades.tipoActividad'])->find($juicio->id);
         $this->selected_id = $juicio->id;
         // Mensaje dinámico según el modo
         // RE-HIDRATAR las propiedades para que la vista las vea actualizadas
@@ -311,7 +311,7 @@ class Juicios extends Component
 
     public function Edit(Juicio $juicio){
         //dd($juicio->asunto->procedimiento->materia->nombre);
-        $this->juicio = Juicio::with(['asunto.procedimiento.materia', 'unidadJudicial.canton.provincia', 'actores', 'demandados', 'estadoProcesal'])->find($juicio->id);
+        $this->juicio = Juicio::with(['asunto.procedimiento.materia', 'unidadJudicial.canton.provincia', 'actores', 'demandados', 'estadoProcesal', 'actividades.tipoActividad'])->find($juicio->id);
         
         $this->selected_id = $juicio->id;
         $this->cod_satje = $juicio->cod_satje;
@@ -448,17 +448,30 @@ class Juicios extends Component
         $archivoPath = $this->archivo->store('actividades_juicios', 'public');
     }
 
-    // Registro de la actividad vinculada al juicio actual
-    $actividad = \App\Models\Actividad::create([
-        'juicio_id' => $this->selected_id,
-        'tipo_actividad_id' => $this->tipo_actividad_id,
-        'user_id' => auth()->id(),
-        'origen' => $this->origen,
-        'fecha_actividad' => $this->fecha_actividad,
-        'descripcion' => $this->descripcion,
-        'contenido' => $this->contenido,
-        'archivo' => $archivoPath // asegurando que el modelo tenga este campo si existe
-    ]);
+    if ($this->editModeActividad) {
+        $actividad = \App\Models\Actividad::find($this->selected_actividad_id);
+        $actividad->update([
+            'tipo_actividad_id' => $this->tipo_actividad_id,
+            'origen' => $this->origen,
+            'fecha_actividad' => $this->fecha_actividad,
+            'descripcion' => $this->descripcion,
+            'contenido' => $this->contenido,
+            'archivo' => $archivoPath ? $archivoPath : $actividad->archivo
+        ]);
+        $this->noty('Actividad actualizada', 'noty', false);
+    } else {
+        \App\Models\Actividad::create([
+            'juicio_id' => $this->selected_id,
+            'tipo_actividad_id' => $this->tipo_actividad_id,
+            'user_id' => auth()->id(),
+            'origen' => $this->origen,
+            'fecha_actividad' => $this->fecha_actividad,
+            'descripcion' => $this->descripcion,
+            'contenido' => $this->contenido,
+            'archivo' => $archivoPath 
+        ]);
+        $this->noty('Actividad registrada', 'noty', false);
+    }
 
     // MEJORA: Si se seleccionó un nuevo estado, actualizar la carátula del juicio
     if ($this->nuevo_estado_id) {
@@ -467,13 +480,41 @@ class Juicios extends Component
         $this->estado_procesal_id = $this->nuevo_estado_id; // Sincronizar UI
     }
 
-    $this->noty('Actividad registrada y juicio actualizado', 'noty', false);
+    // Recargar el juicio para refrescar el listado y el sidebar
+    $this->juicio = Juicio::with(['asunto.procedimiento.materia', 'unidadJudicial.canton.provincia', 'actores', 'demandados', 'estadoProcesal', 'actividades.tipoActividad'])->find($this->selected_id);
+
     $this->resetActividadInputs();
 
    }
 
+   public function editActividad($id) {
+        $actividad = \App\Models\Actividad::find($id);
+        $this->selected_actividad_id = $id;
+        $this->tipo_actividad_id = $actividad->tipo_actividad_id;
+        $this->origen = $actividad->origen;
+        $this->fecha_actividad = \Carbon\Carbon::parse($actividad->fecha_actividad)->format('Y-m-d\TH:i');
+        $this->descripcion = $actividad->descripcion;
+        $this->contenido = $actividad->contenido;
+        $this->editModeActividad = true;
+        
+        $this->dispatchBrowserEvent('set-actividad-editor-content', ['content' => $this->contenido]);
+   }
+
+   public function cancelEditActividad() {
+        $this->resetActividadInputs();
+   }
+
+   public function destroyActividad($id) {
+        \App\Models\Actividad::find($id)->delete();
+        $this->juicio = Juicio::with(['asunto.procedimiento.materia', 'unidadJudicial.canton.provincia', 'actores', 'demandados', 'estadoProcesal', 'actividades.tipoActividad'])->find($this->selected_id);
+        $this->noty('Actividad eliminada', 'noty', false);
+        if ($this->selected_actividad_id == $id) {
+            $this->resetActividadInputs();
+        }
+   }
+
    public function resetActividadInputs(){
-    $this->reset(['tipo_actividad_id', 'descripcion', 'contenido', 'nuevo_estado_id', 'archivo', 'tiene_plantilla_disponible', 'plantillas_disponibles', 'plantilla_seleccionada_id']);
+    $this->reset(['tipo_actividad_id', 'descripcion', 'contenido', 'nuevo_estado_id', 'archivo', 'tiene_plantilla_disponible', 'plantillas_disponibles', 'plantilla_seleccionada_id', 'editModeActividad', 'selected_actividad_id']);
     $this->dispatchBrowserEvent('set-actividad-editor-content', ['content' => '']);
    }
 

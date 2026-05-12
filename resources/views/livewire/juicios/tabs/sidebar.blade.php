@@ -101,6 +101,28 @@
             </div>
         </div>
         @endif
-        
+
+        {{-- @if(isset($juicio) && $juicio->actividades->count() > 0)
+        {{-- ACTIVIDADES DEL JUICIO 
+        <div class="space-y-8 mt-10">
+            <h4 class="text-lg font-semibold text-slate-700 border-b border-slate-100 pb-3 mb-6">
+                Últimas Actividades
+            </h4>
+
+            <div class="space-y-4">
+                @foreach($juicio->actividades->sortByDesc('fecha_actividad')->take(5) as $actividad)
+                <div class="bg-white rounded-lg border border-slate-200 p-4 shadow-sm hover:shadow-md transition-shadow">
+                    <div class="flex justify-between items-start mb-2">
+                        <span class="font-bold text-slate-800 text-base">{{ $actividad->tipoActividad->nombre ?? 'Actividad' }}</span>
+                        <span class="text-xs text-slate-500 bg-slate-100 px-2 py-1 rounded">{{ \Carbon\Carbon::parse($actividad->fecha_actividad)->format('d/m/Y') }}</span>
+                    </div>
+                    <div class="text-sm text-slate-600 italic border-l-4 border-slate-300 pl-3">
+                        "{{ Str::limit(strip_tags($actividad->contenido), 120, '...') }}"
+                    </div>
+                </div>
+                @endforeach
+            </div>
+        </div>
+        @endif      --}}
     </div>
 </div>

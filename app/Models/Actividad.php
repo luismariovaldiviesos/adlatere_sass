@@ -65,4 +65,8 @@ class Actividad extends Model
         'archivo.mimes' => 'Archivo debe ser un PDF, DOC, DOCX o TXT',
         'archivo.max' => 'Archivo debe tener máximo 5 MB',
    ];
+
+   public function tipoActividad(){
+        return $this->belongsTo(TipoActividad::class, 'tipo_actividad_id');
+   }
 }

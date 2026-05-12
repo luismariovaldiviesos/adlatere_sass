@@ -39,5 +39,9 @@ class TipoActividad extends Model
     {
         return $this->hasMany(Actividad::class, 'tipo_actividad_id');
     }
+    public function plantillas()
+    {
+        return $this->hasMany(Plantilla::class, 'tipo_actividad_id');
+    }
 
 }
