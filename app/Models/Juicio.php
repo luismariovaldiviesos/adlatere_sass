@@ -82,5 +82,9 @@ class Juicio extends Model
         return $this->hasMany(Actividad::class);
     }
 
+    public function audiencias(){
+        return $this->hasMany(Audiencia::class);
+    }
+
     
 }

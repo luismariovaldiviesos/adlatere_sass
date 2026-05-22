@@ -7,10 +7,10 @@
             <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='juicio' }"  @click="tab='juicio'">Juicio</button>
             <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='sujetos' }"   @click="tab='sujetos'">Sujetos Procesales</button>
             <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='actividades' }"@click="tab='actividades'">Actividades</button>
-            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='rep' }"     @click="tab='rep'">Representante</button>
-            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='matri' }"   @click="tab='matri'">Matrícula</button>
+            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='audiencias' }"     @click="tab='audiencias'">Audiencias</button>
+            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='documentos' }"   @click="tab='documentos'">Documentos</button>
             <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='fin' }"     @click="tab='fin'">Finanzas</button>
-            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='eval' }" @click="tab='eval'">Evaluaciones</button>
+            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='funcionarios' }" @click="tab='funcionarios'">Funcionarios</button>
 
         </div>
     </div>
@@ -38,23 +38,23 @@
 
            
 
-            {{-- REPRESENTANTE --}}
-            <div class="intro-y box" x-show="tab==='rep'" x-cloak>
-                @include('livewire.juicios.tabs.representante')
+            {{-- audiencias --}}
+            <div class="intro-y box" x-show="tab==='audiencias'" x-cloak>
+                @include('livewire.juicios.tabs.audiencias')
             </div>
 
-            {{-- MATRÍCULA --}}
-            <div class="intro-y box" x-show="tab==='matri'" x-cloak>
-                @include('livewire.juicios.tabs.matricula')
+            {{-- documentos --}}
+            <div class="intro-y box" x-show="tab==='documentos'" x-cloak>
+                @include('livewire.juicios.tabs.documentos')
             </div>
 
             {{-- FINANZAS --}}
             <div class="intro-y box" x-show="tab==='fin'" x-cloak>
                 @include('livewire.juicios.tabs.finanzas')
             </div>
-            {{-- EVALUACIONES --}}
-            <div class="intro-y box" x-show="tab==='eval'" x-cloak>
-                @include('livewire.juicios.tabs.evaluaciones')
+            {{-- funcionarios --}}
+            <div class="intro-y box" x-show="tab==='funcionarios'" x-cloak>
+                @include('livewire.juicios.tabs.funcionarios')
             </div>
 
         </div>

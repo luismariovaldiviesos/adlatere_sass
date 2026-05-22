@@ -19,4 +19,14 @@ class PagosJuicio extends Model
         'notas',
     ];
     use HasFactory;
+
+    public function FinanzasJuicios()
+    {
+        return $this->belongsTo(FinanzasJuicios::class, 'finanzas_juicios_id');
+    }
+
+    Public function User()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }

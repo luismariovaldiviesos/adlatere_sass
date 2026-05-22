@@ -11,3 +11,7 @@ php artisan make:model Asunto
 TODO
 en estados procesales hay que cambiar el select del render inicial cuando haya tabla juicios
 lo mismo en Asuntos, hay que validar en tipos actividades que no se eleimine si tiene actividades 
+
+
+
+toda la bbdd esta generada las tablas a excepcion de historial, queda pendiente par ael ultimo 

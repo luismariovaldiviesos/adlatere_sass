@@ -21,4 +21,8 @@ class FinanzasJuicio extends Model
     {
         return $this->hasMany(PagosJuicio::class, 'finanzas_juicios_id');
     }
+    public function juicio()
+    {
+        return $this->belongsTo(Juicio::class, 'juicio_id');
+    }
 }
