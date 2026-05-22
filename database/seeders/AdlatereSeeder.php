@@ -277,9 +277,9 @@ class AdlatereSeeder extends Seeder
          Especialidad::updateOrCreate(['nombre' => 'Control Constitucional', 'materia_id' => 6, 'descripcion' => 'Especialidad en materia laboral.']);
 
          //funcionoarios
-            Funcionario::updateOrCreate(['nombre' => 'Juan Pérez', 'cargo' => 'Juez', 'telefono' => '0999999999', 'email' => 'juan.perez@example.com']);
-            Funcionario::updateOrCreate(['nombre' => 'María Gómez', 'cargo' => 'Secretario', 'telefono' => '0988888888', 'email' => 'maria.gomez@example.com']);    
-            Funcionario::updateOrCreate(['nombre' => 'Piedad Ortega', 'cargo' => 'Ayudante', 'telefono' => '0988888888', 'email' => 'piedad.ortega@example.com']);    
+            Funcionario::updateOrCreate(['nombre' => 'Juan Pérez', 'cargo' => 'Juez', 'unidad_id' => 1, 'telefono' => '0999999999', 'email' => 'juan.perez@example.com']);
+            Funcionario::updateOrCreate(['nombre' => 'María Gómez', 'cargo' => 'Secretario', 'unidad_id' => 1, 'telefono' => '0988888888', 'email' => 'maria.gomez@example.com']);    
+            Funcionario::updateOrCreate(['nombre' => 'Piedad Ortega', 'cargo' => 'Ayudante', 'unidad_id' => 1, 'telefono' => '0988888888', 'email' => 'piedad.ortega@example.com']);    
 
             //tipo actividades
             TipoActividad::updateOrCreate(['nombre' => 'Escrito']);

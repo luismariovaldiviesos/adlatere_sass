@@ -14,9 +14,10 @@ return new class extends Migration
     public function up()
     {
         Schema::create('funcionarios', function (Blueprint $table) {
-            $table->id();
+            $table->id();            
             $table->string('nombre');
-            $table->enum('cargo', ['Juez', 'Secretario','Ayudante','Citador','Otro']);
+            $table->string('cargo');
+            $table->foreignId('unidad_id')->constrained('unidads')->onDelete('cascade'); // Agregado para filtrar por Unidad Judicial
             $table->string('telefono')->nullable();
             $table->string('email')->nullable();
             $table->timestamps();

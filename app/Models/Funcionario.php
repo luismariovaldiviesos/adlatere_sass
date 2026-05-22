@@ -8,10 +8,12 @@ use Illuminate\Database\Eloquent\Model;
 class Funcionario extends Model
 {
     use HasFactory;
+    protected $table = 'funcionarios';
 
     protected $fillable = [
         'nombre',
         'cargo',
+        'unidad_id',
         'telefono',
         'email'
     ];
@@ -22,6 +24,7 @@ class Funcionario extends Model
             return [
                 'nombre' => 'required|min:3|max:50|unique:funcionarios',
                 'cargo' => 'required|in:Juez,Secretario,Ayudante,Citador,Otro',
+                'unidad_id' => 'required|exists:unidads,id',
                 'telefono' => 'nullable|string|max:20',
                 'email' => 'nullable|email|max:255|unique:funcionarios,email'
             ];
@@ -29,6 +32,7 @@ class Funcionario extends Model
             return [
                 'nombre' => "required|min:3|max:50|unique:funcionarios,nombre,{$id}",
                 'cargo' => 'required|in:Juez,Secretario,Ayudante,Citador,Otro',
+                'unidad_id' => 'required|exists:unidads,id',
                 'telefono' => 'nullable|string|max:20',
                 'email' => "nullable|email|max:255|unique:funcionarios,email,{$id}"
             ];

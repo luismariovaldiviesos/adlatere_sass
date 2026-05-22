@@ -110,10 +110,11 @@
             <table class="table table-report">
                 <thead>
                     <tr>
-                        <th class="whitespace-nowrap">FECHA</th>
+                        <th class="whitespace-nowrap">CREADA</th>
                         <th class="whitespace-nowrap">TIPO</th>
                         <th class="whitespace-nowrap">ORIGEN</th>
                         <th class="whitespace-nowrap">DESCRIPCIÓN</th>
+                        <th class="text-center whitespace-nowrap">MODIFICADA</th>
                         <th class="text-center whitespace-nowrap">ACCIONES</th>
                     </tr>
                 </thead>
@@ -130,6 +131,7 @@
                             @endif
                         </td>
                         <td class="text-slate-500">{{ $act->descripcion }}</td>
+                        <td class="text-slate-500">{{ \Carbon\Carbon::parse($act->updated_at)->format('d/m/Y H:i') }}</td>
                         <td class="table-report__action w-56">
                             <div class="flex justify-center items-center">
                                 <a class="flex items-center mr-3 text-primary" href="javascript:;" wire:click="editActividad({{ $act->id }})">
