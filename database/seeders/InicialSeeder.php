@@ -39,6 +39,48 @@ class InicialSeeder extends Seeder
             'phone' => '999999',
             'notes' => 'cliente de prueba'
         ]);
+         $customer = Customer::create([
+            'businame' => 'Joaquin Valdivieso',
+            'typeidenti' => 'ci',
+            'valueidenti' => '0151377983',
+            'address' => 'dirección',
+            'address' => 'dirección',
+            'email' => 'joaquin@mail.com',
+            'phone' => '999999',
+            'notes' => 'cliente de prueba'
+        ]);
+         $customer = Customer::create([
+            'businame' => 'Ximena Chocho',
+            'typeidenti' => 'ci',
+            'valueidenti' => '0103849843',
+            'address' => 'dirección',
+            'address' => 'dirección',
+            'email' => 'ximena@mail.com',
+            'phone' => '999999',
+            'notes' => 'cliente de prueba'
+        ]);
+         $customer = Customer::create([
+            'businame' => 'Pedro Pablo Chocho',
+            'typeidenti' => 'ci',
+            'valueidenti' => '010452587',
+            'address' => 'dirección',
+            'address' => 'dirección',
+            'email' => 'pablo@mail.com',
+            'phone' => '999999',
+            'notes' => 'cliente de prueba'
+        ]);
+         $customer = Customer::create([
+            'businame' => 'Juan Piedra',
+            'typeidenti' => 'ci',
+            'valueidenti' => '0102547896',
+            'address' => 'dirección',
+            'address' => 'dirección',
+            'email' => 'juan@mail.com',
+            'phone' => '999999',
+            'notes' => 'cliente de prueba'
+        ]);
+
+
 
         $caja =  Caja::create([
             'nombre' => 'Caja Uno',
