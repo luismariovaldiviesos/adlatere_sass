@@ -86,5 +86,9 @@ class Juicio extends Model
         return $this->hasMany(Audiencia::class);
     }
 
+    public function historialEstados(){
+        return $this->hasMany(JuicioHistorialEstado::class)->orderBy('created_at', 'desc');
+    }
+
     
 }
