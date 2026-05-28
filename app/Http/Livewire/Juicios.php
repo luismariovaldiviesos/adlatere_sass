@@ -67,6 +67,13 @@ class Juicios extends Component
     public $estados_procesales = [];
 
 
+    // propiedades para las audiencias 
+    public $audiencia_id = null;
+    public $aud_fecha_hora, $aud_tipo_audiencia, $aud_sala_enlace;
+    public $aud_estado = 'Programada', $aud_acta_resumen;
+    public $editModeAudiencia = false;
+
+
 
 
     // 
@@ -517,6 +524,89 @@ class Juicios extends Component
     $this->reset(['tipo_actividad_id', 'descripcion', 'contenido', 'nuevo_estado_id', 'archivo', 'tiene_plantilla_disponible', 'plantillas_disponibles', 'plantilla_seleccionada_id', 'editModeActividad', 'selected_actividad_id']);
     $this->dispatchBrowserEvent('set-actividad-editor-content', ['content' => '']);
    }
+   
+
+   public function saveAudiencia(){
+   
+    // $this->validate([
+    //     'aud_fecha_hora'     => 'required|date',
+    //     'aud_tipo_audiencia' => 'required|string|max:255',
+    //     'aud_estado'         => 'required|in:Programada,Realizada,Suspendida,Fallida',
+    // ]);
+    if ($this->editModeAudiencia) {
+        // MODO EDICIÓN
+        \App\Models\Audiencia::find($this->audiencia_id)->update([
+            'fecha_hora'      => $this->aud_fecha_hora,
+            'tipo_audiencia'  => $this->aud_tipo_audiencia,
+            'sala_enlace'     => $this->aud_sala_enlace,
+            'estado'          => $this->aud_estado,
+            'acta_resumen'    => $this->aud_acta_resumen,
+        ]);
+        $this->noty('Audiencia actualizada correctamente.', 'noty', false);
+    } else {
+        // MODO CREACIÓN
+        // dd($this->selected_id, $this->aud_fecha_hora, $this->aud_tipo_audiencia, $this->aud_sala_enlace, $this->aud_estado, $this->aud_acta_resumen);
+        \App\Models\Audiencia::create([
+            'juicio_id'       => $this->selected_id,
+            'fecha_hora'      => $this->aud_fecha_hora,
+            'tipo_audiencia'  => $this->aud_tipo_audiencia,
+            'sala_enlace'     => $this->aud_sala_enlace,
+            'estado'          => $this->aud_estado,
+            'acta_resumen'    => $this->aud_acta_resumen,
+        ]);
+        $this->noty('Audiencia registrada correctamente.', 'noty', false);
+    }
+    // Refrescar el modelo para que el listado y sidebar se actualicen
+    $this->juicio = \App\Models\Juicio::with([
+        'asunto.procedimiento.materia',
+        'unidadJudicial.canton.provincia',
+        'actores', 'demandados',
+        'estadoProcesal',
+        'actividades.tipoActividad',
+        'audiencias',
+    ])->find($this->selected_id);
+    $this->resetAudienciaInputs();
+   }
+
+   public function editAudiencia($id){
+    $aud =  \App\Models\Audiencia::find($id);
+    $this->audiencia_id = $id;
+    $this->aud_fecha_hora = \Carbon\Carbon::parse($aud->fecha_hora)->format('Y-m-d\TH:i');
+    $this->aud_tipo_audiencia = $aud->tipo_audiencia;
+    $this->aud_sala_enlace = $aud->sala_enlace;
+    $this->aud_estado = $aud->estado;
+    $this->aud_acta_resumen = $aud->acta_resumen;
+    $this->editModeAudiencia = true;
+   }
+
+   public function destroyAudiencia($id){
+    \App\Models\Audiencia::find($id)->delete();
+    $this->juicio = \App\Models\Juicio::with([
+        'asunto.procedimiento.materia',
+        'unidadJudicial.canton.provincia',
+        'actores', 'demandados',
+        'estadoProcesal',
+        'actividades.tipoActividad',
+        'audiencias',
+    ])->find($this->selected_id);
+      if ($this->audiencia_id == $id) {
+        $this->resetAudienciaInputs();
+    }
+    $this->noty('Audiencia eliminada correctamente.', 'noty', false);
+   }
+   public function cancelEditAudiencia()
+    {
+        $this->resetAudienciaInputs();
+    }
+
+    public function resetAudienciaInputs()
+{
+    $this->reset([
+        'audiencia_id', 'aud_fecha_hora', 'aud_tipo_audiencia',
+        'aud_sala_enlace', 'aud_acta_resumen', 'editModeAudiencia',
+    ]);
+    $this->aud_estado = 'Programada'; // valor por defecto
+}
 
 
 }
