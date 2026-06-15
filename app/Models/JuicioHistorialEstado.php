@@ -8,6 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class JuicioHistorialEstado extends Model
 {
     use HasFactory;
+    
+    // Le decimos a Laravel que esta tabla no usa la columna updated_at
+    const UPDATED_AT = null;
+    
     protected $table = 'juicio_historial_estados';
 
     protected $fillable = [

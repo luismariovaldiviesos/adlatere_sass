@@ -73,6 +73,13 @@ class Juicios extends Component
     public $aud_estado = 'Programada', $aud_acta_resumen;
     public $editModeAudiencia = false;
 
+ // Propiedades para Documentos
+    public $doc_nombre;
+    public $doc_archivo;
+    public $doc_origen_tipo = 'General'; // Valor por defecto
+    public $search_doc = ''; // Buscador de documentos
+
+
 
 
 
@@ -86,7 +93,7 @@ class Juicios extends Component
         $this->estados_procesales = EstadoProcesal::orderBy('id', 'asc')->get();
         
         if($this->selected_id > 0) {
-            $this->edit($this->selected_id);
+            $this->edit(\App\Models\Juicio::find($this->selected_id));
         }
     }
 
@@ -607,6 +614,74 @@ class Juicios extends Component
     ]);
     $this->aud_estado = 'Programada'; // valor por defecto
 }
+
+// ─────────────────────────────────────────
+// DOCUMENTOS (GESTOR GLOBAL)
+// ─────────────────────────────────────────
+
+    public function saveDocumentoGeneral(){
+        $this->validate([
+            'doc_nombre'      => 'required|string|max:255',
+            'doc_origen_tipo' => 'required|string|max:255',
+            'doc_archivo'     => 'required|file|max:5120', // Máximo 5MB
+        ]);
+
+
+        // Obtener información del archivo
+    $extension = $this->doc_archivo->getClientOriginalExtension();
+    $pesoKb = filesize($this->doc_archivo->getRealPath()) / 1024;
+    // Guardar el archivo físicamente. 
+    // NOTA: Como usas stancl/tenancy, el disco 'public' ya se aísla automáticamente en la carpeta de cada tenant.
+    $ruta = $this->doc_archivo->store('documentos_juicios', 'public');
+    // Registrar en la base de datos
+    \App\Models\Documento::create([
+        'juicio_id'    => $this->selected_id,
+        'origen_tipo'  => $this->doc_origen_tipo, // Aquí guardamos la clasificación seleccionada
+        'origen_id'    => null,
+        'nombre'       => $this->doc_nombre,
+        'ruta_archivo' => $ruta,
+        'tipo_archivo' => strtolower($extension),
+        'tamaño_archivo'      => $pesoKb,
+    ]);
+    // Registrar en el historial de auditoría
+    \App\Models\JuicioHistorialEstado::create([
+        'juicio_id'       => $this->selected_id,
+        'user_id'         => auth()->id(),
+        'estado_procesal_id' => null, 
+        'tipo_movimiento' => 'documento_subido',
+        'descripcion'     => 'Se subió un documento (' . $this->doc_origen_tipo . '): ' . $this->doc_nombre,
+    ]);
+    $this->noty('Documento subido con éxito.', 'noty', false);
+    // Limpiar inputs
+    $this->reset(['doc_nombre', 'doc_archivo']);
+    $this->doc_origen_tipo = 'General';
+    
+    // Refrescar modelo
+    $this->edit(\App\Models\Juicio::find($this->selected_id));
+    }
+
+    public function destroyDocumento($id){
+        $doc = \App\Models\Documento::find($id);
+        // Eliminar el archivo físicamente
+        if (\Storage::disk('public')->exists($doc->ruta_archivo)) {
+            \Storage::disk('public')->delete($doc->ruta_archivo);
+        }
+        // Eliminar el registro de la base de datos
+        $doc->delete();
+          // Registrar en el historial
+        \App\Models\JuicioHistorialEstado::create([
+            'juicio_id'       => $this->selected_id,
+            'user_id'         => auth()->id(),
+            'estado_procesal_id' => null, 
+            'tipo_movimiento' => 'documento_eliminado',
+            'descripcion'     => 'Se eliminó el documento: ' . $doc->nombre,
+        ]);
+        $this->noty('Documento eliminado.', 'noty', false);
+         $this->edit(\App\Models\Juicio::find($this->selected_id));
+    }
+
+
+    
 
 
 }

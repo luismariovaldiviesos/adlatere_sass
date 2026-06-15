@@ -90,5 +90,9 @@ class Juicio extends Model
         return $this->hasMany(JuicioHistorialEstado::class)->orderBy('created_at', 'desc');
     }
 
+    public function documentos(){
+        return $this->hasMany(Documento::class);
+    }
+
     
 }
