@@ -16,13 +16,15 @@ return new class extends Migration
         Schema::create('pagos_juicios', function (Blueprint $table) {
             $table->id();
             $table->foreignId('finanzas_juicios_id')->constrained('finanzas_juicios')->onDelete('cascade');
-            $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
+            $table->foreignId('customer_id')->nullable()->constrained('customers')->onDelete('set null'); // ¿Quién pagó físicamente?
+            $table->foreignId('user_id')->constrained('users')->onDelete('cascade'); // ¿Qué abogado registró el abono?
             $table->decimal('monto', 10, 2);
             $table->date('fecha_pago');
-            $table->string('metodo_pago');
-            $table->string('comprobante_ruta')->nullable();
-            $table->string('estado')->default('Aprobado');
-            $table->text('notas')->nullable();
+            $table->string('metodo_pago'); // Efectivo, Transferencia, Cheque
+            $table->string('referencia_transaccion')->nullable(); // Número de comprobante o cheque
+            $table->string('comprobante_ruta')->nullable(); // Archivo físico subido
+            $table->string('estado')->default('Aprobado'); // Aprobado, Pendiente
+            $table->text('notas')->nullable(); // Detalle opcional del abono
             $table->timestamps();
         });
     }

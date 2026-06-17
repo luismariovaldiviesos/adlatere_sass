@@ -94,5 +94,8 @@ class Juicio extends Model
         return $this->hasMany(Documento::class);
     }
 
+    public function finanza(){
+        return $this->hasOne(FinanzasJuicio::class, 'juicio_id');
+    }
     
 }

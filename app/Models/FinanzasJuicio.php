@@ -13,8 +13,7 @@ class FinanzasJuicio extends Model
         'juicio_id',
         'honorarios_totales',
         'gastos_extras',
-        'notas_acuerdo',
-        'estado',
+        'notas_acuerdo'
     ];
 
     public function pagos()
@@ -25,4 +24,15 @@ class FinanzasJuicio extends Model
     {
         return $this->belongsTo(Juicio::class, 'juicio_id');
     }
+    //accesors para total pagado
+    public function getTotalPagadoAttribute(){
+        return $this->pagos()->where('estado','Aprobado')->sum('monto');
+    }
+
+    // sccesror para calcular el saldo pendiente
+    public function getSaldoAttribute(){
+        $totalDeuda =  $this->honorarios_totales + $this->gastos_extras;
+        return $totalDeuda - $this->total_pagado;  
+    }
+
 }

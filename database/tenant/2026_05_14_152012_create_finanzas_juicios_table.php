@@ -14,10 +14,10 @@ return new class extends Migration
     public function up()
     {
         Schema::create('finanzas_juicios', function (Blueprint $table) {
-            $table->id();
+             $table->id();
             $table->foreignId('juicio_id')->constrained('juicios')->onDelete('cascade');
-            $table->decimal('honorarios_totales',10,2)->default(0);
-            $table->decimal('gastos_extras',10,2)->default(0);
+            $table->decimal('honorarios_totales', 10, 2)->default(0);
+            $table->decimal('gastos_extras', 10, 2)->default(0);
             $table->text('notas_acuerdo')->nullable();
             $table->timestamps();
         });
