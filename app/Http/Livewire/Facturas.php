@@ -77,7 +77,8 @@ class Facturas extends Component
 
      public $estadoCaja;
 
-
+     public $monto_externo = null;
+     public $pago_juicio_id = null; // ID del pago de juicios que se está facturando
 
 
      // carga al inicio
@@ -91,6 +92,43 @@ class Facturas extends Component
         $this->validaCaja();
         $this->paymentMethods = PaymentMethod::active();
         //$this->recalcularTotales();
+
+        // CAPTURAR CLIENTE DESDE JUICIOS
+        if (request()->has('cliente_id')) {
+            $cliente = \App\Models\Customer::find(request('cliente_id'));
+            if ($cliente) {
+                $this->customer_id = $cliente->id;
+                $this->customerSelected = $cliente->businame;
+            }
+        }
+
+        // CAPTURAR MONTO Y PAGO_ID DESDE JUICIOS → AUTO-AGREGAR AL CARRITO
+        if (request()->has('monto_pago') && request()->has('pago_id')) {
+            $monto = floatval(request('monto_pago'));
+            $this->pago_juicio_id = request('pago_id');
+
+            // Buscar un producto/servicio para usarlo como vehículo en la factura
+            $producto = Product::where('es_servicio', true)
+                ->where('name', 'like', '%Honorario%')
+                ->first();
+
+            // Si no existe un servicio "Honorario", tomamos cualquier servicio
+            if (!$producto) {
+                $producto = Product::where('es_servicio', true)->first();
+            }
+
+            if ($producto) {
+                // Sobrescribir precio con el monto exacto del pago
+                $producto->price = $monto;
+                $producto->price2 = $monto;
+                // Sobrescribir nombre para que se vea claramente en la factura
+                $producto->name = 'Honorarios Profesionales - Pago Juicio';
+
+                // Agregar directamente al carrito
+                $cart = new \App\Services\Cart();
+                $cart->addProduct($producto, 1, '');
+            }
+        }
      }
 
 
@@ -191,10 +229,16 @@ class Facturas extends Component
 
     public function add2Cart(Product $product)
     {
+        //nuevo si recibims un monto externo (desde juicios)
+        if($this->monto_externo) {
+            $product->price = $this->monto_externo;
+            $product->price2 = $this->monto_externo;
+        }
 
        $this->addProductCart($product, 1, $this->changes);
        $this->changes = '';
        $this->recalcularTotales();
+        $this->monto_externo = null; // Reset monto_externo after adding to cart
        //$this->subTotSinImpuesto = $this->subTotSinImpuesto + $product->price;
        //dd($this->subTotSinImpuesto);
     }
@@ -538,6 +582,17 @@ class Facturas extends Component
 
             DB::commit();
             Log::info('Transacción DB commiteada');
+
+            // VINCULAR FACTURA AL PAGO DE JUICIOS (si viene desde módulo de juicios)
+            if ($this->pago_juicio_id) {
+                $pagoJuicio = \App\Models\PagosJuicio::find($this->pago_juicio_id);
+                if ($pagoJuicio) {
+                    $pagoJuicio->factura_id = $factura->id;
+                    $pagoJuicio->save();
+                    Log::info('Pago de juicio vinculado a factura', ['pago_id' => $this->pago_juicio_id, 'factura_id' => $factura->id]);
+                }
+                $this->pago_juicio_id = null;
+            }
 
             // PROCESO DE FACTURACIÓN ELECTRÓNICA
             try {

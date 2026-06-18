@@ -163,13 +163,31 @@
                                 <span class="text-slate-400 text-xs">Sin adjunto</span>
                             @endif
                         </td>
-                        <td class="table-report__action w-40">
-                            <div class="flex justify-center items-center">
+                        <td class="table-report__action">
+                            <div class="flex justify-center items-center gap-2">
+                                {{-- Botón Facturar / Badge Facturado --}}
+                                @if($pago->cliente)
+                                    @if($pago->factura_id)
+                                        <span class="btn btn-sm bg-slate-200 text-slate-600 flex items-center cursor-default">
+                                            <i data-lucide="check-circle" class="w-4 h-4 mr-1"></i> Facturado
+                                        </span>
+                                    @else
+                                        <a href="{{ route('facturas', ['cliente_id' => $pago->customer_id, 'monto_pago' => $pago->monto, 'pago_id' => $pago->id]) }}" 
+                                           target="_blank" 
+                                           class="btn btn-sm btn-success text-white flex items-center">
+                                            <i data-lucide="receipt" class="w-4 h-4 mr-1"></i> Facturar
+                                        </a>
+                                    @endif
+                                @endif
+
+                                {{-- Botón Eliminar --}}
+                                @if(!$pago->factura_id)
                                 <a class="btn btn-sm btn-danger text-white flex items-center" href="javascript:;"
                                    onclick="confirm('¿Seguro que desea eliminar este pago? Esto alterará el saldo.') || event.stopImmediatePropagation()"
                                    wire:click="destroyPago({{ $pago->id }})">
                                     <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> Eliminar
                                 </a>
+                                @endif
                             </div>
                         </td>
                     </tr>

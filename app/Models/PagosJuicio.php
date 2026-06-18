@@ -10,7 +10,7 @@ class PagosJuicio extends Model
     protected  $table = 'pagos_juicios';
 
      protected $fillable = [
-        'finanzas_juicios_id', 'customer_id', 'user_id', 'monto', 'fecha_pago', 'metodo_pago', 'referencia_transaccion', 'comprobante_ruta', 'estado', 'notas'
+        'finanzas_juicios_id', 'customer_id', 'user_id', 'monto', 'fecha_pago', 'metodo_pago', 'referencia_transaccion', 'comprobante_ruta', 'estado', 'notas', 'factura_id'
     ];
     use HasFactory;
 
@@ -26,5 +26,10 @@ class PagosJuicio extends Model
     public function cliente()
     {
         return $this->belongsTo(Customer::class, 'customer_id');
+    }
+
+    public function factura()
+    {
+        return $this->belongsTo(\App\Models\Factura::class, 'factura_id');
     }
 }
