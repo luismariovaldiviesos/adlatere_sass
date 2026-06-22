@@ -426,6 +426,19 @@ class PermisosSistemaSeeder extends Seeder
                 'minstock' => 0,
                 'es_servicio' => true,
             ]);
+            $producto->impuestos()->sync(1);
+           $producto = Product::firstOrCreate([
+               'category_id' => 1,
+                'code' => 'SP',
+               'name' => 'Honorarios de juicio',
+               'cost' => 0,
+                'price' => 0,
+                'descuento' => 0,
+                'price2' => 0,
+                'stock' => 0,
+                'minstock' => 0,
+                'es_servicio' => true,
+            ]);
 
             //asignar impuesto por defecto al producto
             $producto->impuestos()->sync(1);

@@ -172,7 +172,9 @@
                                             <i data-lucide="check-circle" class="w-4 h-4 mr-1"></i> Facturado
                                         </span>
                                     @else
-                                        <a href="{{ route('facturas', ['cliente_id' => $pago->customer_id, 'monto_pago' => $pago->monto, 'pago_id' => $pago->id]) }}" 
+                                        <a href="{{ route('facturas', ['cliente_id' => $pago->customer_id, 
+                                        'monto_pago' => $pago->monto, 
+                                        'pago_id' => $pago->id]) }}" 
                                            target="_blank" 
                                            class="btn btn-sm btn-success text-white flex items-center">
                                             <i data-lucide="receipt" class="w-4 h-4 mr-1"></i> Facturar
