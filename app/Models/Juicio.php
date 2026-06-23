@@ -97,5 +97,11 @@ class Juicio extends Model
     public function finanza(){
         return $this->hasOne(FinanzasJuicio::class, 'juicio_id');
     }
+
+    public function funcionarios (){
+        return $this->belongsToMany(\App\Models\Funcionario::class, 'juicio_funcionario')
+                    ->withPivot('rol_en_juicio') // para acceder al rol del funcionario en el juicio
+                    ->withTimestamps();
+    }
     
 }

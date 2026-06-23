@@ -86,6 +86,14 @@ class Juicios extends Component
     public    $pago_referencia, $pago_notas, $pago_comprobante;
 
 
+    //propiedades de funcionarios
+    public $searchFuncionario = '';
+    public $funcionarios_list = [];
+    public $funcionario_id = null;
+    public $rol_en_juicio = '';
+    public $showFuncionarioDropdown = false;
+
+
 
 
 
@@ -808,5 +816,66 @@ class Juicios extends Component
     }   
 
 
+
+    //se ejecuta al teclear el buscador de funcionarios 
+    public function updatedSearchFuncionario($value){
+
+    $this->funcionario_id = null; //reseteamos el id del funcionario seleccionado
+    $this->showFuncionarioDropdown  = true; 
+        if(strlen($value)>0){
+            $this->funcionarios_list = \App\Models\Funcionario::where('nombre','like',"%$value%")
+            ->orderBy('nombre','asc')
+            ->limit(5)
+            ->get();
+        } else {
+            $this->funcionarios_list = [];
+
+        }
+    }
+
+    //se ejecuta cuando al hacer clic en un funcionario de la lista desplegable
+    public function selectFuncionario($id, $name){
+        $this->funcionario_id = $id;
+        $this->searchFuncionario = $name;
+         $this->funcionarios_list = [];
+        $this->showFuncionarioDropdown  = false; 
+    }
+
+    //metodo para asignar un funcionario a un juicio
+    public function addFuncionario(){
+        if(!$this->selected_id || $this->selected_id <=0){
+            $this->noty('Debe guardar el juicio primero.', 'noty', false);
+             $this->tab = 'juicio'; // volver a la pestaña de juicio para guardar primero
+            return;           
+        }
+        if (!$this->funcionario_id || $this->funcionario_id <= 0)
+        {
+            $this->noty('Seleccione un funcionario válido.', 'noty', false);
+            return;           
+        }
+         if (empty($this->rol_en_juicio)) {
+        $this->noty('Seleccione o escriba el rol del funcionario en el juicio.', 'noty', false);
+        return;
+        }
+
+        $juicio =  \App\Models\Juicio::find($this->selected_id);
+        //validar duplicados 
+        if($juicio->funcionarios()->where('funcionario_id', $this->funcionario_id)->exists()){
+            $this->noty( 'Este funcionario ya está asignado al juicio.', 'noty', false);
+            return; 
+        }
+        //guardar en la tabla pivote
+        $juicio->funcionarios()->attach($this->funcionario_id, ['rol_en_juicio' => $this->rol_en_juicio]);
+        $this->noty('Funcionario asignado con éxito.', 'noty', false);
+           // Resetear campos
+        $this->reset(['funcionario_id', 'searchFuncionario', 'rol_en_juicio', 'funcionarios_list']);
+    }
+
+    public function removeFuncionario($funcionarioId){
+        if (!$this->selected_id || $this->selected_id <= 0) return;
+        $juicio = \App\Models\Juicio::find($this->selected_id);
+        $juicio->funcionarios()->detach($funcionarioId);
+        $this->noty('Funcionario removido del juicio.', 'noty', false);
+    }
 }
 
