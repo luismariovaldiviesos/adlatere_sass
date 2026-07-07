@@ -24,6 +24,7 @@
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >NOMBRE</th>
                                      <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >DESCRIPCIÓN</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >FASE</th>                                   
+                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >JUICIOS EN FASE</th>                                   
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap text-center" >ACCIONES</th>
                                 </tr>
                             </thead>
@@ -46,6 +47,28 @@
 
                                         <td class="dark:border-dark-5">
                                             <h6 class="mb-1 font-medium">{{ $estado->fase->nombre }}</h6>
+                                        </td>
+
+                                        <td class="dark:border-dark-5">
+                                            {{-- @if($estado->juicios_count > 0)
+                                            <span class="px-3 py-1.5 rounded-full text-sm font-bold shadow-sm inline-flex items-center gap-2
+                                                {{ $estado->juicios_count >= 10 ? 'bg-danger/20 text-danger border border-danger/30' : 'bg-warning/20 text-warning border border-warning/30' }}">
+                                                <span class="w-2 h-2 rounded-full animate-pulse {{ $estado->juicios_count >= 10 ? 'bg-danger' : 'bg-warning' }}"></span>
+                                                {{ $estado->juicios_count }} Juicios Activos
+                                            </span>
+                                        @else
+                                            <span class="px-3 py-1.5 rounded-full text-sm font-medium bg-slate-100 text-slate-500 border border-slate-200 inline-flex items-center">
+                                                Sin procesos
+                                            </span>
+                                        @endif --}}
+                                        @if($estado->juicios_count > 0  )
+                                        <div class="alert alert-warning-soft show flex items-center mb-2 px-4 py-3 rounded-lg border border-warning/20" role="alert">
+                                            <i data-lucide="alert-triangle" class="w-6 h-6 mr-3 text-warning"></i>
+                                            <div class="text-base font-semibold text-warning-900">
+                                                 Hay <span class="font-extrabold text-lg">{{ $estado->juicios_count }}</span> expedientes en esta fase.
+                                            </div>
+                                        </div>
+                                        @endif
                                         </td>
 
                                        

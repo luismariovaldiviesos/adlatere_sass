@@ -41,4 +41,9 @@ class EstadoProcesal extends Model
     {
         return $this->belongsTo(Fase::class);
     }
+
+    public function juicios()
+    {
+        return $this->hasMany(Juicio::class);
+    }
 }

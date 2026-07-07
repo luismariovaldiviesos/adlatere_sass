@@ -23,14 +23,23 @@ class EstadosProcesales extends Component
 
      public function render()
     {
+
+        $query = EstadoProcesal::with('fase')
+        ->withCount('juicios');
         if (strlen($this->search) > 0)
-            $info = EstadoProcesal::where('nombre', 'like', "%{$this->search}%")->paginate($this->pagination);
-        else
-            $info = EstadoProcesal::paginate($this->pagination);
+            $query->where('nombre', 'like', "%{$this->search}%")
+            ->orWhereHas('fase', function ($q) {
+                $q->where('nombre', 'like', "%{$this->search}%");
+            });
+        // Ordenamos por fase y luego por el nombre o ID del estado para que la tabla sea legible
+        $info = $query->orderBy('fase_id', 'asc')
+                  ->orderBy('nombre', 'asc')
+                  ->paginate($this->pagination);
 
-
-        return view('livewire.estados_procesales.component', ['estados' => $info, 'fases' => Fase::orderBy('nombre', 'asc')->get()])
-            ->layout('layouts.theme.app');
+        return view('livewire.estados_procesales.component', [
+            'estados' => $info,
+            'fases' => Fase::orderBy('nombre', 'asc')->get()
+        ])->layout('layouts.theme.app');
     }
 
     public $listeners = [

@@ -9,9 +9,14 @@ php artisan make:model Asunto
 
 
 TODO
-en estados procesales hay que cambiar el select del render inicial cuando haya tabla juicios
-lo mismo en Asuntos, hay que validar en tipos actividades que no se eleimine si tiene actividades 
+
+lo mismo en Asuntos, 
 
 
 
 toda la bbdd esta generada las tablas a excepcion de historial, queda pendiente par ael ultimo 
+
+
+/// desde aqui ya todo esta hecho, faltan estos detealles :
+agregar al form de funcioanrios la unidad a la que pertenece
+revisar actualizar sujetos procesales, al editar no se carga el editado 
