@@ -10,7 +10,10 @@ use App\Models\Asunto;
 use App\Models\Materia;
 use App\Models\Procedimiento;
 use App\Models\EstadoProcesal;
+use App\Models\Audiencia;
 use Carbon\Carbon;
+use Iluminate\Support\Facades\Response;
+use Barryvdh\DomPDF\Facade\Pdf;
 
 class Juicios extends Component
 {
@@ -877,5 +880,29 @@ class Juicios extends Component
         $juicio->funcionarios()->detach($funcionarioId);
         $this->noty('Funcionario removido del juicio.', 'noty', false);
     }
+
+    //descargar acta de word
+    public function descargarWord(Audiencia $audiencia){
+        //dd($audiencia->acta_resumen);
+        $contenido = $audiencia->acta_resumen;
+        $documentoWord = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                    <head><meta charset='utf-8'><title>Acta Resumen</title></head>
+                    <body style='font-family: Arial, sans-serif;'>
+                        {$contenido}
+                    </body>
+                    </html>";
+        //dd($documentoWord);
+        $nombreArchivo =  "Acta audiencia_" . $audiencia->id . "_" . now()->format('dmY') . ".docx";
+
+        // 3. Retornar la descarga forzando las cabeceras HTTP de Word
+    return response()->streamDownload(function () use ($documentoWord) {
+        echo $documentoWord;
+    }, $nombreArchivo, [
+        'Content-Type' => 'application/msword',
+        'Cache-Control' => 'max-age=0, no-cache, must-revalidate, proxy-revalidate'
+    ]);      
+
+    }
+    
 }
 

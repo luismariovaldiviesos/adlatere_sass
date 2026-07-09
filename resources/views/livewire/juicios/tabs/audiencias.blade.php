@@ -74,6 +74,7 @@
                         <th class="whitespace-nowrap">TIPO</th>
                         <th class="whitespace-nowrap">SALA / ENLACE</th>
                         <th class="whitespace-nowrap">ESTADO</th>
+                        <th class="whitespace-nowrap">ACTA</th>
                         <th class="text-center whitespace-nowrap">ACCIONES</th>
                     </tr>
                 </thead>
@@ -98,6 +99,32 @@
                             <span class="px-3 py-1 rounded-full text-xs font-bold {{ $color }}">
                                 {{ $aud->estado }}
                             </span>
+                        </td>
+                        <td class="font-medium">
+                            @if($aud->acta_resumen != null)
+                            <div class="flex gap-3">
+                                <button wire:click="descargarWord({{ $aud->id }})" 
+                                        wire:loading.attr="disabled"
+                                        title="Descargar Acta en Word"
+                                        class="p-2.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200 transition-all duration-200 shadow-sm flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                    </svg>
+                                </button>
+
+                                <button wire:click="descargarPdf({{ $aud->id }})" 
+                                        wire:loading.attr="disabled"
+                                        title="Descargar Acta en PDF"
+                                        class="p-2.5 rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white border border-danger/20 transition-all duration-200 shadow-sm flex items-center justify-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                    </svg>
+                                </button>
+                            </div>
+                            
+                            @else
+                                <span class="text-slate-500">—</span>
+                            @endif
                         </td>
                         <td class="table-report__action w-56">
                             <div class="flex justify-center items-center gap-4">

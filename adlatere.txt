@@ -20,3 +20,16 @@ toda la bbdd esta generada las tablas a excepcion de historial, queda pendiente 
 /// desde aqui ya todo esta hecho, faltan estos detealles :
 agregar al form de funcioanrios la unidad a la que pertenece
 revisar actualizar sujetos procesales, al editar no se carga el editado 
+
+// revisar los documentos en audiencias 
+al cargr el acta resuemen por ejemplo no se sabe de que audiencia es. 
+cargar documento desde pestañas audiencias ? 
+cancelar audiencias en el selec de documentos ?
+
+en antigravity esta pendiente jhacer lo de que se carguen automatico las variables 
+a plantillas 
+
+terminar descargarpdf de resuemen audiencia
+
+asignar unidad_id a funcionarios en funcionarios al guardar 
+
