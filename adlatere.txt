@@ -25,6 +25,8 @@ revisar actualizar sujetos procesales, al editar no se carga el editado
 al cargr el acta resuemen por ejemplo no se sabe de que audiencia es. 
 cargar documento desde pestañas audiencias ? 
 cancelar audiencias en el selec de documentos ?
+validar que no se repitan secretarios ni ayudantes ni jueces ? en un juicio salvo que sea tribuanal 
+pero eso creo que ya no iría. 
 
 
 
