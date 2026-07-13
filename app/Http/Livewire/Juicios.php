@@ -428,11 +428,29 @@ class Juicios extends Component
    }
 
    private function reemplazarVariables($textoHtml) {
-       $juicio = Juicio::with(['unidadJudicial.canton.provincia', 'asunto.procedimiento.materia', 'actores', 'demandados'])->find($this->selected_id);
+        // Cargar el juicio con todas las relaciones necesarias para reemplazar las variables
+        //en el contenido de la plantilla
+       $juicio = Juicio::with(['unidadJudicial.canton.provincia', 'asunto.procedimiento.materia', 
+       'actores', 'demandados','funcionarios'])->find($this->selected_id);
        if(!$juicio) return $textoHtml;
 
        $actores = $juicio->actores->pluck('businame')->implode(', ');
        $demandados = $juicio->demandados->pluck('businame')->implode(', ');
+       //juez ponente 
+         $juez = $juicio->funcionarios->first(function($f) {
+            return strtolower($f->pivot->rol_en_juicio) === 'juez ponente' 
+                || strtolower($f->cargo) === 'juez';
+        })?->nombre ?? '';
+
+            // 2. Buscar al funcionario asignado como Secretario
+        $secretario = $juicio->funcionarios->first(function($f) {
+            return strtolower($f->pivot->rol_en_juicio) === 'secretario' 
+                || strtolower($f->cargo) === 'secretario';
+        })?->nombre ?? '';
+        // 3. Formatear la lista completa de todos los funcionarios asignados y sus roles
+        $todosFuncionarios = $juicio->funcionarios->map(function($f) {
+            return "{$f->nombre} ({$f->pivot->rol_en_juicio})";
+        })->implode(', ');
 
        $variables = [
            'COD_SATJE' => $juicio->cod_satje ?? '',
@@ -446,6 +464,9 @@ class Juicios extends Component
            'ACTORES' => $actores,
            'DEMANDADOS' => $demandados,
            'FECHA_ACTUAL' => \Carbon\Carbon::now()->translatedFormat('d \d\e F \d\e Y'),
+             'JUEZ' => $juez,
+            'SECRETARIO' => $secretario,
+            'FUNCIONARIOS' => $todosFuncionarios,
        ];
 
        foreach($variables as $key => $value) {

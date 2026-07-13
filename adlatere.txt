@@ -26,10 +26,13 @@ al cargr el acta resuemen por ejemplo no se sabe de que audiencia es.
 cargar documento desde pestañas audiencias ? 
 cancelar audiencias en el selec de documentos ?
 
-en antigravity esta pendiente jhacer lo de que se carguen automatico las variables 
-a plantillas 
+
 
 terminar descargarpdf de resuemen audiencia
 
 asignar unidad_id a funcionarios en funcionarios al guardar 
+
+
+// ESTO EN PRODUCCION Y DESPUES 
+REVISAR Debugbar el resultado que le subi a deep seek,  descaticar debugbar en  facta.ec 
 
