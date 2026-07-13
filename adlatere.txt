@@ -10,29 +10,23 @@ php artisan make:model Asunto
 
 TODO
 
-lo mismo en Asuntos, 
-
-
-
-toda la bbdd esta generada las tablas a excepcion de historial, queda pendiente par ael ultimo 
-
-
 /// desde aqui ya todo esta hecho, faltan estos detealles :
-agregar al form de funcioanrios la unidad a la que pertenece
-revisar actualizar sujetos procesales, al editar no se carga el editado 
+*agregar al form de funcioanrios la unidad a la que pertenece
+*revisar actualizar sujetos procesales, al editar no se carga el editado 
+*revisar que cada registro vaya a historial del juicio, creo que faltan algiunos metodos de registrar
+
 
 // revisar los documentos en audiencias 
-al cargr el acta resuemen por ejemplo no se sabe de que audiencia es. 
-cargar documento desde pestañas audiencias ? 
-cancelar audiencias en el selec de documentos ?
-validar que no se repitan secretarios ni ayudantes ni jueces ? en un juicio salvo que sea tribuanal 
+*al cargr el acta resuemen por ejemplo no se sabe de que audiencia es. 
+*cargar documento desde pestañas audiencias esto para auidiencias  ? 
+* cancelar audiencias en el selec de documentos ?
+//
+*validar que no se repitan secretarios ni ayudantes ni jueces ? en un juicio salvo que sea tribuanal 
 pero eso creo que ya no iría. 
 
+*terminar descargarpdf de resuemen audiencia
 
 
-terminar descargarpdf de resuemen audiencia
-
-asignar unidad_id a funcionarios en funcionarios al guardar 
 
 
 // ESTO EN PRODUCCION Y DESPUES 
