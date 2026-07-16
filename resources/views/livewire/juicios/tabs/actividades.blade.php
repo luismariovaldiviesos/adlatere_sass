@@ -214,9 +214,9 @@
         });
     }
 
-    setTimeout(() => {
+     document.addEventListener('livewire:load', function () {
         loadActividadQuillEditor();
-    }, 100);
+    });
 </script>
 
 <style>
