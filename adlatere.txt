@@ -12,7 +12,7 @@ TODO
 
 /// desde aqui ya todo esta hecho, faltan estos detealles :
 *agregar al form de funcioanrios la unidad a la que pertenece
-*revisar actualizar sujetos procesales, al editar no se carga el editado 
+*al crear nuevo juicio dependiendo la materia que se carguen los funcioarios que pertenenzcana a esa uni.dad 
 *revisar que cada registro vaya a historial del juicio, creo que faltan algiunos metodos de registrar
 
 
@@ -25,6 +25,8 @@ TODO
 pero eso creo que ya no iría. 
 
 *terminar descargarpdf de resuemen audiencia
+* en la ba<rra lateral quiza poner qué hace falta del jucio : fianzas,  funcionarios etc.
+* firmar  documentos.  
 
 
 
