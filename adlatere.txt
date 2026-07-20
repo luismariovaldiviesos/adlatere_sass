@@ -34,3 +34,9 @@ pero eso creo que ya no iría.
 // ESTO EN PRODUCCION Y DESPUES 
 REVISAR Debugbar el resultado que le subi a deep seek,  descaticar debugbar en  facta.ec 
 
+
+
+
+prueba de actividad 
+
+
