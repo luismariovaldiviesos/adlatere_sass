@@ -1,16 +1,16 @@
 {{-- FORM con pestañas (sin datos). Lógica en Livewire\Alumno, métodos usan dd(). --}}
-<div x-data="{ tab: @entangle('tab') }" class="content space-y-6">
+<div x-data="{ tab: @entangle('tab').defer }" class="content space-y-6">
 
     {{-- BARRA DE PESTAÑAS --}}
     <div class="intro-y box p-6">
         <div class="flex flex-wrap gap-3">
-            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='juicio' }"  @click="tab='juicio'">Juicio</button>
-            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='sujetos' }"   @click="tab='sujetos'">Sujetos Procesales</button>
-            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='actividades' }"@click="tab='actividades'">Actividades</button>
-            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='audiencias' }"     @click="tab='audiencias'">Audiencias</button>
-            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='documentos' }"   @click="tab='documentos'">Documentos</button>
-            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='fin' }"     @click="tab='fin'">Finanzas</button>
-            <button class="btn px-6 py-2" :class="{ 'btn-primary': tab==='funcionarios' }" @click="tab='funcionarios'">Funcionarios</button>
+            <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='juicio' }"  @click="tab='juicio'">Juicio</button>
+            <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='sujetos' }"   @click="tab='sujetos'">Sujetos Procesales</button>
+            <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='actividades' }"@click="tab='actividades'">Actividades</button>
+            <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='audiencias' }"     @click="tab='audiencias'">Audiencias</button>
+            <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='documentos' }"   @click="tab='documentos'">Documentos</button>
+            <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='fin' }"     @click="tab='fin'">Finanzas</button>
+            <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='funcionarios' }" @click="tab='funcionarios'">Funcionarios</button>
 
         </div>
     </div>
