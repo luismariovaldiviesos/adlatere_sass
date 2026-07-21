@@ -32,11 +32,9 @@ pero eso creo que ya no iría.
 
 
 // ESTO EN PRODUCCION Y DESPUES 
+REVISAR LOS PLZAOS SEGUN LA LEY, ESTA MAS O MENOS ARMADO EN GEMINI
 REVISAR Debugbar el resultado que le subi a deep seek,  descaticar debugbar en  facta.ec 
 
 
-
-
-prueba de actividad 
 
 
