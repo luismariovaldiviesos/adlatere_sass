@@ -6,7 +6,7 @@
         <div class="flex flex-wrap gap-3">
             <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='juicio' }"  @click="tab='juicio'">Juicio</button>
             <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='sujetos' }"   @click="tab='sujetos'">Sujetos Procesales</button>
-            <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='actividades' }"@click="tab='actividades'">Actividades</button>
+           <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='actividades' }" @click="tab='actividades'; setTimeout(() => { if(typeof loadActividadQuillEditor === 'function') loadActividadQuillEditor(); }, 150)">Actividades</button>
             <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='audiencias' }"     @click="tab='audiencias'">Audiencias</button>
             <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='documentos' }"   @click="tab='documentos'">Documentos</button>
             <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='fin' }"     @click="tab='fin'">Finanzas</button>
