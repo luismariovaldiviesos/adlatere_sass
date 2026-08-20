@@ -95,53 +95,76 @@ class TenantSetupService
     private function sendWelcomeEmail($tenant, $user, $data)
     {
         try {
-            $sendgridKey = env('SENDGRID_API_KEY');
-            $url = 'http://' . ($data['domain'] ?? $tenant->domains->first()->domain);
+            // $sendgridKey = env('SENDGRID_API_KEY');
+            // $url = 'http://' . ($data['domain'] ?? $tenant->domains->first()->domain);
 
-            if (!empty($sendgridKey)) {
-                Log::info('[SETUP_SERVICE] Dispatching Welcome Mail via SendGrid API');
+            // if (!empty($sendgridKey)) {
+            //     Log::info('[SETUP_SERVICE] Dispatching Welcome Mail via SendGrid API');
                 
-                $client = new Client();
-                $fromEmail = env('MAIL_FROM_ADDRESS', 'noreply@facta.ec');
+            //     $client = new Client();
+            //     $fromEmail = env('MAIL_FROM_ADDRESS', 'noreply@facta.ec');
                 
-                $htmlContent = view('emails.welcome_tenant', [
-                    'tenant' => $tenant,
-                    'user' => $user,
-                    'url' => $url
-                ])->render();
+            //     $htmlContent = view('emails.welcome_tenant', [
+            //         'tenant' => $tenant,
+            //         'user' => $user,
+            //         'url' => $url
+            //     ])->render();
 
+            //     $payload = [
+            //         'personalizations' => [
+            //             [
+            //                 'to' => [['email' => $data['admin_email']]],
+            //                 'subject' => '¡Bienvenido a Facta SaaS!'
+            //             ]
+            //         ],
+            //         'from' => ['email' => $fromEmail, 'name' => 'Facta SaaS'],
+            //         'content' => [
+            //             [
+            //                 'type' => 'text/html',
+            //                 'value' => $htmlContent
+            //             ]
+            //         ]
+            //     ];
+
+            //     $response = $client->post('https://api.sendgrid.com/v3/mail/send', [
+            //         'headers' => [
+            //             'Authorization' => "Bearer $sendgridKey",
+            //             'Content-Type' => 'application/json',
+            //         ],
+            //         'json' => $payload,
+            //     ]);
+
+            //     if ($response->getStatusCode() == 202) {
+            //         Log::info('[SETUP_SERVICE] Welcome Email Sent (API) to: ' . $data['admin_email']);
+            //     } else {
+            //         Log::error('[SETUP_SERVICE] SendGrid API returned status ' . $response->getStatusCode());
+            //     }
+            // } else {
+            //     Mail::to($data['admin_email'])->send(new WelcomeTenant($tenant, $user, $url));
+            //     Log::info('[SETUP_SERVICE] Welcome Email Sent (SMTP Fallback) to: ' . $data['admin_email']);
+            // }
+                        $resendKey = env('RESEND_API_KEY');
+
+            if (!empty($resendKey)) {
+                Log::info('[SETUP_SERVICE] Dispatching Welcome Mail via Resend API');
+                
                 $payload = [
-                    'personalizations' => [
-                        [
-                            'to' => [['email' => $data['admin_email']]],
-                            'subject' => '¡Bienvenido a Facta SaaS!'
-                        ]
-                    ],
-                    'from' => ['email' => $fromEmail, 'name' => 'Facta SaaS'],
-                    'content' => [
-                        [
-                            'type' => 'text/html',
-                            'value' => $htmlContent
-                        ]
-                    ]
+                    'from' => "Facta SAAS <" . env('MAIL_FROM_ADDRESS', 'noreply@facta.ec') . ">",
+                    'to' => [$data['admin_email']],
+                    'subject' => '¡Bienvenido a Facta!',
+                    'html' => "Hola {$data['admin_name']},<br><br>Tu entorno ha sido creado exitosamente.<br>
+                               Puedes acceder en: <a href='{$url}'>{$url}</a><br>
+                               Usuario: {$data['admin_email']}<br>
+                               Contraseña: la que elegiste en el registro.<br><br>Saludos."
                 ];
 
-                $response = $client->post('https://api.sendgrid.com/v3/mail/send', [
+                $client->post('https://api.resend.com/emails', [
                     'headers' => [
-                        'Authorization' => "Bearer $sendgridKey",
-                        'Content-Type' => 'application/json',
+                        'Authorization' => "Bearer $resendKey",
+                        'Content-Type'  => 'application/json',
                     ],
                     'json' => $payload,
                 ]);
-
-                if ($response->getStatusCode() == 202) {
-                    Log::info('[SETUP_SERVICE] Welcome Email Sent (API) to: ' . $data['admin_email']);
-                } else {
-                    Log::error('[SETUP_SERVICE] SendGrid API returned status ' . $response->getStatusCode());
-                }
-            } else {
-                Mail::to($data['admin_email'])->send(new WelcomeTenant($tenant, $user, $url));
-                Log::info('[SETUP_SERVICE] Welcome Email Sent (SMTP Fallback) to: ' . $data['admin_email']);
             }
         } catch (\Exception $e) {
             Log::error('[SETUP_SERVICE] Welcome Email Delivery Failed: ' . $e->getMessage());

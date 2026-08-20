@@ -21,7 +21,7 @@ class TenantResetPassword extends Notification
     public function via($notifiable)
     {
         if (env('SENDGRID_API_KEY')) {
-            $this->sendViaSendGrid($notifiable);
+           $this->sendViaResend($notifiable);
             return []; // Handled manually
         }
         return ['mail'];
@@ -48,60 +48,94 @@ class TenantResetPassword extends Notification
             ->line('Si no solicitaste este cambio, omite este mensaje.');
     }
 
-    protected function sendViaSendGrid($notifiable)
+    // protected function sendViaSendGrid($notifiable)
+    // {
+    //     try {
+    //         $apiKey = env('SENDGRID_API_KEY');
+    //         $client = new \GuzzleHttp\Client();
+            
+    //         // Construct URL
+    //         $url = url(route('password.reset', [
+    //             'token' => $this->token,
+    //             'email' => $notifiable->getEmailForPasswordReset(),
+    //         ], false));
+
+    //         $fromName = 'Facta SaaS';
+    //         if (function_exists('empresa')) {
+    //             $company = empresa();
+    //             if ($company) $fromName = $company->nombreComercial;
+    //         }
+    //         $fromEmail = env('MAIL_FROM_ADDRESS', 'noreply@facta.ec');
+
+    //         $htmlContent = "<p>Hola,</p>";
+    //         $htmlContent .= "<p>Recibiste este correo porque solicitaste restablecer tu contraseña para <strong>$fromName</strong>.</p>";
+    //         $htmlContent .= "<p style='text-align:center; margin: 20px 0;'><a href='$url' style='background-color:#4CAF50; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;'>Restablecer Contraseña</a></p>";
+    //         $htmlContent .= "<p>Si el botón no funciona, copia y pega este enlace:</p>";
+    //         $htmlContent .= "<p><small>$url</small></p>";
+    //         $htmlContent .= "<p>Si no solicitaste este cambio, omite este mensaje.</p>";
+
+    //         $payload = [
+    //             'personalizations' => [
+    //                 [
+    //                     'to' => [['email' => $notifiable->email]],
+    //                     'subject' => 'Restablecer Contraseña - ' . $fromName
+    //                 ]
+    //             ],
+    //             'from' => ['email' => $fromEmail, 'name' => $fromName],
+    //             'content' => [
+    //                 [
+    //                     'type' => 'text/html',
+    //                     'value' => $htmlContent
+    //                 ]
+    //             ]
+    //         ];
+
+    //         $client->post('https://api.sendgrid.com/v3/mail/send', [
+    //             'headers' => [
+    //                 'Authorization' => "Bearer $apiKey",
+    //                 'Content-Type' => 'application/json',
+    //             ],
+    //             'json' => $payload,
+    //         ]);
+
+    //         \Illuminate\Support\Facades\Log::info('[RESET_PASSWORD] Email sent via SendGrid API to ' . $notifiable->email);
+
+    //     } catch (\Exception $e) {
+    //         \Illuminate\Support\Facades\Log::error('[RESET_PASSWORD] Failed to send via API: ' . $e->getMessage());
+    //     }
+    // }
+        protected function sendViaResend($notifiable)
     {
         try {
-            $apiKey = env('SENDGRID_API_KEY');
+            $apiKey = env('RESEND_API_KEY');
+            if (!$apiKey) return;
+
             $client = new \GuzzleHttp\Client();
-            
-            // Construct URL
-            $url = url(route('password.reset', [
+            $url = url(route('tenant.password.reset', [
                 'token' => $this->token,
                 'email' => $notifiable->getEmailForPasswordReset(),
             ], false));
 
-            $fromName = 'Facta SaaS';
-            if (function_exists('empresa')) {
-                $company = empresa();
-                if ($company) $fromName = $company->nombreComercial;
-            }
-            $fromEmail = env('MAIL_FROM_ADDRESS', 'noreply@facta.ec');
-
-            $htmlContent = "<p>Hola,</p>";
-            $htmlContent .= "<p>Recibiste este correo porque solicitaste restablecer tu contraseña para <strong>$fromName</strong>.</p>";
-            $htmlContent .= "<p style='text-align:center; margin: 20px 0;'><a href='$url' style='background-color:#4CAF50; color:white; padding:10px 20px; text-decoration:none; border-radius:5px;'>Restablecer Contraseña</a></p>";
-            $htmlContent .= "<p>Si el botón no funciona, copia y pega este enlace:</p>";
-            $htmlContent .= "<p><small>$url</small></p>";
-            $htmlContent .= "<p>Si no solicitaste este cambio, omite este mensaje.</p>";
-
             $payload = [
-                'personalizations' => [
-                    [
-                        'to' => [['email' => $notifiable->email]],
-                        'subject' => 'Restablecer Contraseña - ' . $fromName
-                    ]
-                ],
-                'from' => ['email' => $fromEmail, 'name' => $fromName],
-                'content' => [
-                    [
-                        'type' => 'text/html',
-                        'value' => $htmlContent
-                    ]
-                ]
+                'from' => "Facta SAAS <" . env('MAIL_FROM_ADDRESS', 'noreply@facta.ec') . ">",
+                'to' => [$notifiable->email],
+                'subject' => 'Restablecer Contraseña',
+                'html' => "Hola,<br><br>Recibes este correo porque solicitaste restablecer tu contraseña.<br><br>
+                           <a href='{$url}'>Haz clic aquí para restablecer tu contraseña</a><br><br>
+                           Si no solicitaste esto, ignora este correo."
             ];
 
-            $client->post('https://api.sendgrid.com/v3/mail/send', [
+            $client->post('https://api.resend.com/emails', [
                 'headers' => [
-                    'Authorization' => "Bearer $apiKey",
+                    'Authorization' => "Bearer " . $apiKey,
                     'Content-Type' => 'application/json',
                 ],
                 'json' => $payload,
             ]);
 
-            \Illuminate\Support\Facades\Log::info('[RESET_PASSWORD] Email sent via SendGrid API to ' . $notifiable->email);
-
+            \Illuminate\Support\Facades\Log::info('[RESET_PASSWORD] Email sent via Resend API to ' . $notifiable->email);
         } catch (\Exception $e) {
-            \Illuminate\Support\Facades\Log::error('[RESET_PASSWORD] Failed to send via API: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('[RESET_PASSWORD] Error sending via Resend: ' . $e->getMessage());
         }
     }
 }

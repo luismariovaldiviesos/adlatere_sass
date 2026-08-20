@@ -91,7 +91,7 @@ class SendInvoiceEmail implements ShouldQueue
                 $sendgridKey = config('services.sendgrid.key');
 
                 if (!empty($sendgridKey)) {
-                    $this->sendViaSendGridApi($sendgridKey, $pdfPath, $xmlPath, $settings);
+                    $this->sendViaResendApi(env('RESEND_API_KEY'), $pdfPath, $xmlPath, $settings);
                     Log::info("[DEBUG_JOB] Envío exitoso vía SendGrid API.");
                     return;
                 } else {
@@ -114,54 +114,110 @@ class SendInvoiceEmail implements ShouldQueue
 
     /**
      * Envía el correo usando la API de SendGrid (Puerto 443) para saltar bloqueos de red.
+    //  */
+    // private function sendViaSendGridApi($apiKey, $pdfPath, $xmlPath, $settings)
+    // {
+    //     $client = new \GuzzleHttp\Client();
+        
+    //     $fromEmail = env('MAIL_FROM_ADDRESS', 'noreply@facta.ec');
+    //     $fromName = $settings->razonSocial ?? 'Sistema de Facturación';
+    //     $replyTo = $settings->email ?? $fromEmail; // El correo del tenant registrado en "Mi Empresa"
+
+    //     Log::info("[DEBUG_JOB] Usando Remitente (From): " . $fromEmail);
+
+    //     $subject = ($this->factura->codDoc == '04' ? 'Nota de Crédito: ' : 'Factura: ') . $this->factura->secuencial;
+
+    //     $payload = [
+    //         'personalizations' => [
+    //             [
+    //                 'to' => [['email' => $this->factura->customer->email]],
+    //                 'subject' => $subject
+    //             ]
+    //         ],
+    //         'from' => ['email' => $fromEmail, 'name' => $fromName],
+    //         'reply_to' => ['email' => $replyTo, 'name' => $fromName],
+    //         'content' => [
+    //             [
+    //                 'type' => 'text/html',
+    //                 'value' => "Estimado(a) <b>" . $this->factura->customer->businame . "</b>,<br><br>Adjuntamos su comprobante electrónico <b>" . $this->factura->secuencial . "</b>.<br><br>Saludos,<br>" . $fromName
+    //             ]
+    //         ],
+    //         'attachments' => [
+    //             [
+    //                 'content' => base64_encode(file_get_contents($pdfPath)),
+    //                 'type' => 'application/pdf',
+    //                 'filename' => basename($pdfPath),
+    //                 'disposition' => 'attachment'
+    //             ],
+    //             [
+    //                 'content' => base64_encode(file_get_contents($xmlPath)),
+    //                 'type' => 'text/xml',
+    //                 'filename' => basename($xmlPath),
+    //                 'disposition' => 'attachment'
+    //             ]
+    //         ]
+    //     ];
+
+    //     Log::info("[DEBUG_JOB] Enviando payload a SendGrid. Destino: " . $this->factura->customer->email);
+        
+    //     try {
+    //         $response = $client->post('https://api.sendgrid.com/v3/mail/send', [
+    //             'headers' => [
+    //                 'Authorization' => "Bearer " . $apiKey,
+    //                 'Content-Type' => 'application/json',
+    //             ],
+    //             'json' => $payload,
+    //         ]);
+
+    //         if ($response->getStatusCode() != 202) {
+    //             $errorBody = (string) $response->getBody();
+    //             Log::error("[DEBUG_JOB] Error en SendGrid API. Status: " . $response->getStatusCode() . " Body: " . $errorBody);
+    //             throw new \Exception("Error en SendGrid API: Status " . $response->getStatusCode() . " - " . $errorBody);
+    //         }
+    //     } catch (\GuzzleHttp\Exception\ClientException $e) {
+    //         $errorBody = (string) $e->getResponse()->getBody();
+    //         Log::error("[DEBUG_JOB] Excepción Cliente Guzzle: " . $e->getMessage() . " Response: " . $errorBody);
+    //         throw new \Exception("Error de Cliente SendGrid: " . $errorBody);
+    //     } catch (\Exception $e) {
+    //         Log::error("[DEBUG_JOB] Error inesperado en Guzzle: " . $e->getMessage());
+    //         throw $e;
+    //     }
+    // }
+
+        /**
+     * Envía el correo usando la API de Resend
      */
-    private function sendViaSendGridApi($apiKey, $pdfPath, $xmlPath, $settings)
+    private function sendViaResendApi($apiKey, $pdfPath, $xmlPath, $settings)
     {
         $client = new \GuzzleHttp\Client();
         
         $fromEmail = env('MAIL_FROM_ADDRESS', 'noreply@facta.ec');
         $fromName = $settings->razonSocial ?? 'Sistema de Facturación';
-        $replyTo = $settings->email ?? $fromEmail; // El correo del tenant registrado en "Mi Empresa"
+        $replyTo = $settings->email ?? $fromEmail;
 
         Log::info("[DEBUG_JOB] Usando Remitente (From): " . $fromEmail);
-
         $subject = ($this->factura->codDoc == '04' ? 'Nota de Crédito: ' : 'Factura: ') . $this->factura->secuencial;
 
         $payload = [
-            'personalizations' => [
-                [
-                    'to' => [['email' => $this->factura->customer->email]],
-                    'subject' => $subject
-                ]
-            ],
-            'from' => ['email' => $fromEmail, 'name' => $fromName],
-            'reply_to' => ['email' => $replyTo, 'name' => $fromName],
-            'content' => [
-                [
-                    'type' => 'text/html',
-                    'value' => "Estimado(a) <b>" . $this->factura->customer->businame . "</b>,<br><br>Adjuntamos su comprobante electrónico <b>" . $this->factura->secuencial . "</b>.<br><br>Saludos,<br>" . $fromName
-                ]
-            ],
+            'from' => "$fromName <$fromEmail>",
+            'to' => [$this->factura->customer->email],
+            'reply_to' => $replyTo,
+            'subject' => $subject,
+            'html' => "Estimado(a) <b>" . $this->factura->customer->businame . "</b>,<br><br>Adjuntamos su comprobante electrónico <b>" . $this->factura->secuencial . "</b>.<br><br>Saludos,<br>" . $fromName,
             'attachments' => [
                 [
-                    'content' => base64_encode(file_get_contents($pdfPath)),
-                    'type' => 'application/pdf',
                     'filename' => basename($pdfPath),
-                    'disposition' => 'attachment'
+                    'content' => base64_encode(file_get_contents($pdfPath)),
                 ],
                 [
-                    'content' => base64_encode(file_get_contents($xmlPath)),
-                    'type' => 'text/xml',
                     'filename' => basename($xmlPath),
-                    'disposition' => 'attachment'
+                    'content' => base64_encode(file_get_contents($xmlPath)),
                 ]
             ]
         ];
 
-        Log::info("[DEBUG_JOB] Enviando payload a SendGrid. Destino: " . $this->factura->customer->email);
-        
         try {
-            $response = $client->post('https://api.sendgrid.com/v3/mail/send', [
+            $response = $client->post('https://api.resend.com/emails', [
                 'headers' => [
                     'Authorization' => "Bearer " . $apiKey,
                     'Content-Type' => 'application/json',
@@ -169,17 +225,12 @@ class SendInvoiceEmail implements ShouldQueue
                 'json' => $payload,
             ]);
 
-            if ($response->getStatusCode() != 202) {
+            if ($response->getStatusCode() != 200) {
                 $errorBody = (string) $response->getBody();
-                Log::error("[DEBUG_JOB] Error en SendGrid API. Status: " . $response->getStatusCode() . " Body: " . $errorBody);
-                throw new \Exception("Error en SendGrid API: Status " . $response->getStatusCode() . " - " . $errorBody);
+                throw new \Exception("Error en Resend API: " . $errorBody);
             }
-        } catch (\GuzzleHttp\Exception\ClientException $e) {
-            $errorBody = (string) $e->getResponse()->getBody();
-            Log::error("[DEBUG_JOB] Excepción Cliente Guzzle: " . $e->getMessage() . " Response: " . $errorBody);
-            throw new \Exception("Error de Cliente SendGrid: " . $errorBody);
         } catch (\Exception $e) {
-            Log::error("[DEBUG_JOB] Error inesperado en Guzzle: " . $e->getMessage());
+            Log::error("[DEBUG_JOB] Excepción: " . $e->getMessage());
             throw $e;
         }
     }
