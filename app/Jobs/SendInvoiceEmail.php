@@ -88,14 +88,24 @@ class SendInvoiceEmail implements ShouldQueue
             if (file_exists($pdfPath) && $xmlPath && file_exists($xmlPath)) {
                 Log::info("[DEBUG_JOB] Archivos localizados. PDF: " . basename($pdfPath) . " | XML: " . basename($xmlPath));
                 
-                $sendgridKey = config('services.sendgrid.key');
+                // $sendgridKey = config('services.sendgrid.key');
 
-                if (!empty($sendgridKey)) {
-                    $this->sendViaResendApi(env('RESEND_API_KEY'), $pdfPath, $xmlPath, $settings);
-                    Log::info("[DEBUG_JOB] Envío exitoso vía SendGrid API.");
+                // if (!empty($sendgridKey)) {
+                //     $this->sendViaResendApi(env('RESEND_API_KEY'), $pdfPath, $xmlPath, $settings);
+                //     Log::info("[DEBUG_JOB] Envío exitoso vía SendGrid API.");
+                //     return;
+                // } else {
+                //     Log::error("[DEBUG_JOB] Error: SENDGRID_API_KEY no está configurado en el servidor (.env).");
+                //     throw new \Exception("Configuración de correo incompleta (API Key faltante).");
+                // }
+                                $resendKey = env('RESEND_API_KEY');
+
+                if (!empty($resendKey)) {
+                    $this->sendViaResendApi($resendKey, $pdfPath, $xmlPath, $settings);
+                    Log::info("[DEBUG_JOB] Envío exitoso vía Resend API.");
                     return;
                 } else {
-                    Log::error("[DEBUG_JOB] Error: SENDGRID_API_KEY no está configurado en el servidor (.env).");
+                    Log::error("[DEBUG_JOB] Error: RESEND_API_KEY no está configurado en el servidor (.env).");
                     throw new \Exception("Configuración de correo incompleta (API Key faltante).");
                 }
             } else {
