@@ -17,7 +17,7 @@ return new class extends Migration
             $table->id();            
             $table->string('nombre');
             $table->string('cargo');
-            $table->foreignId('unidad_id')->constrained('unidads')->onDelete('cascade'); // Agregado para filtrar por Unidad Judicial
+            //$table->foreignId('unidad_id')->constrained('unidads')->onDelete('cascade'); // Agregado para filtrar por Unidad Judicial
             $table->string('telefono')->nullable();
             $table->string('email')->nullable();
             $table->timestamps();

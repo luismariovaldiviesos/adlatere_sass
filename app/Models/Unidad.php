@@ -43,6 +43,11 @@ public function canton()
         return $this->hasMany(Materia::class);
     }
 
+    public function funcionarios()
+    {
+        return $this->belongsToMany(Funcionario::class, 'funcionario_unidad');
+    }
+
    
 
    

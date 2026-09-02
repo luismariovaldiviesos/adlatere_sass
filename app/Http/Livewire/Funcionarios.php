@@ -17,6 +17,7 @@ class Funcionarios extends Component
 
     public $nombre = '', $selected_id = 0, $cargo = '', $telefono = '', $email = '';
     public $action = 'Listado', $componentName = 'Funcionarios', $search, $form = false;
+    public $unidades_seleccionadas = []; // Array para guardar múltiples IDs
     private $pagination = 10;
     protected $paginationTheme = 'tailwind';
 
@@ -30,8 +31,15 @@ class Funcionarios extends Component
             $info = Funcionario::paginate($this->pagination);
 
 
-        return view('livewire.funcionarios.component', ['funcionarios' => $info])
-            ->layout('layouts.theme.app');
+        return view('livewire.funcionarios.component',
+             ['funcionarios' => $info],
+             ['unidades_agrupadas' => \App\Models\Unidad::with('canton')
+                                ->orderBy('nombre', 'asc')
+                                ->get()
+                                ->groupBy(function($unidad) {
+                                    return $unidad->canton->nombre ?? 'Sin Ciudad';
+                                })]
+                )->layout('layouts.theme.app');
     }
 
     public $listeners = [
@@ -75,7 +83,8 @@ class Funcionarios extends Component
         // regresar a la página inicial del componente
         $this->resetPage();
         // regresar propiedades a su valor por defecto
-        $this->reset('nombre', 'selected_id', 'search', 'action', 'componentName', 'cargo', 'telefono', 'email', 'form');
+        $this->reset('nombre', 'selected_id', 'search', 'action', 'componentName', 'cargo', 
+        'telefono', 'email', 'form','unidades_seleccionadas');
     }
 
     public function Edit(Funcionario $funcionario)
@@ -85,6 +94,7 @@ class Funcionarios extends Component
         $this->cargo = $funcionario->cargo;
         $this->telefono = $funcionario->telefono;
         $this->email = $funcionario->email;
+        $this->unidades_seleccionadas = $funcionario->unidades->pluck('id')->toArray();
         $this->action = 'Editar';
         $this->form = true;
 
@@ -100,6 +110,7 @@ class Funcionarios extends Component
             ['id' => $this->selected_id],
             ['nombre' => $this->nombre, 'cargo' => $this->cargo, 'telefono' => $this->telefono, 'email' => $this->email]
         );
+        $funcionario->unidades()->sync($this->unidades_seleccionadas); // Sincronizar las unidades seleccionadas
 
         
         

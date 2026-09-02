@@ -7,8 +7,12 @@
             <div class="relative">
                 <input type="text" 
                        wire:model.debounce.500ms="searchFuncionario" 
-                       class="form-control h-12 text-lg" 
-                       placeholder="Escriba el nombre del Juez, Secretario...">
+                       class="form-control h-12 text-lg" {{ !$unidad_id ? 'bg-gray-100 cursor-not-allowed' : '' }}"
+                       placeholder="{{ $unidad_id ? 'Escriba el nombre del Juez, Secretario...' : 'Seleccione una Unidad Judicial primero' }}"
+                @if(!$unidad_id) disabled @endif>
+                   @if(!$unidad_id)
+        <small class="text-theme-12 block mt-1"><i class="fas fa-exclamation-triangle"></i> Debe seleccionar y guardar la Unidad Judicial en la pestaña principal para buscar funcionarios.</small>
+    @endif
                 
                 @if(strlen($searchFuncionario) > 0 && $showFuncionarioDropdown)
                     <div class="absolute z-50 w-full bg-white border border-gray-200 rounded-md shadow-lg mt-1 overflow-hidden" style="max-height: 250px; overflow-y: auto;">

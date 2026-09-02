@@ -846,8 +846,17 @@ class Juicios extends Component
 
     $this->funcionario_id = null; //reseteamos el id del funcionario seleccionado
     $this->showFuncionarioDropdown  = true; 
+    // 1. Validar por seguridad en el backend que exista una unidad seleccionada
+    if (!$this->unidad_id) {
+        $this->funcionarios_list = [];
+        return;
+    }
         if(strlen($value)>0){
-            $this->funcionarios_list = \App\Models\Funcionario::where('nombre','like',"%$value%")
+            $this->funcionarios_list = \App\Models\Funcionario::where('nombre', 'like', "%$value%")
+             // 2. Aquí está la magia: Filtramos solo los funcionarios de esta unidad
+              ->whereHas('unidades', function($query) {
+                $query->where('unidad_id', $this->unidad_id); // $this->unidad_id viene de la pestaña carátula
+            })
             ->orderBy('nombre','asc')
             ->limit(5)
             ->get();

@@ -24,7 +24,7 @@ class Funcionario extends Model
             return [
                 'nombre' => 'required|min:3|max:50|unique:funcionarios',
                 'cargo' => 'required|in:Juez,Secretario,Ayudante,Citador,Otro',
-                'unidad_id' => 'required|exists:unidads,id',
+                //'unidad_id' => 'required|exists:unidads,id',
                 'telefono' => 'nullable|string|max:20',
                 'email' => 'nullable|email|max:255|unique:funcionarios,email'
             ];
@@ -32,7 +32,7 @@ class Funcionario extends Model
             return [
                 'nombre' => "required|min:3|max:50|unique:funcionarios,nombre,{$id}",
                 'cargo' => 'required|in:Juez,Secretario,Ayudante,Citador,Otro',
-                'unidad_id' => 'required|exists:unidads,id',
+                //'unidad_id' => 'required|exists:unidads,id',
                 'telefono' => 'nullable|string|max:20',
                 'email' => "nullable|email|max:255|unique:funcionarios,email,{$id}"
             ];
@@ -52,6 +52,11 @@ class Funcionario extends Model
         'email.max' => 'El correo electrónico debe tener máximo 255 caracteres',
         'email.unique' => 'El correo electrónico ya existe en sistema'
     ];
+
+    public function unidades()
+    {
+        return $this->belongsToMany(Unidad::class, 'funcionario_unidad');
+    }
 
 
 }
