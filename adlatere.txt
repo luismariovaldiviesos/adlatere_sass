@@ -8,32 +8,7 @@ php artisan make:livewire Asuntos
 php artisan make:model Asunto
 
 
-TODO
 
-/// desde aqui ya todo esta hecho, faltan estos detealles :
-*agregar al form de funcioanrios la unidad a la que pertenece
-*al crear nuevo juicio dependiendo la materia que se carguen los funcioarios que pertenenzcana a esa uni.dad 
-*revisar que cada registro vaya a historial del juicio, creo que faltan algiunos metodos de registrar
-
-
-// revisar los documentos en audiencias 
-*al cargr el acta resuemen por ejemplo no se sabe de que audiencia es. 
-*cargar documento desde pestañas audiencias esto para auidiencias  ? 
-* cancelar audiencias en el selec de documentos ?
-//
-*validar que no se repitan secretarios ni ayudantes ni jueces ? en un juicio salvo que sea tribuanal 
-pero eso creo que ya no iría. 
-
-*terminar descargarpdf de resuemen audiencia
-* en la ba<rra lateral quiza poner qué hace falta del jucio : fianzas,  funcionarios etc.
-* firmar  documentos.  
-
-
-
-
-// ESTO EN PRODUCCION Y DESPUES 
-REVISAR LOS PLZAOS SEGUN LA LEY, ESTA MAS O MENOS ARMADO EN GEMINI
-REVISAR Debugbar el resultado que le subi a deep seek,  descaticar debugbar en  facta.ec 
 
 
 
