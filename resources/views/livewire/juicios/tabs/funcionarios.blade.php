@@ -17,7 +17,8 @@
                 @if(strlen($searchFuncionario) > 0 && $showFuncionarioDropdown)
                     <div class="absolute z-50 w-full bg-white border border-gray-200 rounded-md shadow-lg mt-1 overflow-hidden" style="max-height: 250px; overflow-y: auto;">
                         @forelse($funcionarios_list as $func)
-                            <div wire:click="selectFuncionario({{ $func->id }}, '{{ $func->nombre }}')" 
+                            <div wire:key="func-{{ $func->id }}"
+                                wire:click="selectFuncionario({{ $func->id }}, '{{ addslashes($func->nombre) }}')" 
                                  class="p-3 hover:bg-blue-100 cursor-pointer border-b last:border-0 transition-colors duration-200">
                                 <span class="font-bold block text-lg">{{ $func->nombre }}</span>
                                 <small class="text-gray-500 block">{{ $func->cargo }} | {{ $func->email ?? 'Sin correo' }}</small>

@@ -236,6 +236,17 @@ class Juicios extends Component
         'unidadJudicial.canton.provincia', 'actores', 'demandados', 'estadoProcesal', 
         'actividades.tipoActividad','finanza.pagos'])->find($juicio->id);
         $this->selected_id = $juicio->id;
+        
+        //historial de auditoría
+        \App\Models\JuicioHistorialEstado::create([
+            'juicio_id'          => $juicio->id,
+            'user_id'            => auth()->id(),
+            'estado_procesal_id' => $juicio->estado_procesal_id,
+            'tipo_movimiento'    => $this->editModeJuicio ? 'juicio_actualizado' : 'juicio_creado',
+            'referencia_tipo'    => 'Juicio',
+            'referencia_id'      => $juicio->id,
+            'descripcion'        => $this->editModeJuicio ? 'Se actualizaron los datos generales del juicio' : 'Se registró el juicio en el sistema',
+        ]);
         // Mensaje dinámico según el modo
         // RE-HIDRATAR las propiedades para que la vista las vea actualizadas
         $this->cod_satje = $juicio->cod_satje;
@@ -290,6 +301,16 @@ class Juicios extends Component
         }
         $juicio->participantes()->attach($this->cliente_id, ['rol' => $this->rol]);
          $this->noty('Sujeto procesal agregado con éxito.', 'noty', false);
+         //historial de auditoría
+         \App\Models\JuicioHistorialEstado::create([
+        'juicio_id'          => $this->selected_id,
+        'user_id'            => auth()->id(),
+        'estado_procesal_id' => $this->estado_procesal_id,
+        'tipo_movimiento'    => 'litigante_agregado',
+        'referencia_tipo'    => 'Customer',
+        'referencia_id'      => $this->cliente_id,
+        'descripcion'        => 'Se agregó un ' . $this->rol . ' al juicio.',
+    ]);
           // Limpiamos los cajones para agregar otro
         $this->reset(['cliente_id', 'searchCustomer', 'rol', 'customers']);
         $this->customers = [];
@@ -391,17 +412,40 @@ class Juicios extends Component
         $juicio = Juicio::find($this->selected_id);
         $juicio->participantes()->detach($id);
         $this->noty('Sujeto procesal removido con éxito.', 'noty', false);
+        \App\Models\JuicioHistorialEstado::create([
+            'juicio_id'          => $this->selected_id,
+            'user_id'            => auth()->id(),
+            'estado_procesal_id' => $this->estado_procesal_id,
+            'tipo_movimiento'    => 'litigante_removido',
+            'referencia_tipo'    => 'Customer',
+            'referencia_id'      => $id,
+            'descripcion'        => 'Se removió un sujeto procesal del juicio.',
+        ]);
     }
 
-   public function  editParticipanteEnJuicio($id){
-        $juicio = Juicio::find($this->selected_id);
-        $juicio->participantes()->updateExistingPivot($id, ['rol' => $this->rol]);
-        $this->noty('Rol del sujeto procesal actualizado con éxito.', 'noty', false);
-        // Limpiamos los cajones para agregar otro
-        $this->reset(['cliente_id', 'searchCustomer', 'rol', 'customers']);
-        $this->editModeSujeto = false;
-         $this->customers = [];
-   }
+public function editParticipanteEnJuicio(){
+    $juicio = Juicio::find($this->selected_id);
+    $juicio->participantes()->updateExistingPivot($this->cliente_id, ['rol' => $this->rol]);
+    $this->noty('Rol del sujeto procesal actualizado con éxito.', 'noty', false);
+    
+    \App\Models\JuicioHistorialEstado::create([
+        'juicio_id'          => $this->selected_id,
+        'user_id'            => auth()->id(),
+        'estado_procesal_id' => $this->estado_procesal_id,
+        'tipo_movimiento'    => 'litigante_editado',
+        'referencia_tipo'    => 'Customer',
+        'referencia_id'      => $this->cliente_id,
+        'descripcion'        => 'Se cambió el rol del sujeto procesal a ' . $this->rol,
+    ]);
+
+    // Refrescar el juicio para que la interfaz se actualice
+    $this->edit(\App\Models\Juicio::find($this->selected_id));
+
+    // Limpiamos los cajones para agregar otro
+    $this->reset(['cliente_id', 'searchCustomer', 'rol', 'customers']);
+    $this->editModeSujeto = false;
+    $this->customers = [];
+    }
 
    // mtodos actividades 
    public function updatedTipoActividadId($value){
@@ -517,8 +561,17 @@ class Juicios extends Component
             'archivo' => $archivoPath ? $archivoPath : $actividad->archivo
         ]);
         $this->noty('Actividad actualizada', 'noty', false);
+        \App\Models\JuicioHistorialEstado::create([
+            'juicio_id'          => $this->selected_id,
+            'user_id'            => auth()->id(),
+            'estado_procesal_id' => $this->nuevo_estado_id ?? $this->estado_procesal_id,
+            'tipo_movimiento'    => 'actividad_editada',
+            'referencia_tipo'    => 'Actividad',
+            'referencia_id'      => $actividad->id,
+            'descripcion'        => 'Se editó la actividad: ' . $this->descripcion,
+        ]);
     } else {
-        \App\Models\Actividad::create([
+       $nuevaActividad = \App\Models\Actividad::create([
             'juicio_id' => $this->selected_id,
             'tipo_actividad_id' => $this->tipo_actividad_id,
             'user_id' => auth()->id(),
@@ -529,6 +582,16 @@ class Juicios extends Component
             'archivo' => $archivoPath 
         ]);
         $this->noty('Actividad registrada', 'noty', false);
+        \App\Models\JuicioHistorialEstado::create([
+        'juicio_id'          => $this->selected_id,
+        'user_id'            => auth()->id(),
+        'estado_procesal_id' => $this->nuevo_estado_id ?? $this->estado_procesal_id,
+        'tipo_movimiento'    => 'actividad_creada',
+        'referencia_tipo'    => 'Actividad',
+        'referencia_id'      => $nuevaActividad->id,
+        'descripcion'        => 'Se creó la actividad: ' . $this->descripcion,
+    ]);
+        
     }
 
     // MEJORA: Si se seleccionó un nuevo estado, actualizar la carátula del juicio
@@ -566,6 +629,15 @@ class Juicios extends Component
         \App\Models\Actividad::find($id)->delete();
         $this->juicio = Juicio::with(['asunto.procedimiento.materia', 'unidadJudicial.canton.provincia', 'actores', 'demandados', 'estadoProcesal', 'actividades.tipoActividad'])->find($this->selected_id);
         $this->noty('Actividad eliminada', 'noty', false);
+        \App\Models\JuicioHistorialEstado::create([
+            'juicio_id'          => $this->selected_id,
+            'user_id'            => auth()->id(),
+            'estado_procesal_id' => $this->estado_procesal_id,
+            'tipo_movimiento'    => 'actividad_eliminada',
+            'referencia_tipo'    => 'Actividad',
+            'referencia_id'      => $id,
+            'descripcion'        => 'Se eliminó una actividad del juicio.',
+        ]);
         if ($this->selected_actividad_id == $id) {
             $this->resetActividadInputs();
         }
@@ -594,10 +666,19 @@ class Juicios extends Component
             'acta_resumen'    => $this->aud_acta_resumen,
         ]);
         $this->noty('Audiencia actualizada correctamente.', 'noty', false);
+        \App\Models\JuicioHistorialEstado::create([
+            'juicio_id'          => $this->selected_id,
+            'user_id'            => auth()->id(),
+            'estado_procesal_id' => $this->estado_procesal_id,
+            'tipo_movimiento'    => 'audiencia_actualizada',
+            'referencia_tipo'    => 'Audiencia',
+            'referencia_id'      => $this->audiencia_id,
+            'descripcion'        => 'Se actualizó la audiencia. Estado actual: ' . $this->aud_estado,
+        ]);
     } else {
         // MODO CREACIÓN
         // dd($this->selected_id, $this->aud_fecha_hora, $this->aud_tipo_audiencia, $this->aud_sala_enlace, $this->aud_estado, $this->aud_acta_resumen);
-        \App\Models\Audiencia::create([
+      $nuevaAudiencia = \App\Models\Audiencia::create([
             'juicio_id'       => $this->selected_id,
             'fecha_hora'      => $this->aud_fecha_hora,
             'tipo_audiencia'  => $this->aud_tipo_audiencia,
@@ -606,6 +687,15 @@ class Juicios extends Component
             'acta_resumen'    => $this->aud_acta_resumen,
         ]);
         $this->noty('Audiencia registrada correctamente.', 'noty', false);
+      \App\Models\JuicioHistorialEstado::create([
+            'juicio_id'          => $this->selected_id,
+            'user_id'            => auth()->id(),
+            'estado_procesal_id' => $this->estado_procesal_id,
+            'tipo_movimiento'    => 'audiencia_programada',
+            'referencia_tipo'    => 'Audiencia',
+            'referencia_id'      => $nuevaAudiencia->id,
+            'descripcion'        => 'Se programó una audiencia para: ' . $this->aud_fecha_hora,
+        ]);
     }
     // Refrescar el modelo para que el listado y sidebar se actualicen
     $this->juicio = \App\Models\Juicio::with([
@@ -644,6 +734,15 @@ class Juicios extends Component
         $this->resetAudienciaInputs();
     }
     $this->noty('Audiencia eliminada correctamente.', 'noty', false);
+    \App\Models\JuicioHistorialEstado::create([
+        'juicio_id'          => $this->selected_id,
+        'user_id'            => auth()->id(),
+        'estado_procesal_id' => $this->estado_procesal_id,
+        'tipo_movimiento'    => 'audiencia_eliminada',
+        'referencia_tipo'    => 'Audiencia',
+        'referencia_id'      => $id,
+        'descripcion'        => 'Se eliminó una audiencia registrada en el juicio.',
+    ]);
    }
    public function cancelEditAudiencia()
     {
@@ -678,7 +777,7 @@ class Juicios extends Component
     // NOTA: Como usas stancl/tenancy, el disco 'public' ya se aísla automáticamente en la carpeta de cada tenant.
     $ruta = $this->doc_archivo->store('documentos_juicios', 'public');
     // Registrar en la base de datos
-    \App\Models\Documento::create([
+ $nuevoDoc = \App\Models\Documento::create([
         'juicio_id'    => $this->selected_id,
         'origen_tipo'  => $this->doc_origen_tipo, // Aquí guardamos la clasificación seleccionada
         'origen_id'    => null,
@@ -688,12 +787,14 @@ class Juicios extends Component
         'tamaño_archivo'      => $pesoKb,
     ]);
     // Registrar en el historial de auditoría
-    \App\Models\JuicioHistorialEstado::create([
-        'juicio_id'       => $this->selected_id,
-        'user_id'         => auth()->id(),
-        'estado_procesal_id' => null, 
-        'tipo_movimiento' => 'documento_subido',
-        'descripcion'     => 'Se subió un documento (' . $this->doc_origen_tipo . '): ' . $this->doc_nombre,
+  \App\Models\JuicioHistorialEstado::create([
+        'juicio_id'          => $this->selected_id,
+        'user_id'            => auth()->id(),
+        'estado_procesal_id' => $this->estado_procesal_id,
+        'tipo_movimiento'    => 'documento_subido',
+        'referencia_tipo'    => 'Documento',
+        'referencia_id'      => $nuevoDoc->id,
+        'descripcion'        => 'Se subió un documento (' . $this->doc_origen_tipo . '): ' . $this->doc_nombre,
     ]);
     $this->noty('Documento subido con éxito.', 'noty', false);
     // Limpiar inputs
@@ -716,8 +817,10 @@ class Juicios extends Component
         \App\Models\JuicioHistorialEstado::create([
             'juicio_id'       => $this->selected_id,
             'user_id'         => auth()->id(),
-            'estado_procesal_id' => null, 
+            'estado_procesal_id' => $this->estado_procesal_id, 
             'tipo_movimiento' => 'documento_eliminado',
+            'referencia_tipo' => 'Documento',
+            'referencia_id'   => $doc->id,
             'descripcion'     => 'Se eliminó el documento: ' . $doc->nombre,
         ]);
         $this->noty('Documento eliminado.', 'noty', false);
@@ -731,7 +834,7 @@ class Juicios extends Component
         'fin_gastos'     => 'required|numeric|min:0',
         ]);
 
-        \App\Models\FinanzasJuicio::updateOrCreate(
+     $finanzas =   \App\Models\FinanzasJuicio::updateOrCreate(
             ['juicio_id' => $this->selected_id],
             [
                 'honorarios_totales' => $this->fin_honorarios, 
@@ -740,11 +843,14 @@ class Juicios extends Component
             ]
         );
 
-        \App\Models\JuicioHistorialEstado::create([
-        'juicio_id'       => $this->selected_id,
-        'user_id'         => auth()->id(),
-        'tipo_movimiento' => 'finanzas_actualizadas',
-        'descripcion'     => 'Se actualizaron los honorarios y gastos del caso.',
+      \App\Models\JuicioHistorialEstado::create([
+        'juicio_id'          => $this->selected_id,
+        'user_id'            => auth()->id(),
+        'estado_procesal_id' => $this->estado_procesal_id,
+        'tipo_movimiento'    => 'finanzas_actualizadas',
+        'referencia_tipo'    => 'FinanzasJuicio',
+        'referencia_id'      => $finanzas->id,
+        'descripcion'        => 'Se actualizaron los honorarios y gastos del caso.',
     ]);
 
     $this->noty('Costos del juicio actualizados.', 'noty', false);
@@ -802,14 +908,16 @@ class Juicios extends Component
         ]);
     }
 
-      \App\Models\JuicioHistorialEstado::create([
-        'juicio_id'       => $this->selected_id,
-        'user_id'         => auth()->id(),
-        'tipo_movimiento' => 'pago_registrado',
-        'descripcion'     => 'Se registró un abono por $ ' . number_format($this->pago_monto, 2),
+     \App\Models\JuicioHistorialEstado::create([
+        'juicio_id'          => $this->selected_id,
+        'user_id'            => auth()->id(),
+        'estado_procesal_id' => $this->estado_procesal_id,
+        'tipo_movimiento'    => 'pago_registrado',
+        'referencia_tipo'    => 'PagosJuicio',
+        'referencia_id'      => $pago->id,
+        'descripcion'        => 'Se registró un abono por $ ' . number_format($this->pago_monto, 2),
     ]);
-
-     $this->noty('Abono registrado con éxito.', 'noty', false);
+        $this->noty('Abono registrado con éxito.', 'noty', false);
       // Limpiar formulario
     $this->reset(['pago_customer_id', 'pago_monto', 'pago_fecha', 'pago_referencia', 'pago_notas', 'pago_comprobante']);
     $this->pago_metodo = 'Transferencia';
@@ -829,11 +937,14 @@ class Juicios extends Component
             \App\Models\Documento::where('origen_tipo', 'Finanzas')->where('origen_id', $pago->id)->delete();
         }
         $pago->delete();
-        \App\Models\JuicioHistorialEstado::create([
-            'juicio_id'       => $this->selected_id,
-            'user_id'         => auth()->id(),
-            'tipo_movimiento' => 'pago_eliminado',
-            'descripcion'     => 'Se eliminó un abono por $ ' . number_format($pago->monto, 2),
+       \App\Models\JuicioHistorialEstado::create([
+            'juicio_id'          => $this->selected_id,
+            'user_id'            => auth()->id(),
+            'estado_procesal_id' => $this->estado_procesal_id,
+            'tipo_movimiento'    => 'pago_eliminado',
+            'referencia_tipo'    => 'PagosJuicio',
+            'referencia_id'      => $id,
+            'descripcion'        => 'Se eliminó un abono por $ ' . number_format($pago->monto, 2),
         ]);
         $this->noty('Abono eliminado.', 'noty', false);
         $this->edit(\App\Models\Juicio::find($this->selected_id));
@@ -899,6 +1010,15 @@ class Juicios extends Component
         }
         //guardar en la tabla pivote
         $juicio->funcionarios()->attach($this->funcionario_id, ['rol_en_juicio' => $this->rol_en_juicio]);
+        \App\Models\JuicioHistorialEstado::create([
+        'juicio_id'          => $this->selected_id,
+        'user_id'            => auth()->id(),
+        'estado_procesal_id' => $this->estado_procesal_id,
+        'tipo_movimiento'    => 'funcionario_asignado',
+        'referencia_tipo'    => 'Funcionario',
+        'referencia_id'      => $this->funcionario_id,
+        'descripcion'        => 'Se asignó un funcionario con el rol de: ' . $this->rol_en_juicio,
+    ]);
         $this->noty('Funcionario asignado con éxito.', 'noty', false);
            // Resetear campos
         $this->reset(['funcionario_id', 'searchFuncionario', 'rol_en_juicio', 'funcionarios_list']);
@@ -908,6 +1028,15 @@ class Juicios extends Component
         if (!$this->selected_id || $this->selected_id <= 0) return;
         $juicio = \App\Models\Juicio::find($this->selected_id);
         $juicio->funcionarios()->detach($funcionarioId);
+        \App\Models\JuicioHistorialEstado::create([
+        'juicio_id'          => $this->selected_id,
+        'user_id'            => auth()->id(),
+        'estado_procesal_id' => $this->estado_procesal_id,
+        'tipo_movimiento'    => 'funcionario_removido',
+        'referencia_tipo'    => 'Funcionario',
+        'referencia_id'      => $funcionarioId,
+        'descripcion'        => 'Se removió un funcionario asignado al juicio.',
+    ]);
         $this->noty('Funcionario removido del juicio.', 'noty', false);
     }
 

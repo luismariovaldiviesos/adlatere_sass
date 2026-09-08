@@ -136,7 +136,7 @@
                 @else
                  <button type="button"
                 class="btn btn-primary text-lg px-8 py-2.5"
-                wire:click="editParticipanteEnJuicio({{ $cliente_id }})">
+               wire:click="editParticipanteEnJuicio">
                  <i class="fas fa-edit mr-2"></i >
                 Editar Sujeto
               </button>
@@ -161,7 +161,7 @@
                 @endphp
 
                 @forelse($participantes as $p)
-                <tr class="hover:bg-gray-100 transition-colors duration-200">
+               <tr wire:key="sujeto-{{ $p->id }}" class="hover:bg-gray-100 transition-colors duration-200">
                     <td class="p-4 border-b">{{ $p->valueidenti }}</td>
                     <td class="p-4 uppercase border-b font-medium">{{ $p->businame }}</td>
                     <td class="p-4 text-center border-b">
