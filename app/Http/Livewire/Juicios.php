@@ -57,6 +57,7 @@ class Juicios extends Component
     // --- EDICIÓN DE PARTICIPANTE ---
     public $editModeSujeto = false;
     public $editModeJuicio = false;
+    public $old_cliente_id;
 
 
     //propiedades para las actividades
@@ -404,7 +405,8 @@ class Juicios extends Component
             $this->rol = $pivotData->rol;
             $this->editModeSujeto = true;
             //dd($this->cliente_id, $this->searchCustomer, $this->rol);
-             $this->noty('lesion cargada para editar', 'noty', false);
+            $this->old_cliente_id = $participante->id;
+             $this->noty('Sujeto procesal cargado para editar', 'noty', false);
     }
 
 
@@ -425,7 +427,14 @@ class Juicios extends Component
 
 public function editParticipanteEnJuicio(){
     $juicio = Juicio::find($this->selected_id);
-    $juicio->participantes()->updateExistingPivot($this->cliente_id, ['rol' => $this->rol]);
+    if ($this->old_cliente_id && $this->old_cliente_id != $this->cliente_id) {
+    // Si el usuario buscó a una persona diferente, quitamos al anterior y agregamos al nuevo
+    $juicio->participantes()->detach($this->old_cliente_id);
+    $juicio->participantes()->attach($this->cliente_id, ['rol' => $this->rol]);
+    } else {
+        // Si es la misma persona y solo le están cambiando el rol
+        $juicio->participantes()->updateExistingPivot($this->cliente_id, ['rol' => $this->rol]);
+    }
     $this->noty('Rol del sujeto procesal actualizado con éxito.', 'noty', false);
     
     \App\Models\JuicioHistorialEstado::create([
