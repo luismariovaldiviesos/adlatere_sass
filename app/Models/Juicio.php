@@ -103,5 +103,10 @@ class Juicio extends Model
                     ->withPivot('rol_en_juicio') // para acceder al rol del funcionario en el juicio
                     ->withTimestamps();
     }
+    public function abogados(){
+        return $this->belongsToMany(\App\Models\User::class, 'juicio_user')
+                    ->withPivot('rol_en_juicio') // para acceder al rol del funcionario en el juicio
+                    ->withTimestamps();
+    }
     
 }

@@ -97,6 +97,12 @@ class Juicios extends Component
     public $rol_en_juicio = '';
     public $showFuncionarioDropdown = false;
 
+    //propiedades de abogados
+    public $searchAbogado = '';
+    public $abogados_list = [];
+    public $abogado_id = null;
+    public $showAbogadoDropdown = false;
+
 
 
 
@@ -1087,6 +1093,84 @@ public function editParticipanteEnJuicio(){
         'Cache-Control' => 'max-age=0, no-cache, must-revalidate, proxy-revalidate'
     ]);      
 
+    }
+
+
+    // metodos de abogados patrocinadores de los juicios
+    public function updatedSearchAbogado($value){
+        $this->abogado_id = null;
+        $this->showAbogadoDropdown = true; 
+        if(strlen($value) > 0){
+            // Busca en la tabla users
+            $this->abogados_list = \App\Models\User::where('name', 'like', "%$value%")
+                ->orWhere('email', 'like', "%$value%")
+                ->orderBy('name','asc')
+                ->limit(5)
+                ->get();
+        } else {
+            $this->abogados_list = [];
+        }
+    }
+
+    public function selectAbogado($id, $name){
+        $this->abogado_id = $id;
+        $this->searchAbogado = $name;
+        $this->abogados_list = [];
+        $this->showAbogadoDropdown = false; 
+    }
+
+    public function addAbogado(){
+        if(!$this->selected_id || $this->selected_id <= 0){
+            $this->noty('Debe guardar el juicio primero.', 'noty', false);
+            $this->tab = 'juicio';
+            return;           
+        }
+        if (!$this->abogado_id || $this->abogado_id <= 0){
+            $this->noty('Seleccione un abogado válido.', 'noty', false);
+            return;           
+        }
+
+        $juicio = \App\Models\Juicio::find($this->selected_id);
+        
+        if($juicio->abogados()->where('user_id', $this->abogado_id)->exists()){
+            $this->noty('Este abogado ya está asignado al juicio.', 'noty', false);
+            return; 
+        }
+
+        $juicio->abogados()->attach($this->abogado_id, ['rol_en_juicio' => 'Abogado Patrocinador']);
+        $this->noty('Abogado asignado con éxito.', 'noty', false);
+        
+        \App\Models\JuicioHistorialEstado::create([
+            'juicio_id'          => $this->selected_id,
+            'user_id'            => auth()->id(),
+            'estado_procesal_id' => $this->estado_procesal_id,
+            'tipo_movimiento'    => 'abogado_asignado',
+            'referencia_tipo'    => 'User',
+            'referencia_id'      => $this->abogado_id,
+            'descripcion'        => 'Se asignó un abogado patrocinador al juicio.',
+        ]);
+
+        $this->edit(\App\Models\Juicio::find($this->selected_id));
+        $this->reset(['abogado_id', 'searchAbogado', 'abogados_list']);
+    }
+
+    public function removeAbogado($userId){
+        if (!$this->selected_id || $this->selected_id <= 0) return;
+        $juicio = \App\Models\Juicio::find($this->selected_id);
+        $juicio->abogados()->detach($userId);
+        
+        \App\Models\JuicioHistorialEstado::create([
+            'juicio_id'          => $this->selected_id,
+            'user_id'            => auth()->id(),
+            'estado_procesal_id' => $this->estado_procesal_id,
+            'tipo_movimiento'    => 'abogado_removido',
+            'referencia_tipo'    => 'User',
+            'referencia_id'      => $userId,
+            'descripcion'        => 'Se removió un abogado patrocinador del juicio.',
+        ]);
+
+        $this->noty('Abogado removido del juicio.', 'noty', false);
+        $this->edit(\App\Models\Juicio::find($this->selected_id));
     }
     
 }

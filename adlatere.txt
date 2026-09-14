@@ -1,5 +1,7 @@
 para generar toda la bbdd del tenant :
 php artisan tenants:migrate-fresh
+sollo una migracion :
+php artisan tenants:migrate
 seeder del tenant :
 php artisan tenants:seed
 

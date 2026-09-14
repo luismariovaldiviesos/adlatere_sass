@@ -11,6 +11,7 @@
             <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='documentos' }"   @click="tab='documentos'">Documentos</button>
             <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='fin' }"     @click="tab='fin'">Finanzas</button>
             <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='funcionarios' }" @click="tab='funcionarios'">Funcionarios</button>
+            <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='abogados' }" @click="tab='abogados'">Abogados</button>
 
         </div>
     </div>
@@ -55,6 +56,10 @@
             {{-- funcionarios --}}
             <div class="intro-y box" x-show="tab==='funcionarios'" x-cloak>
                 @include('livewire.juicios.tabs.funcionarios')
+            </div>
+            {{-- abogados --}}
+             <div class="intro-y box" x-show="tab==='abogados'" x-cloak>
+                @include('livewire.juicios.tabs.abogados')
             </div>
 
         </div>
