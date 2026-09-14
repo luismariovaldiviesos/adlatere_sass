@@ -485,6 +485,14 @@ public function editParticipanteEnJuicio(){
         //en el contenido de la plantilla
        $juicio = Juicio::with(['unidadJudicial.canton.provincia', 'asunto.procedimiento.materia', 
        'actores', 'demandados','funcionarios'])->find($this->selected_id);
+       $actores_identificacion = $juicio->actores->pluck('valueidenti')->implode(', ');
+        $actores_direccion = $juicio->actores->pluck('address')->implode(' | ');
+        $actores_correo = $juicio->actores->pluck('email')->implode(', ');
+        $actores_telefono = $juicio->actores->pluck('phone')->implode(', ');
+        $demandados_identificacion = $juicio->demandados->pluck('valueidenti')->implode(', ');
+        $demandados_direccion = $juicio->demandados->pluck('address')->implode(' | ');
+        $demandados_correo = $juicio->demandados->pluck('email')->implode(', ');
+        $demandados_telefono = $juicio->demandados->pluck('phone')->implode(', ');
        if(!$juicio) return $textoHtml;
 
        $actores = $juicio->actores->pluck('businame')->implode(', ');
@@ -516,6 +524,15 @@ public function editParticipanteEnJuicio(){
            'PROVINCIA' => $juicio->unidadJudicial->canton->provincia->nombre ?? '',
            'ACTORES' => $actores,
            'DEMANDADOS' => $demandados,
+           'ACTORES_IDENTIFICACION'    => $actores_identificacion,
+            'ACTORES_DIRECCION'         => $actores_direccion,
+            'ACTORES_CORREO'            => $actores_correo,
+            'ACTORES_TELEFONO'          => $actores_telefono,
+
+            'DEMANDADOS_IDENTIFICACION' => $demandados_identificacion,
+            'DEMANDADOS_DIRECCION'      => $demandados_direccion,
+            'DEMANDADOS_CORREO'         => $demandados_correo,
+            'DEMANDADOS_TELEFONO'       => $demandados_telefono,
            'FECHA_ACTUAL' => \Carbon\Carbon::now()->translatedFormat('d \d\e F \d\e Y'),
              'JUEZ' => $juez,
             'SECRETARIO' => $secretario,
