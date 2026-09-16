@@ -52,26 +52,39 @@
             </div>
             
             @error('aud_archivo') <span class="text-theme-6 mt-1 block">{{ $message }}</span> @enderror
+            @if($aud_archivo)
+            <div class="text-success mt-1 text-sm">
+                <i class="fas fa-check-circle mr-1"></i> Archivo listo: {{ $aud_archivo->getClientOriginalName() }}
+            </div>
+        @endif
     </div>
 
         {{-- BOTONES --}}
-        <div class="col-span-12 flex justify-end gap-3 mt-2">
-            @if($editModeAudiencia)
-                <button type="button" class="btn btn-outline-secondary text-lg px-8 py-2.5"
-                        wire:click.prevent="cancelEditAudiencia">
-                    Cancelar Edición
-                </button>
-                <button type="button" class="btn btn-primary text-lg px-8 py-2.5"
-                        wire:click.prevent="saveAudiencia">
-                    Actualizar Audiencia
-                </button>
-            @else
-                <button type="button" class="btn btn-primary text-lg px-8 py-2.5"
-                        wire:click.prevent="saveAudiencia">
-                    Registrar Audiencia
-                </button>
-            @endif
-        </div>
+        {{-- BOTONES --}}
+<div class="col-span-12 flex justify-end gap-3 mt-2">
+    @if($editModeAudiencia)
+        <button type="button" class="btn btn-outline-secondary text-lg px-8 py-2.5"
+                wire:click.prevent="cancelEditAudiencia"
+                wire:loading.attr="disabled" wire:target="aud_archivo, saveAudiencia">
+            Cancelar Edición
+        </button>
+        <button type="button" class="btn btn-primary text-lg px-8 py-2.5"
+                wire:click.prevent="saveAudiencia"
+                wire:loading.attr="disabled" wire:target="aud_archivo, saveAudiencia">
+            <span wire:loading.remove wire:target="aud_archivo, saveAudiencia">Actualizar Audiencia</span>
+            <span wire:loading wire:target="aud_archivo"><i class="fas fa-spinner fa-spin mr-1"></i> Subiendo archivo, espere...</span>
+            <span wire:loading wire:target="saveAudiencia"><i class="fas fa-spinner fa-spin mr-1"></i> Guardando...</span>
+        </button>
+    @else
+        <button type="button" class="btn btn-primary text-lg px-8 py-2.5"
+                wire:click.prevent="saveAudiencia"
+                wire:loading.attr="disabled" wire:target="aud_archivo, saveAudiencia">
+            <span wire:loading.remove wire:target="aud_archivo, saveAudiencia">Registrar Audiencia</span>
+            <span wire:loading wire:target="aud_archivo"><i class="fas fa-spinner fa-spin mr-1"></i> Subiendo archivo, espere...</span>
+            <span wire:loading wire:target="saveAudiencia"><i class="fas fa-spinner fa-spin mr-1"></i> Guardando...</span>
+        </button>
+    @endif
+</div>
     </div>
 
     {{-- LISTADO DE AUDIENCIAS --}}

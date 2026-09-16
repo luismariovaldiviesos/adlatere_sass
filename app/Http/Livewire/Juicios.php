@@ -685,6 +685,14 @@ public function editParticipanteEnJuicio(){
    
 
    public function saveAudiencia(){
+
+    $this->validate([
+                    'aud_archivo' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
+                ], [
+                    'aud_archivo.file'  => 'El archivo no se cargó completamente. Espere a que termine la subida e intente de nuevo.',
+                    'aud_archivo.mimes' => 'Solo se permiten archivos PDF, DOC o DOCX.',
+                    'aud_archivo.max'   => 'El archivo no debe superar los 10 MB.',
+                ]);
    
   
     if ($this->editModeAudiencia) {
