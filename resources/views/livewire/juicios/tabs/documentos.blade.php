@@ -12,7 +12,7 @@
                 <option value="General">General / Otros</option>
                 <option value="Carátula / Demanda">Carátula / Demanda Inicial</option>
                 <option value="Sujetos Procesales">Sujetos Procesales (Cédulas, Poderes)</option>
-                <option value="Audiencia">Audiencia</option>
+                {{-- <option value="Audiencia">Audiencia</option> --}}
                 <option value="Actividad">Actividad / Escrito</option>
                 <option value="Finanzas">Pagos / Finanzas</option>
             </select>

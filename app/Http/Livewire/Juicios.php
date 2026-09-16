@@ -109,7 +109,8 @@ class Juicios extends Component
     public $juicioRoadmap = null;
     public $showRoadmapModal = false;
 
-    // 
+    // archivo para audiencias 
+    public $aud_archivo;
 
     public function mount()
     {
@@ -685,11 +686,7 @@ public function editParticipanteEnJuicio(){
 
    public function saveAudiencia(){
    
-    // $this->validate([
-    //     'aud_fecha_hora'     => 'required|date',
-    //     'aud_tipo_audiencia' => 'required|string|max:255',
-    //     'aud_estado'         => 'required|in:Programada,Realizada,Suspendida,Fallida',
-    // ]);
+  
     if ($this->editModeAudiencia) {
         // MODO EDICIÓN
         \App\Models\Audiencia::find($this->audiencia_id)->update([
@@ -712,7 +709,7 @@ public function editParticipanteEnJuicio(){
     } else {
         // MODO CREACIÓN
         // dd($this->selected_id, $this->aud_fecha_hora, $this->aud_tipo_audiencia, $this->aud_sala_enlace, $this->aud_estado, $this->aud_acta_resumen);
-      $nuevaAudiencia = \App\Models\Audiencia::create([
+            $nuevaAudiencia = \App\Models\Audiencia::create([
             'juicio_id'       => $this->selected_id,
             'fecha_hora'      => $this->aud_fecha_hora,
             'tipo_audiencia'  => $this->aud_tipo_audiencia,
@@ -731,6 +728,40 @@ public function editParticipanteEnJuicio(){
             'descripcion'        => 'Se programó una audiencia para: ' . $this->aud_fecha_hora,
         ]);
     }
+            // Si el usuario subió un archivo de acta desde la pestaña audiencias
+        if ($this->aud_archivo) {
+            // Subir archivo al disco public
+            $ruta = $this->aud_archivo->store('documentos_juicios', 'public');
+            $extension = $this->aud_archivo->getClientOriginalExtension();
+            $pesoKb = filesize($this->aud_archivo->getRealPath()) / 1024;
+            
+            // Determinar el ID de la audiencia (depende si acabas de hacer create o update)
+            // Si tu variable al crear se llama $nuevaAudiencia usa esa, o usa $audiencia
+           $idAud = $this->editModeAudiencia ? $this->audiencia_id : $nuevaAudiencia->id;
+
+            // Crear el registro en documentos enlazado a esta audiencia
+            \App\Models\Documento::create([
+                'juicio_id'    => $this->selected_id,
+                'origen_tipo'  => 'Audiencia',
+                'origen_id'    => $idAud,
+                'nombre'       => 'Acta de Audiencia - ' . $this->aud_tipo_audiencia,
+                'ruta_archivo' => $ruta,
+                'tipo_archivo' => $extension,
+                'tamaño_archivo' => round($pesoKb, 2),
+            ]);
+            \App\Models\JuicioHistorialEstado::create([
+            'juicio_id'          => $this->selected_id,
+            'user_id'            => auth()->id(),
+            'estado_procesal_id' => $this->estado_procesal_id,
+            'tipo_movimiento'    => 'acta_resumen_subida',
+            'referencia_tipo'    => 'Audiencia',
+            'referencia_id'      => $idAud,
+            'descripcion'        => 'Se subió el acta de la audiencia para: ' . $this->aud_tipo_audiencia,
+        ]);
+
+            // Limpiamos el archivo temporal
+            $this->aud_archivo = null;
+        }
     // Refrescar el modelo para que el listado y sidebar se actualicen
     $this->juicio = \App\Models\Juicio::with([
         'asunto.procedimiento.materia',
@@ -784,13 +815,14 @@ public function editParticipanteEnJuicio(){
     }
 
     public function resetAudienciaInputs()
-{
-    $this->reset([
-        'audiencia_id', 'aud_fecha_hora', 'aud_tipo_audiencia',
-        'aud_sala_enlace', 'aud_acta_resumen', 'editModeAudiencia',
-    ]);
-    $this->aud_estado = 'Programada'; // valor por defecto
-}
+    {
+        $this->reset([
+            'audiencia_id', 'aud_fecha_hora', 'aud_tipo_audiencia',
+            'aud_sala_enlace', 'aud_acta_resumen', 'editModeAudiencia',
+        ]);
+        $this->aud_estado = 'Programada'; // valor por defecto
+        $this->aud_archivo = null;
+    }
 
 // ─────────────────────────────────────────
 // DOCUMENTOS (GESTOR GLOBAL)

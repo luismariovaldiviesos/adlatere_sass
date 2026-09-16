@@ -41,6 +41,18 @@
             <textarea wire:model.defer="aud_acta_resumen" class="form-control text-lg" rows="4"
                       placeholder="Escribe aquí lo ocurrido en la audiencia (completar después si aún no se ha realizado)..."></textarea>
         </div>
+        
+        {{-- ARCHIVO ADJUNTO --}}
+        <div class="col-span-12 md:col-span-6">
+            <label class="form-label text-base font-bold">Documento / Acta Resumen (PDF)</label>
+            <input type="file" wire:model="aud_archivo" class="form-control h-12 pt-2" accept=".pdf,.doc,.docx">
+            
+            <div wire:loading wire:target="aud_archivo" class="text-theme-1 mt-2 font-medium">
+                <i class="fas fa-spinner fa-spin mr-1"></i> Cargando archivo temporalmente...
+            </div>
+            
+            @error('aud_archivo') <span class="text-theme-6 mt-1 block">{{ $message }}</span> @enderror
+    </div>
 
         {{-- BOTONES --}}
         <div class="col-span-12 flex justify-end gap-3 mt-2">
@@ -75,6 +87,7 @@
                         <th class="whitespace-nowrap">SALA / ENLACE</th>
                         <th class="whitespace-nowrap">ESTADO</th>
                         <th class="whitespace-nowrap">ACTA</th>
+                        <th class="whitespace-nowrap">ARCHIVO</th>
                         <th class="text-center whitespace-nowrap">ACCIONES</th>
                     </tr>
                 </thead>
@@ -124,6 +137,20 @@
                             
                             @else
                                 <span class="text-slate-500">—</span>
+                            @endif
+                        </td>
+                        <td>
+                            @php
+                             // Buscar si existe un documento cuyo origen sea esta audiencia específica
+                            $documentoActa = \App\Models\Documento::where('origen_tipo', 'Audiencia')
+                              ->where('origen_id', $aud->id)
+                              ->first();
+                            @endphp
+                            @if($documentoActa)
+                                <a href="{{ route('tenant.media', ['path' => $documentoActa->ruta_archivo]) }}" 
+                                target="_blank" class="btn btn-sm btn-outline-primary mt-2" title="">Ver Archivo</a>
+                            @else
+                                <span class="text-gray-400 text-xs mt-2 block italic">Sin archivo</span>
                             @endif
                         </td>
                         <td class="table-report__action w-56">
