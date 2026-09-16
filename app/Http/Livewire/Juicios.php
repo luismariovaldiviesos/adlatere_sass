@@ -1143,6 +1143,37 @@ public function editParticipanteEnJuicio(){
 
     }
 
+    // Descargar acta resumen en PDF (misma fuente que el Word: campo acta_resumen)
+public function descargarPdf(Audiencia $audiencia)
+{
+    $audiencia->refresh(); // trae el texto recién editado, no el de caché
+
+    if (empty(trim(strip_tags($audiencia->acta_resumen ?? '')))) {
+        $this->noty('Esta audiencia no tiene acta resumen para generar.', 'noty', false, 'error');
+        return;
+    }
+
+    $contenido = $audiencia->acta_resumen; // <-- MISMA variable que usa descargarWord
+
+    $html = "<html>
+                <head><meta charset='utf-8'>
+                <style>body { font-family: DejaVu Sans, sans-serif; }</style>
+                </head>
+                <body style='font-family: DejaVu Sans, sans-serif;'>
+                    {$contenido}
+                </body>
+            </html>";
+
+    $pdf = Pdf::loadHTML($html)->setPaper('a4', 'portrait');
+    $nombreArchivo = "Acta audiencia_" . $audiencia->id . "_" . now()->format('dmY') . ".pdf";
+
+    return response()->streamDownload(function () use ($pdf) {
+        echo $pdf->output();
+    }, $nombreArchivo, [
+        'Content-Type' => 'application/pdf',
+    ]);
+}
+
 
     // metodos de abogados patrocinadores de los juicios
     public function updatedSearchAbogado($value){
