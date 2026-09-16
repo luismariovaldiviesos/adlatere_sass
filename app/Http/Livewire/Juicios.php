@@ -104,8 +104,10 @@ class Juicios extends Component
     public $showAbogadoDropdown = false;
 
 
-
-
+    // para el roadmap de actividades
+    public $historialRoadmap = [];
+    public $juicioRoadmap = null;
+    public $showRoadmapModal = false;
 
     // 
 
@@ -1172,6 +1174,30 @@ public function editParticipanteEnJuicio(){
         $this->noty('Abogado removido del juicio.', 'noty', false);
         $this->edit(\App\Models\Juicio::find($this->selected_id));
     }
+
+
+    // para el roadmap de estados procesales del juicio
+        public function openRoadmap($id) {
+        // Cargamos el juicio con su estado actual
+        //dd($id);
+        $this->juicioRoadmap = \App\Models\Juicio::with('estadoProcesal')->find($id);
+        
+        // Obtenemos el historial cronológicamente (de más antiguo a más reciente)
+        $this->historialRoadmap = \App\Models\JuicioHistorialEstado::with('user')
+            ->where('juicio_id', $id)
+            ->orderBy('created_at', 'asc')
+            ->get();
+            
+        $this->showRoadmapModal = true;
+    }
+
+    public function closeRoadmap() {
+        $this->showRoadmapModal = false;
+        $this->historialRoadmap = [];
+        $this->juicioRoadmap = null;
+    }
+
+
     
 }
 

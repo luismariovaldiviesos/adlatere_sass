@@ -54,4 +54,9 @@ class JuicioHistorialEstado extends Model
     public function usuario(){
         return $this->belongsTo(User::class, 'usuario_id');
     }
+
+    // para la linea de tiempo
+    public function user (){
+        return $this->belongsTo(User::class, 'user_id');
+    }
 }
