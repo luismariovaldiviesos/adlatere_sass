@@ -140,12 +140,12 @@
                             @endif
                         </td>
                         <td>
-                            @php
-                             // Buscar si existe un documento cuyo origen sea esta audiencia específica
+                         @php
                             $documentoActa = \App\Models\Documento::where('origen_tipo', 'Audiencia')
-                              ->where('origen_id', $aud->id)
-                              ->first();
-                            @endphp
+                                ->where('origen_id', $aud->id)
+                                ->latest()  // ← Por si quedan duplicados históricos, muestra el más reciente
+                                ->first();
+                        @endphp
                             @if($documentoActa)
                                 <a href="{{ route('tenant.media', ['path' => $documentoActa->ruta_archivo]) }}" 
                                 target="_blank" class="btn btn-sm btn-outline-primary mt-2" title="">Ver Archivo</a>

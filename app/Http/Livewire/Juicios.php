@@ -728,50 +728,64 @@ public function editParticipanteEnJuicio(){
             'descripcion'        => 'Se programó una audiencia para: ' . $this->aud_fecha_hora,
         ]);
     }
-            // Si el usuario subió un archivo de acta desde la pestaña audiencias
-        if ($this->aud_archivo) {
-            // Subir archivo al disco public
-            $ruta = $this->aud_archivo->store('documentos_juicios', 'public');
-            $extension = $this->aud_archivo->getClientOriginalExtension();
-            $pesoKb = filesize($this->aud_archivo->getRealPath()) / 1024;
             
-            // Determinar el ID de la audiencia (depende si acabas de hacer create o update)
-            // Si tu variable al crear se llama $nuevaAudiencia usa esa, o usa $audiencia
-           $idAud = $this->editModeAudiencia ? $this->audiencia_id : $nuevaAudiencia->id;
+      // Si el usuario subió un archivo de acta desde la pestaña audiencias
+    if ($this->aud_archivo) {
+        // 1. Determinar ID de la audiencia (creación o edición)
+        $idAud = $this->editModeAudiencia ? $this->audiencia_id : $nuevaAudiencia->id;
 
-            // Crear el registro en documentos enlazado a esta audiencia
-            \App\Models\Documento::create([
-                'juicio_id'    => $this->selected_id,
-                'origen_tipo'  => 'Audiencia',
-                'origen_id'    => $idAud,
-                'nombre'       => 'Acta de Audiencia - ' . $this->aud_tipo_audiencia,
-                'ruta_archivo' => $ruta,
-                'tipo_archivo' => $extension,
-                'tamaño_archivo' => round($pesoKb, 2),
-            ]);
-            \App\Models\JuicioHistorialEstado::create([
+        // 2. BUSCAR DOCUMENTO EXISTENTE para esta audiencia
+        $documentoExistente = \App\Models\Documento::where('origen_tipo', 'Audiencia')
+            ->where('origen_id', $idAud)
+            ->first();
+
+        // 3. SI EXISTE: Eliminar archivo físico Y registro BD
+        if ($documentoExistente) {
+            if (\Storage::disk('public')->exists($documentoExistente->ruta_archivo)) {
+                \Storage::disk('public')->delete($documentoExistente->ruta_archivo);
+            }
+            $documentoExistente->delete();
+        }
+
+        // 4. SUBIR NUEVO ARCHIVO
+        $ruta = $this->aud_archivo->store('documentos_juicios', 'public');
+        $extension = $this->aud_archivo->getClientOriginalExtension();
+        $pesoKb = filesize($this->aud_archivo->getRealPath()) / 1024;
+
+        // 5. CREAR NUEVO REGISTRO DOCUMENTO
+        \App\Models\Documento::create([
+            'juicio_id'     => $this->selected_id,
+            'origen_tipo'   => 'Audiencia',
+            'origen_id'     => $idAud,
+            'nombre'        => 'Acta de Audiencia - ' . $this->aud_tipo_audiencia,
+            'ruta_archivo'  => $ruta,
+            'tipo_archivo'  => $extension,
+            'tamaño_archivo' => round($pesoKb, 2),
+        ]);
+
+        \App\Models\JuicioHistorialEstado::create([
             'juicio_id'          => $this->selected_id,
             'user_id'            => auth()->id(),
             'estado_procesal_id' => $this->estado_procesal_id,
-            'tipo_movimiento'    => 'acta_resumen_subida',
+            'tipo_movimiento'    => $this->editModeAudiencia ? 'acta_resumen_actualizada' : 'acta_resumen_subida',
             'referencia_tipo'    => 'Audiencia',
             'referencia_id'      => $idAud,
-            'descripcion'        => 'Se subió el acta de la audiencia para: ' . $this->aud_tipo_audiencia,
+            'descripcion'        => ($this->editModeAudiencia ? 'Se actualizó' : 'Se subió') . ' el acta de la audiencia: ' . $this->aud_tipo_audiencia,
         ]);
 
-            // Limpiamos el archivo temporal
-            $this->aud_archivo = null;
-        }
-    // Refrescar el modelo para que el listado y sidebar se actualicen
-    $this->juicio = \App\Models\Juicio::with([
-        'asunto.procedimiento.materia',
-        'unidadJudicial.canton.provincia',
-        'actores', 'demandados',
-        'estadoProcesal',
-        'actividades.tipoActividad',
-        'audiencias',
-    ])->find($this->selected_id);
-    $this->resetAudienciaInputs();
+        // Limpiamos el archivo temporal
+        $this->aud_archivo = null;
+    }
+        // Refrescar el modelo para que el listado y sidebar se actualicen
+        $this->juicio = \App\Models\Juicio::with([
+            'asunto.procedimiento.materia',
+            'unidadJudicial.canton.provincia',
+            'actores', 'demandados',
+            'estadoProcesal',
+            'actividades.tipoActividad',
+            'audiencias',
+        ])->find($this->selected_id);
+        $this->resetAudienciaInputs();
    }
 
    public function editAudiencia($id){
