@@ -78,6 +78,39 @@
                             <x-alert msg="{{ $message }}" />
                         @enderror
                     </div>
+                    <div>
+    <label class="form-label">PKC (.p12/.pfx)</label>
+    <input type="file" wire:model="firma_archivo" accept=".p12,.pfx">
+    
+    {{-- Indicador de subida en curso --}}
+    <div wire:loading wire:target="firma_archivo" class="text-primary mt-1 flex items-center gap-1">
+        <i class="fas fa-spinner fa-spin"></i> <span>Subiendo certificado, espere...</span>
+    </div>
+    
+    {{-- Archivo listo (subida terminó OK) --}}
+    @if($firma_archivo)
+        <div class="text-success mt-1 text-sm flex items-center gap-1">
+            <i class="fas fa-check-circle"></i> Listo: {{ $firma_archivo->getClientOriginalName() }}
+        </div>
+    {{-- Usuario ya tiene certificado y no ha seleccionado uno nuevo --}}
+    @elseif($tieneFirma)
+        <div class="text-muted mt-1 text-sm flex items-center gap-1">
+            <i class="fas fa-key"></i> Ya tiene certificado (suba uno nuevo solo para reemplazarlo).
+        </div>
+    @endif
+    
+    @error('firma_archivo')
+        <x-alert msg="{{ $message }}" />
+    @enderror
+</div>
+
+<div>
+    <label class="form-label">Contraseña de la Firma</label>
+    <input type="password" wire:model="firma_password" autocomplete="new-password">
+    @error('firma_password')
+        <x-alert msg="{{ $message }}" />
+    @enderror
+</div>
                 </div>
 
              <div class="mt-4">

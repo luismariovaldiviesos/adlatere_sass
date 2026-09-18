@@ -40,6 +40,8 @@ class User extends Authenticatable
         'profile',
         'status',
         'password',
+        'firma_path',       // ← AGREGAR
+        'firma_password',   // ← AGREGAR
 
     ];
 
@@ -51,6 +53,7 @@ class User extends Authenticatable
     protected $hidden = [
         'password',
         'remember_token',
+          'firma_password',
     ];
 
     /**

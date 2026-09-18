@@ -23,7 +23,8 @@
         "robrichards/xmlseclibs": "^3.1",
         "spatie/laravel-permission": "^5.5",
         "stancl/tenancy": "^3.8",
-        "symfony/process": "^6.0"
+        "symfony/process": "^6.0",
+        "tecnickcom/tcpdf": "^7.0"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.14",
