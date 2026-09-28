@@ -21,10 +21,11 @@
         "phpseclib/phpseclib": "^3.0",
         "picqer/php-barcode-generator": "^3.2",
         "robrichards/xmlseclibs": "^3.1",
+        "setasign/fpdi-tcpdf": "^2.3",
         "spatie/laravel-permission": "^5.5",
         "stancl/tenancy": "^3.8",
         "symfony/process": "^6.0",
-        "tecnickcom/tcpdf": "^7.0"
+        "tecnickcom/tcpdf": "^6.6"
     },
     "require-dev": {
         "barryvdh/laravel-debugbar": "^3.14",

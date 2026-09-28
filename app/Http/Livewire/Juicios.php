@@ -112,6 +112,11 @@ class Juicios extends Component
     // archivo para audiencias 
     public $aud_archivo;
 
+    // para firmar actividades
+    public $showFirmarModal = false;
+    public $actividadAFirmar = null;
+    public $firmaPasswordConfirm = '';
+
     public function mount()
     {
         $this->provincias = \App\Models\Provincia::orderBy('nombre', 'asc')->get();
@@ -223,7 +228,8 @@ class Juicios extends Component
     {
         $this->resetPage();
         $this->resetValidation();
-        $this->reset('cod_satje','asunto_id','unidad_id','provincia_id','canton_id','materia_id','procedimiento_id','estado_procesal_id','fecha_inicio','prioridad','selected_id','search');
+        $this->reset('cod_satje','asunto_id','unidad_id','provincia_id','canton_id','materia_id',
+        'procedimiento_id','estado_procesal_id','fecha_inicio','prioridad','selected_id','search');
         $this->cantones = [];
         $this->unidades_judiciales = [];
         $this->procedimientos = [];
@@ -375,7 +381,9 @@ class Juicios extends Component
 
     public function Edit(Juicio $juicio){
         //dd($juicio->asunto->procedimiento->materia->nombre);
-        $this->juicio = Juicio::with(['asunto.procedimiento.materia', 'unidadJudicial.canton.provincia', 'actores', 'demandados', 'estadoProcesal', 'actividades.tipoActividad', 'finanza.pagos', 'finanza.pagos.cliente'])->find($juicio->id);
+        $this->juicio = Juicio::with(['asunto.procedimiento.materia', 'unidadJudicial.canton.provincia',
+         'actores', 'demandados', 'estadoProcesal', 'actividades.tipoActividad', 
+         'finanza.pagos', 'finanza.pagos.cliente'])->find($juicio->id);
         $finanza  =  \App\Models\FinanzasJuicio::firstOrCreate(['juicio_id' => $juicio->id], 
                     ['honorarios_totales' => 0, 'gastos_extras' => 0]);
         $this->fin_honorarios = $finanza->honorarios_totales;
@@ -586,27 +594,44 @@ public function editParticipanteEnJuicio(){
     }
 
     if ($this->editModeActividad) {
-        $actividad = \App\Models\Actividad::find($this->selected_actividad_id);
-        $actividad->update([
-            'tipo_actividad_id' => $this->tipo_actividad_id,
-            'origen' => $this->origen,
-            'fecha_actividad' => $this->fecha_actividad,
-            'descripcion' => $this->descripcion,
-            'contenido' => $this->contenido,
-            'archivo' => $archivoPath ? $archivoPath : $actividad->archivo
-        ]);
-        $this->noty('Actividad actualizada', 'noty', false);
-        \App\Models\JuicioHistorialEstado::create([
-            'juicio_id'          => $this->selected_id,
-            'user_id'            => auth()->id(),
-            'estado_procesal_id' => $this->nuevo_estado_id ?? $this->estado_procesal_id,
-            'tipo_movimiento'    => 'actividad_editada',
-            'referencia_tipo'    => 'Actividad',
-            'referencia_id'      => $actividad->id,
-            'descripcion'        => 'Se editó la actividad: ' . $this->descripcion,
-        ]);
-    } else {
-       $nuevaActividad = \App\Models\Actividad::create([
+            $actividad = \App\Models\Actividad::find($this->selected_actividad_id);
+              $tipoActividad = \App\Models\TipoActividad::find($this->tipo_actividad_id);
+
+               $nuevoEstadoFirma = ($tipoActividad && $tipoActividad->es_firmable) ? 'pendiente' : 'no_requerida';
+            // Si ya estaba firmada, no revertir
+            if ($actividad->estado_firma === 'firmada') {
+                $nuevoEstadoFirma = 'firmada';
+            }
+    
+            $actividad->update([
+                'tipo_actividad_id' => $this->tipo_actividad_id,
+                'origen' => $this->origen,
+                'fecha_actividad' => $this->fecha_actividad,
+                'descripcion' => $this->descripcion,
+                'contenido' => $this->contenido,
+                'archivo' => $archivoPath ? $archivoPath : $actividad->archivo,
+                 'estado_firma' => $nuevoEstadoFirma,  // ← AGREGAR ESTO
+            ]);
+            $this->noty('Actividad actualizada', 'noty', false);
+            \App\Models\JuicioHistorialEstado::create([
+                'juicio_id'          => $this->selected_id,
+                'user_id'            => auth()->id(),
+                'estado_procesal_id' => $this->nuevo_estado_id ?? $this->estado_procesal_id,
+                'tipo_movimiento'    => 'actividad_editada',
+                'referencia_tipo'    => 'Actividad',
+                'referencia_id'      => $actividad->id,
+                'descripcion'        => 'Se editó la actividad: ' . $this->descripcion,
+            ]);
+        }
+        else
+        {
+            // MODO CREACIÓN
+    $tipoActividad = \App\Models\TipoActividad::find($this->tipo_actividad_id);
+    
+    // DETERMINAR ESTADO_FIRMA SEGÚN TIPO
+    $estadoFirmaInicial = ($tipoActividad && $tipoActividad->es_firmable) ? 'pendiente' : 'no_requerida';
+
+    $nuevaActividad = \App\Models\Actividad::create([
             'juicio_id' => $this->selected_id,
             'tipo_actividad_id' => $this->tipo_actividad_id,
             'user_id' => auth()->id(),
@@ -614,7 +639,8 @@ public function editParticipanteEnJuicio(){
             'fecha_actividad' => $this->fecha_actividad,
             'descripcion' => $this->descripcion,
             'contenido' => $this->contenido,
-            'archivo' => $archivoPath 
+            'archivo' => $archivoPath,
+            'estado_firma' => $estadoFirmaInicial,  // ← AGREGAR ESTO
         ]);
         $this->noty('Actividad registrada', 'noty', false);
         \App\Models\JuicioHistorialEstado::create([
@@ -637,7 +663,10 @@ public function editParticipanteEnJuicio(){
     }
 
     // Recargar el juicio para refrescar el listado y el sidebar
-    $this->juicio = Juicio::with(['asunto.procedimiento.materia', 'unidadJudicial.canton.provincia', 'actores', 'demandados', 'estadoProcesal', 'actividades.tipoActividad'])->find($this->selected_id);
+    $this->juicio = Juicio::with(['asunto.procedimiento.materia', 
+    'unidadJudicial.canton.provincia', 
+    'actores', 'demandados', 
+    'estadoProcesal', 'actividades.tipoActividad'])->find($this->selected_id);
 
     $this->resetActividadInputs();
 
@@ -662,7 +691,9 @@ public function editParticipanteEnJuicio(){
 
    public function destroyActividad($id) {
         \App\Models\Actividad::find($id)->delete();
-        $this->juicio = Juicio::with(['asunto.procedimiento.materia', 'unidadJudicial.canton.provincia', 'actores', 'demandados', 'estadoProcesal', 'actividades.tipoActividad'])->find($this->selected_id);
+        $this->juicio = Juicio::with(['asunto.procedimiento.materia', 
+        'unidadJudicial.canton.provincia', 'actores', 'demandados', 'estadoProcesal', 
+        'actividades.tipoActividad'])->find($this->selected_id);
         $this->noty('Actividad eliminada', 'noty', false);
         \App\Models\JuicioHistorialEstado::create([
             'juicio_id'          => $this->selected_id,
@@ -792,6 +823,7 @@ public function editParticipanteEnJuicio(){
             'estadoProcesal',
             'actividades.tipoActividad',
             'audiencias',
+            'abogados',
         ])->find($this->selected_id);
         $this->resetAudienciaInputs();
    }
@@ -1281,6 +1313,91 @@ public function descargarPdf(Audiencia $audiencia)
         $this->historialRoadmap = [];
         $this->juicioRoadmap = null;
     }
+
+   // Abrir modal para firmar actividad
+public function abrirModalFirmar($actividadId)
+{
+     \Log::info('ABRIR MODAL FIRMAR', ['actividadId' => $actividadId, 'user' => auth()->id()]);
+   
+    $actividad = \App\Models\Actividad::with('tipoActividad')->find($actividadId);
+    
+    if (!$actividad) {
+        $this->noty('Actividad no encontrada', 'noty', false, 'error');
+        return;
+    }
+    if (!$actividad->tipoActividad->es_firmable) {
+        $this->noty('Este tipo de actividad no es firmable', 'noty', false, 'error');
+        return;
+    }
+    if ($actividad->estado_firma === 'firmada') {
+        $this->noty('La actividad ya está firmada', 'noty', false, 'warning');
+        return;
+    }
+    // Validar que sea abogado patrocinador
+    if (!$actividad->juicio->abogados()->where('user_id', auth()->id())->whereRaw("TRIM(LOWER(rol_en_juicio)) LIKE ?", ['%abogado%patrocinador%'])->exists()) 
+        {
+        $this->noty('Solo el abogado patrocinador puede firmar', 'noty', false, 'error');
+        return;
+    }
+    // Validar certificado
+    if (empty(auth()->user()->firma_path) || empty(auth()->user()->firma_password)) {
+        $this->noty('Configure su certificado digital en Perfil', 'noty', false, 'error');
+        return;
+    }
+
+    $this->actividadAFirmar = $actividad;
+   $this->showFirmarModal = true;
+    $this->firmaPasswordConfirm = '';
+    // FORZAR RE-RENDER Y EVENTO AL NAVEGADOR
+    $this->dispatchBrowserEvent('modal-firmar-abrir', ['actividadId' => $actividadId]);
+}
+
+// Confirmar firma con contraseña del certificado
+public function confirmarFirma()
+{
+    $this->validate(['firmaPasswordConfirm' => 'required'], [
+        'firmaPasswordConfirm.required' => 'Ingrese la contraseña de su certificado',
+    ]);
+
+    try {
+        $service = app(\App\Services\ActividadSignatureService::class);
+        $service->firmar($this->actividadAFirmar, auth()->user());
+        
+        $this->showFirmarModal = false;
+        $this->firmaPasswordConfirm = '';
+        $this->noty('Actividad firmada correctamente', 'noty', false, 'success');
+        
+        // Refrescar lista
+        $this->juicio = \App\Models\Juicio::with(['actividades.tipoActividad', 'abogados'])->find($this->selected_id);
+        
+    } catch (\Exception $e) {
+        \Log::error('Error firmando actividad: ' . $e->getMessage());
+        $this->addError('firmaPasswordConfirm', $e->getMessage());
+    }
+}
+
+// Cerrar modal
+public function cancelarFirma()
+{
+    $this->showFirmarModal = false;
+    $this->firmaPasswordConfirm = '';
+    $this->actividadAFirmar = null;
+}
+
+// Descargar PDF firmado
+public function descargarFirmado($actividadId)
+{
+    $actividad = \App\Models\Actividad::find($actividadId);
+    if (!$actividad || !$actividad->pdf_firmado_path) {
+        $this->noty('No hay PDF firmado disponible', 'noty', false, 'error');
+        return;
+    }
+    return response()->streamDownload(function () use ($actividad) {
+        echo \Storage::disk('actividades/firmados')->get($actividad->pdf_firmado_path);
+    }, "actividad_{$actividad->id}_firmado.pdf", [
+        'Content-Type' => 'application/pdf',
+    ]);
+}
 
 
     

@@ -102,7 +102,29 @@
         </div>
     </div>
 
-    {{-- LISTADO DE ACTIVIDADES --}}
+    {{-- DEBUG ABSOLUTO (SIEMPRE VISIBLE - FUERA DE CUALQUIER @if) --}}
+    @php
+        $hayJuicio = isset($juicio);
+        $juicioId = $hayJuicio ? $juicio->id : 'NULL';
+        $actsCount = $hayJuicio ? $juicio->actividades->count() : 0;
+        $actsLoaded = $hayJuicio && $juicio->relationLoaded('actividades') ? 'SÍ' : 'NO';
+        $userId = auth()->id();
+        $esAbogado = $hayJuicio ? $juicio->abogados()->where('user_id', $userId)->whereRaw("TRIM(LOWER(rol_en_juicio)) LIKE ?", ['%abogado%patrocinador%'])->exists() : false;
+    @endphp
+
+    <div style="background:#e7f3ff;border:2px solid #0d6efd;padding:15px;margin:15px 0;font-family:monospace;font-size:12px;color:#084298;">
+    <strong>DEBUG ABSOLUTO:</strong>
+    Juicio existe: {{ $hayJuicio ? 'SÍ' : 'NO' }} | ID: {{ $juicioId }}
+    | Actividades: {{ $actsCount }} | Loaded: {{ $actsLoaded }}
+    | User: {{ $userId }} | EsAbogadoPatro: {{ $esAbogado ? 'SÍ' : 'NO' }}
+    @if($hayJuicio && $actsCount > 0)
+        @foreach($juicio->actividades->sortByDesc('fecha_actividad') as $a)
+            <br>ID: {{ $a->id }} | {{ $a->tipoActividad->nombre ?? 'SIN TIPO' }} | Firmable: {{ $a->tipoActividad->es_firmable ? 'SÍ' : 'NO' }} | Estado: {{ $a->estado_firma }}
+        @endforeach
+    @endif
+    </div>
+
+    {{-- LISTADO (solo si hay actividades) --}}
     @if(isset($juicio) && $juicio->actividades->count() > 0)
     <div class="mt-8 border-t border-gray-200 pt-8">
         <h3 class="text-xl font-bold mb-4">Historial de Actividades</h3>
@@ -116,10 +138,17 @@
                         <th class="whitespace-nowrap">DESCRIPCIÓN</th>
                         <th class="text-center whitespace-nowrap">MODIFICADA</th>
                         <th class="text-center whitespace-nowrap">ACCIONES</th>
+                        <th class="text-center whitespace-nowrap">FIRMAR</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @foreach($juicio->actividades->sortByDesc('fecha_actividad') as $act)
+                    @php
+                        $actividades = $juicio->actividades->sortByDesc('fecha_actividad');
+                        $userId = auth()->id();
+                        $esAbogadoPatro = $juicio->abogados()->where('user_id', $userId)->whereRaw("TRIM(LOWER(rol_en_juicio)) LIKE ?", ['%abogado%patrocinador%'])->exists();
+                    @endphp
+                    
+                    @foreach($actividades as $act)
                     <tr class="intro-x">
                         <td class="font-medium whitespace-nowrap">{{ \Carbon\Carbon::parse($act->fecha_actividad)->format('d/m/Y H:i') }}</td>
                         <td class="whitespace-nowrap font-medium">{{ $act->tipoActividad->nombre ?? 'N/A' }}</td>
@@ -133,7 +162,7 @@
                         <td class="text-slate-500">{{ $act->descripcion }}</td>
                         <td class="text-slate-500">{{ \Carbon\Carbon::parse($act->updated_at)->format('d/m/Y H:i') }}</td>
                         <td class="table-report__action w-56">
-                            <div class="flex justify-center items-center">
+                            <div class="flex justify-center items-center gap-2 flex-wrap">
                                 <a class="flex items-center mr-3 text-primary" href="javascript:;" wire:click="editActividad({{ $act->id }})">
                                     <i data-lucide="edit" class="w-4 h-4 mr-1"></i> Editar
                                 </a>
@@ -142,15 +171,75 @@
                                 </a>
                             </div>
                         </td>
+                        <td class="text-center">
+                            @php
+                                $esFirmable = $act->tipoActividad->es_firmable ?? false;
+                                $estadoFirma = strtolower($act->estado_firma ?? 'no_requerida');
+                                $yaFirmada = $estadoFirma === 'firmada';
+                                $puedeFirmar = $esFirmable && !$yaFirmada && $esAbogadoPatro;
+                            @endphp
+
+                            @if($yaFirmada)
+                                <div class="flex items-center justify-center gap-2">
+                                    <span class="text-green-600 bg-green-100 px-2 py-1 rounded text-xs font-bold uppercase">
+                                        <i class="fas fa-check-circle mr-1"></i> Firmada
+                                    </span>
+                                    @if($act->pdf_firmado_path)
+                                       <a href="{{ route('tenant.media', ['path' => 'actividades/firmados/' . $act->pdf_firmado_path]) }}" target="_blank" class="btn btn-sm btn-primary text-white shadow-md" title="Ver Documento Firmado">
+                                            <i class="fas fa-file-pdf mr-1"></i> Ver PDF
+                                        </a>
+                                    @endif
+                                </div>
+                            @elseif($puedeFirmar)
+                                <button wire:click="abrirModalFirmar({{ $act->id }})" class="btn btn-sm btn-warning" title="Firmar digitalmente">
+                                    <i data-lucide="signature" class="w-4 h-4 mr-1"></i> Firmar
+                                </button>
+                            @elseif($esFirmable)
+                                <span class="badge badge-warning badge-outline text-xs" title="Solo abogado patrocinador puede firmar">
+                                    <i data-lucide="lock" class="w-3 h-3 mr-1"></i> Solo abogado
+                                </span>
+                            @else
+                                <span class="text-gray-500 text-xs">No firmable</span>
+                            @endif
+                        </td>
                     </tr>
                     @endforeach
                 </tbody>
             </table>
         </div>
     </div>
+    @else
+        <div class="alert alert-info text-center py-8 mt-8">
+            <i data-lucide="info" class="w-8 h-8 mx-auto mb-2 text-gray-400"></i>
+            <p class="text-gray-500">No hay actividades registradas. Crea una arriba.</p>
+        </div>
     @endif
-
 </div>
+
+{{-- MODAL FIRMAR (FUERA DE TODO) --}}
+@if($showFirmarModal)
+<div class="fixed top-0 left-0 w-full h-full z-50 flex items-center justify-center" style="background: rgba(0,0,0,0.6);">
+    <div class="bg-white rounded-lg p-6 relative shadow-2xl overflow-y-auto" style="width: 90%; max-width: 500px;">
+        <h3 class="font-bold text-xl mb-4 text-gray-800 border-b pb-2">Firmar Actividad Digitalmente</h3>
+        <p class="text-sm text-gray-600 mb-4">
+            <strong>{{ $actividadAFirmar->tipoActividad->nombre }}</strong><br>
+            {{ $actividadAFirmar->descripcion }}<br>
+            <small>Fecha: {{ $actividadAFirmar->fecha_actividad->format('d/m/Y H:i') }}</small>
+        </p>
+        <div class="mt-4">
+            <label class="font-bold text-gray-700 block mb-2">Confirmar contraseña del certificado</label>
+            <input type="password" wire:model="firmaPasswordConfirm" class="form-control w-full h-10" autocomplete="new-password">
+            @error('firmaPasswordConfirm') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
+        </div>
+        <div class="mt-6 flex justify-end">
+            <button wire:click="$set('showFirmarModal', false)" class="btn btn-outline-secondary mr-2 px-4 py-2">Cancelar</button>
+            <button wire:click="confirmarFirma" class="btn btn-primary px-4 py-2">
+                <i class="fas fa-signature mr-2"></i> Firmar y Guardar
+            </button>
+        </div>
+    </div>
+</div>
+@endif
 
 {{-- Scripts para manejar el editor Quill --}}
 <script>

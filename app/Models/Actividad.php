@@ -18,7 +18,13 @@ class Actividad extends Model
         'fecha_actividad',
         'descripcion',
         'contenido',
-        'archivo',
+        'archivo', 'estado_firma', 'firmado_por_user_id', 'firmado_en', 
+        'pdf_original_path', 'pdf_firmado_path', 'firma_hash', 'firma_metadatos'
+        
+    ];
+     protected $casts = [
+            'fecha_actividad' => 'datetime',
+            'firma_metadatos' => 'array',
     ];
 
    public static function rules($id){
@@ -69,4 +75,26 @@ class Actividad extends Model
    public function tipoActividad(){
         return $this->belongsTo(TipoActividad::class, 'tipo_actividad_id');
    }
+
+   public function firmadoPor(){
+        return $this->belongsTo(User::class, 'firmado_por_user_id');
+   }
+
+   public function scopePendientesFirma($query) {
+        return $query->where('estado_firma', 'pendiente');
+   }
+
+   public function scopeFirmadas($query) {
+        return $query->where('estado_firma', 'firmada');
+   }
+
+   public function juicio(){
+        return $this->belongsTo(Juicio::class, 'juicio_id');
+   }
+
+       public function user() {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+  
 }

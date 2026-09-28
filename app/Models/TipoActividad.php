@@ -10,7 +10,7 @@ class TipoActividad extends Model
 {
     use HasFactory;
     protected $table = 'tipos_actividades';
-    protected $fillable = ['nombre'];
+    protected $fillable = ['nombre','es_firmable','requiere_firma_abogado'];
 
 
     public static function rules($id){
@@ -42,6 +42,10 @@ class TipoActividad extends Model
     public function plantillas()
     {
         return $this->hasMany(Plantilla::class, 'tipo_actividad_id');
+    }
+
+    public function scopeFirmables($query) {
+        return $query->where('es_firmable', true);
     }
 
 }
