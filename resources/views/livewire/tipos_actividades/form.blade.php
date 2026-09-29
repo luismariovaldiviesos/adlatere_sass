@@ -19,16 +19,15 @@
                             @enderror
                         </div>
 
-                    
-                         {{-- <div>
-                            <label  class="form-label">Descripción</label>
-                            <input wire:model='descripcion' id="descripcion" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
-                            @error('descripcion')
+                      <div div class="sm:grid grid-cols-2 gap-5">
+                            <label class="form-label flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" wire:model='es_firmable' class="form-check-input mt-1" value="1">
+                                <span class="form-label mb-0">¿Es firmable electrónicamente?</span>
+                            </label>
+                            @error('es_firmable')
                                 <x-alert msg="{{ $message }}" />
                             @enderror
-                        </div> --}}
-
-
+                        </div>
                     </div>
                 </div>
 

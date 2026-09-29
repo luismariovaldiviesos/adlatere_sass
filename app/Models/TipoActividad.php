@@ -10,19 +10,26 @@ class TipoActividad extends Model
 {
     use HasFactory;
     protected $table = 'tipos_actividades';
-    protected $fillable = ['nombre','es_firmable','requiere_firma_abogado'];
+    protected $fillable = ['nombre','es_firmable'];
+
+      protected $casts = [
+        'es_firmable' => 'boolean',
+    ];
+
 
 
     public static function rules($id){
         if($id <=0 ){
             return [
-                'nombre' => 'required|min:3|unique:tipos_actividades'
+                'nombre' => 'required|min:3|unique:tipos_actividades',
+                'es_firmable' => 'boolean'
             ];
         }
 
         else{
             return [
-                'nombre' => "required|min:3|string|unique:tipos_actividades,nombre,{$id}"
+                'nombre' => "required|min:3|string|unique:tipos_actividades,nombre,{$id}",
+                'es_firmable' => 'boolean'
             ];
 
         }
@@ -31,7 +38,8 @@ class TipoActividad extends Model
     public static   $messages =[
         'nombre.required' => 'nombre requerido',
         'nombre.min' => 'nombre debe tener al menos 3 caracteres',
-        'nombre.unique' => 'nombre ya esta en uso'
+        'nombre.unique' => 'nombre ya esta en uso',
+        'es_firmable.boolean' => 'el campo es_firmable debe ser un valor booleano'
     ];
 
 
@@ -47,5 +55,6 @@ class TipoActividad extends Model
     public function scopeFirmables($query) {
         return $query->where('es_firmable', true);
     }
+   
 
 }

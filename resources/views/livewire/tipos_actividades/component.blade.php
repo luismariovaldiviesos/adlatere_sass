@@ -22,8 +22,7 @@
                                 <tr class="text-theme-1">
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >ID</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >NOMBRE</th>
-                                     {{-- <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >DESCRIPCIÓN</th>
-                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >FASE</th>                                    --}}
+                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap text-center" >FIRMABLE</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap text-center" >ACCIONES</th>
                                 </tr>
                             </thead>
@@ -40,6 +39,16 @@
                                             <h6 class="mb-1 font-medium">{{ $tipo->nombre }}</h6>
                                             {{-- <small class="font-normal">{{ $MATERI->unidades->count() }} unidades en este edificio</small> --}}
                                         </td>
+
+                                        <td class="dark:border-dark-5 text-center">
+                                        @if($tipo->es_firmable)
+                                            <span class="text-green-600 bg-green-100 px-2 py-1 rounded text-xs font-bold uppercase">
+                                                <i class="fas fa-check-circle mr-1"></i> Sí
+                                            </span>
+                                        @else
+                                            <span class="text-gray-500 bg-gray-100 px-2 py-1 rounded text-xs font-bold uppercase">No</span>
+                                        @endif
+                                    </td>
                                        
 
                                        

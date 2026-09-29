@@ -17,6 +17,7 @@ class TiposActividades extends Component
     public $action = 'Listado', $componentName = 'Listado de Tipos de Actividades', $search, $form = false;
     private $pagination = 10;
     protected $paginationTheme = 'tailwind';
+    public $es_firmable = false;
 
     public function render()
     {
@@ -78,7 +79,7 @@ class TiposActividades extends Component
     {
         $this->selected_id = $tipo->id;
         $this->nombre = $tipo->nombre;
-        //$this->descripcion = $tipo->descripcion;
+        $this->es_firmable = $tipo->es_firmable;
         $this->action = 'Editar';
         $this->form = true;
     }
@@ -87,6 +88,7 @@ class TiposActividades extends Component
           $this->validate(TipoActividad::rules($this->selected_id), TipoActividad::$messages);
         TipoActividad::updateOrCreate(['id' => $this->selected_id], [
             'nombre' => $this->nombre,
+            'es_firmable' => $this->es_firmable
          ]);
          $this->noty($this->selected_id < 1 ? 'Tipo de Actividad Registrado' : 'Tipo de Actividad Actualizado', 'noty', false, 'close-modal');
         $this->resetUI();
