@@ -125,8 +125,45 @@ class Juicios extends Component
         $this->estados_procesales = EstadoProcesal::orderBy('id', 'asc')->get();
         
         if($this->selected_id > 0) {
-            $this->edit(\App\Models\Juicio::find($this->selected_id));
+            $this->cargarJuicioMaestro($this->selected_id, true);
         }
+    }
+
+    // Admin ve todo. Abogado solo sus juicios asignados en juicio_user.
+    private function esAdmin()
+    {
+        $u = auth()->user();
+        if (!$u) return false;
+        if (isset($u->profile) && $u->profile === 'Admin') return true;
+        if (method_exists($u, 'hasRole') && $u->hasRole('Admin')) return true;
+        return false;
+    }
+
+    // CARGA MAESTRA: un solo Juicio con todas sus relaciones. Reutilizar en todos los métodos.
+    // Aplica filtro de visibilidad: no-admin solo carga juicios donde es abogado asignado.
+    private function cargarJuicioMaestro($id = null, $forzar = false)
+    {
+        $id = $id ?: $this->selected_id;
+        if (!$id) return null;
+        if (!$forzar && $this->juicio && $this->juicio->id == $id) {
+            return $this->juicio;
+        }
+        $q = Juicio::with([
+            'asunto.procedimiento.materia',
+            'unidadJudicial.canton.provincia',
+            'actores', 'demandados', 'estadoProcesal',
+            'actividades.tipoActividad', 'audiencias',
+            'abogados', 'funcionarios',
+            'finanza.pagos.cliente', 'documentos'
+        ]);
+        if (!$this->esAdmin()) {
+            $uid = auth()->id();
+            $q->whereHas('abogados', function($qq) use ($uid) {
+                $qq->where('user_id', $uid);
+            });
+        }
+        $this->juicio = $q->find($id);
+        return $this->juicio;
     }
 
     // buscador dinamico para sujetos procesales
@@ -188,10 +225,19 @@ class Juicios extends Component
 
     public function render()
     {
-        $info = Juicio::with('asunto.procedimiento.materia') // Carga la relación automáticamente
-            ->where('cod_satje', 'like', "%{$this->search}%")
-            ->orWhereHas('asunto', function($query) { // Permite buscar también por el nombre del asunto
-                $query->where('nombre', 'like', "%{$this->search}%");
+        $info = Juicio::with('asunto.procedimiento.materia'); // Carga la relación automáticamente
+        // Visibilidad: admin todo, abogado solo sus juicios asignados
+        if (!$this->esAdmin()) {
+            $uid = auth()->id();
+            $info->whereHas('abogados', function($q) use ($uid) {
+                $q->where('user_id', $uid);
+            });
+        }
+        $info = $info->where(function($q) {
+                $q->where('cod_satje', 'like', "%{$this->search}%")
+                  ->orWhereHas('asunto', function($query) { // Permite buscar también por el nombre del asunto
+                      $query->where('nombre', 'like', "%{$this->search}%");
+                  });
             })
             ->orderBy('id', 'desc') // Los juicios más nuevos primero
             ->paginate($this->pagination);
@@ -238,6 +284,7 @@ class Juicios extends Component
 
     public function saveJuicio(){
         $this->validate(Juicio::rules($this->selected_id), Juicio::messages());
+        $eraNuevo = !$this->selected_id;
         
        $juicio =  Juicio::updateOrCreate(['id' => $this->selected_id], [
             'cod_satje' => $this->cod_satje,
@@ -247,11 +294,16 @@ class Juicios extends Component
             'fecha_inicio' => $this->fecha_inicio,
             'prioridad' => $this->prioridad ?? 'Baja'
         ]);
+
+        // Si un abogado crea el juicio, asignarlo como patrocinador para no perder visibilidad
+        if ($eraNuevo && !$this->esAdmin()) {
+            if (!$juicio->abogados()->where('user_id', auth()->id())->exists()) {
+                $juicio->abogados()->attach(auth()->id(), ['rol_en_juicio' => 'Abogado Patrocinador']);
+            }
+        }
         
-        $this->juicio = Juicio::with(['asunto.procedimiento.materia', 
-        'unidadJudicial.canton.provincia', 'actores', 'demandados', 'estadoProcesal', 
-        'actividades.tipoActividad','finanza.pagos'])->find($juicio->id);
         $this->selected_id = $juicio->id;
+        $this->cargarJuicioMaestro($juicio->id, true);
         
         //historial de auditoría
         \App\Models\JuicioHistorialEstado::create([
@@ -310,7 +362,8 @@ class Juicios extends Component
                 return;           
             }
 
-        $juicio =  Juicio::find($this->selected_id);
+        $juicio = $this->cargarJuicioMaestro();
+        if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
         if($juicio->participantes()->where('customer_id', $this->cliente_id)->exists()){
             $this->noty( 'Este sujeto ya es participante en el juicio.', 'noty', false);
             return; 
@@ -381,9 +434,15 @@ class Juicios extends Component
 
     public function Edit(Juicio $juicio){
         //dd($juicio->asunto->procedimiento->materia->nombre);
-        $this->juicio = Juicio::with(['asunto.procedimiento.materia', 'unidadJudicial.canton.provincia',
-         'actores', 'demandados', 'estadoProcesal', 'actividades.tipoActividad', 
-         'finanza.pagos', 'finanza.pagos.cliente'])->find($juicio->id);
+        $this->selected_id = $juicio->id;
+        $this->cargarJuicioMaestro($juicio->id, true);
+        if (!$this->juicio) {
+            $this->noty('No tiene permiso para ver este juicio.', 'noty', false);
+            $this->form = false;
+            $this->selected_id = 0;
+            return;
+        }
+        $juicio = $this->juicio;
         $finanza  =  \App\Models\FinanzasJuicio::firstOrCreate(['juicio_id' => $juicio->id], 
                     ['honorarios_totales' => 0, 'gastos_extras' => 0]);
         $this->fin_honorarios = $finanza->honorarios_totales;
@@ -428,7 +487,8 @@ class Juicios extends Component
 
 
     public function removeParticipante($id){
-        $juicio = Juicio::find($this->selected_id);
+        $juicio = $this->cargarJuicioMaestro();
+        if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
         $juicio->participantes()->detach($id);
         $this->noty('Sujeto procesal removido con éxito.', 'noty', false);
         \App\Models\JuicioHistorialEstado::create([
@@ -443,7 +503,8 @@ class Juicios extends Component
     }
 
 public function editParticipanteEnJuicio(){
-    $juicio = Juicio::find($this->selected_id);
+    $juicio = $this->cargarJuicioMaestro();
+    if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
     if ($this->old_cliente_id && $this->old_cliente_id != $this->cliente_id) {
     // Si el usuario buscó a una persona diferente, quitamos al anterior y agregamos al nuevo
     $juicio->participantes()->detach($this->old_cliente_id);
@@ -465,7 +526,7 @@ public function editParticipanteEnJuicio(){
     ]);
 
     // Refrescar el juicio para que la interfaz se actualice
-    $this->edit(\App\Models\Juicio::find($this->selected_id));
+    $this->cargarJuicioMaestro(null, true);
 
     // Limpiamos los cajones para agregar otro
     $this->reset(['cliente_id', 'searchCustomer', 'rol', 'customers']);
@@ -498,11 +559,11 @@ public function editParticipanteEnJuicio(){
    }
 
    private function reemplazarVariables($textoHtml) {
-        // Cargar el juicio con todas las relaciones necesarias para reemplazar las variables
-        //en el contenido de la plantilla
-       $juicio = Juicio::with(['unidadJudicial.canton.provincia', 'asunto.procedimiento.materia', 
-       'actores', 'demandados','funcionarios'])->find($this->selected_id);
-       $actores_identificacion = $juicio->actores->pluck('valueidenti')->implode(', ');
+        // Reutilizar carga maestra en lugar de consultar de nuevo
+       $juicio = $this->cargarJuicioMaestro();
+       if($juicio) $juicio->loadMissing(['funcionarios']);
+       if(!$juicio) return $textoHtml;
+        $actores_identificacion = $juicio->actores->pluck('valueidenti')->implode(', ');
         $actores_direccion = $juicio->actores->pluck('address')->implode(' | ');
         $actores_correo = $juicio->actores->pluck('email')->implode(', ');
         $actores_telefono = $juicio->actores->pluck('phone')->implode(', ');
@@ -657,16 +718,14 @@ public function editParticipanteEnJuicio(){
 
     // MEJORA: Si se seleccionó un nuevo estado, actualizar la carátula del juicio
     if ($this->nuevo_estado_id) {
-        $juicio = Juicio::find($this->selected_id);
+        $juicio = $this->cargarJuicioMaestro();
+        if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
         $juicio->update(['estado_procesal_id' => $this->nuevo_estado_id]);
         $this->estado_procesal_id = $this->nuevo_estado_id; // Sincronizar UI
     }
 
     // Recargar el juicio para refrescar el listado y el sidebar
-    $this->juicio = Juicio::with(['asunto.procedimiento.materia', 
-    'unidadJudicial.canton.provincia', 
-    'actores', 'demandados', 
-    'estadoProcesal', 'actividades.tipoActividad'])->find($this->selected_id);
+    $this->cargarJuicioMaestro(null, true);
 
     $this->resetActividadInputs();
 
@@ -691,9 +750,7 @@ public function editParticipanteEnJuicio(){
 
    public function destroyActividad($id) {
         \App\Models\Actividad::find($id)->delete();
-        $this->juicio = Juicio::with(['asunto.procedimiento.materia', 
-        'unidadJudicial.canton.provincia', 'actores', 'demandados', 'estadoProcesal', 
-        'actividades.tipoActividad'])->find($this->selected_id);
+        $this->cargarJuicioMaestro(null, true);
         $this->noty('Actividad eliminada', 'noty', false);
         \App\Models\JuicioHistorialEstado::create([
             'juicio_id'          => $this->selected_id,
@@ -816,15 +873,7 @@ public function editParticipanteEnJuicio(){
         $this->aud_archivo = null;
     }
         // Refrescar el modelo para que el listado y sidebar se actualicen
-        $this->juicio = \App\Models\Juicio::with([
-            'asunto.procedimiento.materia',
-            'unidadJudicial.canton.provincia',
-            'actores', 'demandados',
-            'estadoProcesal',
-            'actividades.tipoActividad',
-            'audiencias',
-            'abogados',
-        ])->find($this->selected_id);
+        $this->cargarJuicioMaestro(null, true);
         $this->resetAudienciaInputs();
    }
 
@@ -841,14 +890,7 @@ public function editParticipanteEnJuicio(){
 
    public function destroyAudiencia($id){
     \App\Models\Audiencia::find($id)->delete();
-    $this->juicio = \App\Models\Juicio::with([
-        'asunto.procedimiento.materia',
-        'unidadJudicial.canton.provincia',
-        'actores', 'demandados',
-        'estadoProcesal',
-        'actividades.tipoActividad',
-        'audiencias',
-    ])->find($this->selected_id);
+    $this->cargarJuicioMaestro(null, true);
       if ($this->audiencia_id == $id) {
         $this->resetAudienciaInputs();
     }
@@ -922,7 +964,7 @@ public function editParticipanteEnJuicio(){
     $this->doc_origen_tipo = 'General';
     
     // Refrescar modelo
-    $this->edit(\App\Models\Juicio::find($this->selected_id));
+    $this->cargarJuicioMaestro(null, true);
     }
 
     public function destroyDocumento($id){
@@ -944,7 +986,7 @@ public function editParticipanteEnJuicio(){
             'descripcion'     => 'Se eliminó el documento: ' . $doc->nombre,
         ]);
         $this->noty('Documento eliminado.', 'noty', false);
-         $this->edit(\App\Models\Juicio::find($this->selected_id));
+         $this->cargarJuicioMaestro(null, true);
     }
 
 
@@ -974,7 +1016,7 @@ public function editParticipanteEnJuicio(){
     ]);
 
     $this->noty('Costos del juicio actualizados.', 'noty', false);
-    $this->edit(\App\Models\Juicio::find($this->selected_id));
+    $this->cargarJuicioMaestro(null, true);
 
     }
 
@@ -1041,7 +1083,7 @@ public function editParticipanteEnJuicio(){
       // Limpiar formulario
     $this->reset(['pago_customer_id', 'pago_monto', 'pago_fecha', 'pago_referencia', 'pago_notas', 'pago_comprobante']);
     $this->pago_metodo = 'Transferencia';
-    $this->edit(\App\Models\Juicio::find($this->selected_id));
+    $this->cargarJuicioMaestro(null, true);
 
     }
 
@@ -1067,7 +1109,7 @@ public function editParticipanteEnJuicio(){
             'descripcion'        => 'Se eliminó un abono por $ ' . number_format($pago->monto, 2),
         ]);
         $this->noty('Abono eliminado.', 'noty', false);
-        $this->edit(\App\Models\Juicio::find($this->selected_id));
+        $this->cargarJuicioMaestro(null, true);
     }   
 
 
@@ -1122,7 +1164,8 @@ public function editParticipanteEnJuicio(){
         return;
         }
 
-        $juicio =  \App\Models\Juicio::find($this->selected_id);
+        $juicio = $this->cargarJuicioMaestro();
+        if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
         //validar duplicados 
         if($juicio->funcionarios()->where('funcionario_id', $this->funcionario_id)->exists()){
             $this->noty( 'Este funcionario ya está asignado al juicio.', 'noty', false);
@@ -1146,7 +1189,8 @@ public function editParticipanteEnJuicio(){
 
     public function removeFuncionario($funcionarioId){
         if (!$this->selected_id || $this->selected_id <= 0) return;
-        $juicio = \App\Models\Juicio::find($this->selected_id);
+        $juicio = $this->cargarJuicioMaestro();
+        if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
         $juicio->funcionarios()->detach($funcionarioId);
         \App\Models\JuicioHistorialEstado::create([
         'juicio_id'          => $this->selected_id,
@@ -1249,7 +1293,8 @@ public function descargarPdf(Audiencia $audiencia)
             return;           
         }
 
-        $juicio = \App\Models\Juicio::find($this->selected_id);
+        $juicio = $this->cargarJuicioMaestro();
+        if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
         
         if($juicio->abogados()->where('user_id', $this->abogado_id)->exists()){
             $this->noty('Este abogado ya está asignado al juicio.', 'noty', false);
@@ -1269,13 +1314,14 @@ public function descargarPdf(Audiencia $audiencia)
             'descripcion'        => 'Se asignó un abogado patrocinador al juicio.',
         ]);
 
-        $this->edit(\App\Models\Juicio::find($this->selected_id));
+        $this->cargarJuicioMaestro(null, true);
         $this->reset(['abogado_id', 'searchAbogado', 'abogados_list']);
     }
 
     public function removeAbogado($userId){
         if (!$this->selected_id || $this->selected_id <= 0) return;
-        $juicio = \App\Models\Juicio::find($this->selected_id);
+        $juicio = $this->cargarJuicioMaestro();
+        if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
         $juicio->abogados()->detach($userId);
         
         \App\Models\JuicioHistorialEstado::create([
@@ -1289,7 +1335,7 @@ public function descargarPdf(Audiencia $audiencia)
         ]);
 
         $this->noty('Abogado removido del juicio.', 'noty', false);
-        $this->edit(\App\Models\Juicio::find($this->selected_id));
+        $this->cargarJuicioMaestro(null, true);
     }
 
 
@@ -1297,12 +1343,24 @@ public function descargarPdf(Audiencia $audiencia)
         public function openRoadmap($id) {
         // Cargamos el juicio con su estado actual
         //dd($id);
+        // Visibilidad: no-admin solo su juicio asignado
+        if (!$this->esAdmin()) {
+            $uid = auth()->id();
+            $permitido = \App\Models\Juicio::where('id', $id)
+                ->whereHas('abogados', function($q) use ($uid) {
+                    $q->where('user_id', $uid);
+                })->exists();
+            if (!$permitido) {
+                $this->noty('No tiene permiso para ver este juicio.', 'noty', false);
+                return;
+            }
+        }
         $this->juicioRoadmap = \App\Models\Juicio::with('estadoProcesal')->find($id);
         
         // Obtenemos el historial cronológicamente (de más antiguo a más reciente)
         $this->historialRoadmap = \App\Models\JuicioHistorialEstado::with('user')
             ->where('juicio_id', $id)
-            ->orderBy('created_at', 'asc')
+            ->orderBy('created_at', 'desc')
             ->get();
             
         $this->showRoadmapModal = true;
@@ -1367,8 +1425,8 @@ public function confirmarFirma()
         $this->firmaPasswordConfirm = '';
         $this->noty('Actividad firmada correctamente', 'noty', false, 'success');
         
-        // Refrescar lista
-        $this->juicio = \App\Models\Juicio::with(['actividades.tipoActividad', 'abogados'])->find($this->selected_id);
+        // Refrescar lista - reutiliza carga maestra
+        $this->cargarJuicioMaestro(null, true);
         
     } catch (\Exception $e) {
         \Log::error('Error firmando actividad: ' . $e->getMessage());
@@ -1399,6 +1457,15 @@ public function descargarFirmado($actividadId)
     ]);
 }
 
+     public $listeners = [
+        'resetUI',
+        'Destroy'
+    ];
+
+    public function Destroy(Juicio $jucio)
+    {
+        dd($jucio);
+    }
 
     
 }

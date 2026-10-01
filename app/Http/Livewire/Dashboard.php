@@ -13,11 +13,20 @@ use Illuminate\Support\Facades\DB;
 use Livewire\Component;
 use Spatie\Permission\Models\Role;
 use App\Models\PaymentMethod;
+use App\Models\Juicio;
+use App\Models\Actividad;
+use App\Models\Audiencia;
+use App\Models\FinanzasJuicio;
+use App\Models\PagosJuicio;
+use Carbon\Carbon;
 
 class Dashboard extends Component
 {
 
     public $year, $salesByMonth_Data = [], $top5Data =[], $weekSales_Data=[], $listYears=[], $salesByPaymentMethod_Data = [];
+    // Estadísticas de juicios (sección propia, todos ven todo)
+    public $kpiJuicios = 0, $kpiAudiencias7 = 0, $kpiFirmasPendientes = 0, $kpiPorCobrar = 0;
+    public $juiciosByMonth_Data = [], $juiciosByMateria_Data = [], $juiciosByEstado_Data = [], $audiencias14_Data = [], $audiencias14_Labels = [];
     public $tenantid;
     public $modalOpen = false;
 
@@ -51,6 +60,12 @@ class Dashboard extends Component
         $this->getWeekSales();
         $this->getSalesMonth();
         $this->getSalesByPaymentMethod();
+
+        $this->getJuiciosKpis();
+        $this->getJuiciosByMonth();
+        $this->getJuiciosByMateria();
+        $this->getJuiciosByEstado();
+        $this->getAudiencias14();
 
         return view('livewire.dash.component')->layout('layouts.theme.app');
     }
@@ -152,6 +167,74 @@ class Dashboard extends Component
             ->whereNotNull('facturas.numeroAutorizacion')
             ->groupBy('payment_methods.description')
             ->get()->toArray();
+    }
+
+    // ── JUICIOS: KPIs ──
+    public function getJuiciosKpis()
+    {
+        $this->kpiJuicios = Juicio::count();
+        $this->kpiAudiencias7 = Audiencia::where('estado', 'Programada')
+            ->whereBetween('fecha_hora', [Carbon::now(), Carbon::now()->copy()->addDays(7)])
+            ->count();
+        $this->kpiFirmasPendientes = Actividad::where('estado_firma', 'pendiente')->count();
+        $pactado = (float) FinanzasJuicio::selectRaw('COALESCE(SUM(honorarios_totales),0) + COALESCE(SUM(gastos_extras),0) as t')->value('t');
+        $cobrado = (float) PagosJuicio::where('estado', 'Aprobado')->sum('monto');
+        $this->kpiPorCobrar = max(0, $pactado - $cobrado);
+    }
+
+    // ── JUICIOS: por mes (año seleccionado, por fecha_inicio) ──
+    public function getJuiciosByMonth()
+    {
+        $rows = Juicio::selectRaw('MONTH(fecha_inicio) as m, COUNT(*) as total')
+            ->whereYear('fecha_inicio', $this->year)
+            ->groupBy('m')
+            ->pluck('total', 'm')
+            ->toArray();
+        $this->juiciosByMonth_Data = [];
+        for ($m = 1; $m <= 12; $m++) {
+            array_push($this->juiciosByMonth_Data, (int) ($rows[$m] ?? 0));
+        }
+    }
+
+    // ── JUICIOS: top 5 por materia ──
+    public function getJuiciosByMateria()
+    {
+        $this->juiciosByMateria_Data = Juicio::join('asuntos as a', 'juicios.asunto_id', '=', 'a.id')
+            ->join('procedimientos as p', 'a.procedimiento_id', '=', 'p.id')
+            ->join('materias as m', 'p.materia_id', '=', 'm.id')
+            ->select(DB::raw('m.nombre as materia, COUNT(juicios.id) as total'))
+            ->whereYear('juicios.fecha_inicio', $this->year)
+            ->groupBy('m.nombre')
+            ->orderByDesc(DB::raw('COUNT(juicios.id)'))
+            ->limit(5)
+            ->get()->toArray();
+        $faltan = 5 - count($this->juiciosByMateria_Data);
+        for ($i = 0; $i < $faltan; $i++) {
+            array_push($this->juiciosByMateria_Data, ['materia' => '-', 'total' => 0]);
+        }
+    }
+
+    // ── JUICIOS: por estado procesal ──
+    public function getJuiciosByEstado()
+    {
+        $this->juiciosByEstado_Data = Juicio::join('estados_procesales as e', 'juicios.estado_procesal_id', '=', 'e.id')
+            ->select(DB::raw('e.nombre as estado, COUNT(juicios.id) as total'))
+            ->whereYear('juicios.fecha_inicio', $this->year)
+            ->groupBy('e.nombre')
+            ->orderByDesc(DB::raw('COUNT(juicios.id)'))
+            ->get()->toArray();
+    }
+
+    // ── AUDIENCIAS: próximos 14 días por día ──
+    public function getAudiencias14()
+    {
+        $this->audiencias14_Data = [];
+        $this->audiencias14_Labels = [];
+        for ($d = 0; $d < 14; $d++) {
+            $fecha = Carbon::today()->copy()->addDays($d);
+            $this->audiencias14_Labels[] = $fecha->format('d/m');
+            array_push($this->audiencias14_Data, (int) Audiencia::whereDate('fecha_hora', $fecha->toDateString())->count());
+        }
     }
 
     // ecuchar cuadno la propiedad year se actualice

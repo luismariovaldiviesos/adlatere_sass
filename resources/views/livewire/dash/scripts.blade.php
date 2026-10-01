@@ -221,6 +221,63 @@
         }
 
 
+        // ── JUICIOS POR MES (barra) ──
+        var optionsJuiciosMonth = {
+          series: [{ name: 'Juicios', data: @this.juiciosByMonth_Data }],
+          chart: { height: 350, type: 'bar' },
+          plotOptions: { bar: { borderRadius: 10, dataLabels: { position: 'top' } } },
+          dataLabels: { enabled: true, offsetY: -20, style: { fontSize: '12px', colors: ["#304758"] } },
+          xaxis: { categories: ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"], position: 'top' },
+          yaxis: { labels: { formatter: function(val){ return parseInt(val); } } }
+        };
+        var chartJuiciosMonth = new ApexCharts(document.querySelector("#chartJuiciosMonth"), optionsJuiciosMonth);
+        chartJuiciosMonth.render();
+
+        // ── TOP MATERIAS (donut) ──
+        var optionsJuiciosMateria = {
+          series: [
+            parseFloat(@this.juiciosByMateria_Data[0]['total']),
+            parseFloat(@this.juiciosByMateria_Data[1]['total']),
+            parseFloat(@this.juiciosByMateria_Data[2]['total']),
+            parseFloat(@this.juiciosByMateria_Data[3]['total']),
+            parseFloat(@this.juiciosByMateria_Data[4]['total'])
+          ],
+          chart: { type: 'donut', height: 392 },
+          labels: [
+            @this.juiciosByMateria_Data[0]['materia'],
+            @this.juiciosByMateria_Data[1]['materia'],
+            @this.juiciosByMateria_Data[2]['materia'],
+            @this.juiciosByMateria_Data[3]['materia'],
+            @this.juiciosByMateria_Data[4]['materia']
+          ]
+        };
+        var chartJuiciosMateria = new ApexCharts(document.querySelector("#chartJuiciosMateria"), optionsJuiciosMateria);
+        chartJuiciosMateria.render();
+
+        // ── POR ESTADO PROCESAL (barras horizontales) ──
+        var juiciosEstadoData = @json($juiciosByEstado_Data);
+        var optionsJuiciosEstado = {
+          series: [{ name: 'Juicios', data: juiciosEstadoData.map(item => parseInt(item.total)) }],
+          chart: { height: 350, type: 'bar' },
+          plotOptions: { bar: { borderRadius: 6, horizontal: true } },
+          dataLabels: { enabled: true },
+          xaxis: { categories: juiciosEstadoData.map(item => item.estado) }
+        };
+        var chartJuiciosEstado = new ApexCharts(document.querySelector("#chartJuiciosEstado"), optionsJuiciosEstado);
+        chartJuiciosEstado.render();
+
+        // ── AUDIENCIAS 14 DÍAS (área) ──
+        var optionsAudiencias14 = {
+          series: [{ name: 'Audiencias', data: @this.audiencias14_Data }],
+          chart: { height: 350, type: 'area' },
+          dataLabels: { enabled: false },
+          stroke: { curve: 'smooth' },
+          xaxis: { categories: @json($audiencias14_Labels) }
+        };
+        var chartAudiencias14 = new ApexCharts(document.querySelector("#chartAudiencias14"), optionsAudiencias14);
+        chartAudiencias14.render();
+
+
         //reload charts info
         window.addEventListener('reload-scripts', event => {
             // actualizar grafico semanal
@@ -260,6 +317,23 @@
                 series: newPaymentData.map(item => parseFloat(item.total)),
                 labels: newPaymentData.map(item => item.method)
             })
+
+            // Actualizar gráficos de juicios
+            chartJuiciosMonth.updateSeries([{ data: @this.juiciosByMonth_Data }]);
+            chartJuiciosMateria.updateSeries([
+                parseFloat(@this.juiciosByMateria_Data[0]['total']),
+                parseFloat(@this.juiciosByMateria_Data[1]['total']),
+                parseFloat(@this.juiciosByMateria_Data[2]['total']),
+                parseFloat(@this.juiciosByMateria_Data[3]['total']),
+                parseFloat(@this.juiciosByMateria_Data[4]['total'])
+            ]);
+            var newEstadoData = @this.juiciosByEstado_Data;
+            chartJuiciosEstado.updateOptions({
+                series: [{ data: newEstadoData.map(item => parseInt(item.total)) }],
+                xaxis: { categories: newEstadoData.map(item => item.estado) }
+            });
+            chartAudiencias14.updateSeries([{ data: @this.audiencias14_Data }]);
+            chartAudiencias14.updateOptions({ xaxis: { categories: @this.audiencias14_Labels } });
 
         })
 

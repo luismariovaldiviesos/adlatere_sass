@@ -15,11 +15,11 @@
           <div class="col-span-12 md:col-span-3">
             <div class="intro-y box">
                 <div class="p-5 text-center">
-                    <div class="text-3xl font-bold leading-8 mt-6">{{ strtoupper(tenant('suscription_type') ?? 'GRATUITO') }}</div>
+                    <div class="text-3xl font-bold leading-8 mt-6">{{  'GRATUITO'}}</div>
                     <div class="text-base text-gray-600 mt-1">Plan Actual</div>
-                    <div class="mt-2 text-gray-600 text-xs">Tenant ID: {{ tenant('id') }}</div>
+                    <div class="mt-2 text-gray-600 text-xs">Tenant ID: </div>
 
-                    @php
+                    {{-- @php
                         $tenant = tenant();
                         $count = $tenant->getCurrentCycleInvoiceCount();
                         $limit = $tenant->getInvoiceLimit();
@@ -32,43 +32,23 @@
 
                         // Payment URL (Fixed to Production domain)
                         $paymentUrl = 'https://facta.ec/payment/renewal/' . $tenant->id;
-                    @endphp
+                    @endphp --}}
 
                     <div class="mt-4 border-t border-gray-200 pt-4 text-left">
                         <div class="flex justify-between mb-1">
                              <span class="text-gray-600 text-xs">Facturas:</span>
-                             <span class="font-bold text-xs {{ $limit && $count >= $limit ? 'text-theme-6' : 'text-theme-1' }}">
-                                 {{ $count }} / {{ $limit ?? '∞' }}
-                             </span>
+                             
                         </div>
                         <div class="flex justify-between mb-1">
                              <span class="text-gray-600 text-xs">Último Pago:</span>
-                             <span class="font-bold text-xs">{{ $lastPayment->format('d/m/Y') }}</span>
+                             <span class="font-bold text-xs"></span>
                         </div>
                         <div class="flex justify-between mb-2">
                              <span class="text-gray-600 text-xs">Vencimiento:</span>
-                             <span class="font-bold text-xs">{{ $expiration->format('d/m/Y') }}</span>
+                             <span class="font-bold text-xs"></span>
                         </div>
 
-                         <div class="text-center mt-3">
-                            @if($isOverdue)
-                                <div class="mb-2">
-                                     <span class="py-1 px-2 rounded-full text-xs bg-theme-6 text-white font-medium">
-                                        ¡Vencido hace {{ abs($daysDiff) }} días!
-                                     </span>
-                                </div>
-                            @else
-                                <div class="mb-2">
-                                    <span class="py-1 px-2 rounded-full text-xs bg-theme-9 text-white font-medium">
-                                        Vence en {{ $daysDiff }} días
-                                    </span>
-                                </div>
-                            @endif
-
-                             <button type="button" wire:click="openModal" class="btn btn-sm btn-primary w-full shadow-md">
-                                <i data-feather="credit-card" class="w-4 h-4 mr-2"></i> Pagar / Renovar
-                            </button>
-                        </div>
+                    
                     </div>
                 </div>
         </div>
@@ -111,6 +91,67 @@
                 <h4 class="p-3 text-center text-theme-1 font-bold"> VENTAS POR FORMA DE PAGO</h4>
                 <div id="chartPaymentMethod">
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════════ SECCIÓN JUICIOS ═══════════ -->
+    <div class="intro-y grid grid-cols-12 gap-6 mt-8">
+        <div class="col-span-12">
+            <h3 class="text-lg font-bold text-theme-1">JUICIOS AÑO {{$year}}</h3>
+        </div>
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
+            <div class="intro-y box p-5 text-center">
+                <div class="text-3xl font-bold leading-8">{{$kpiJuicios}}</div>
+                <div class="text-base text-gray-600 mt-1">Total juicios</div>
+            </div>
+        </div>
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
+            <div class="intro-y box p-5 text-center">
+                <div class="text-3xl font-bold leading-8">{{$kpiAudiencias7}}</div>
+                <div class="text-base text-gray-600 mt-1">Audiencias próximos 7 días</div>
+            </div>
+        </div>
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
+            <div class="intro-y box p-5 text-center">
+                <div class="text-3xl font-bold leading-8">{{$kpiFirmasPendientes}}</div>
+                <div class="text-base text-gray-600 mt-1">Actividades pendientes de firma</div>
+            </div>
+        </div>
+        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
+            <div class="intro-y box p-5 text-center">
+                <div class="text-3xl font-bold leading-8">${{number_format($kpiPorCobrar, 2)}}</div>
+                <div class="text-base text-gray-600 mt-1">Honorarios por cobrar</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="intro-y grid grid-cols-12 gap-6 mt-5">
+        <div class="col-span-12 lg:col-span-6">
+            <div class="intro-y box">
+                <h4 class="p-3 text-center text-theme-1 font-bold">JUICIOS POR MES</h4>
+                <div id="chartJuiciosMonth"></div>
+            </div>
+        </div>
+        <div class="col-span-12 lg:col-span-6">
+            <div class="intro-y box">
+                <h4 class="p-3 text-center text-theme-1 font-bold">TOP 5 MATERIAS</h4>
+                <div id="chartJuiciosMateria"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="intro-y grid grid-cols-12 pt-5 gap-6">
+        <div class="col-span-12 lg:col-span-6">
+            <div class="intro-y box">
+                <h4 class="p-3 text-center text-theme-1 font-bold">JUICIOS POR ESTADO PROCESAL</h4>
+                <div id="chartJuiciosEstado"></div>
+            </div>
+        </div>
+        <div class="col-span-12 lg:col-span-6">
+            <div class="intro-y box">
+                <h4 class="p-3 text-center text-theme-1 font-bold">AUDIENCIAS PRÓXIMOS 14 DÍAS</h4>
+                <div id="chartAudiencias14"></div>
             </div>
         </div>
     </div>
