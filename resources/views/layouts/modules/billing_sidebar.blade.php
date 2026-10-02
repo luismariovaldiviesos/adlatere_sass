@@ -18,6 +18,20 @@
         </a>
     </li>
     @endcan
+    @can('menu_facturar')
+    <li>
+        <a href="{{ route('consultas') }}" class="side-menu">
+            <div class="side-menu__icon"> <i data-feather="message-square"></i> </div>
+            <div class="side-menu__title"> CONSULTAS  </div>
+        </a>
+    </li>
+    @endcan
+    <li>
+        <a href="{{ route('mis-consultas') }}" class="side-menu">
+            <div class="side-menu__icon"> <i data-feather="clipboard"></i> </div>
+            <div class="side-menu__title"> MIS CONSULTAS  </div>
+        </a>
+    </li>
 
     <li>
         <a href="javascript:;" class="side-menu">
