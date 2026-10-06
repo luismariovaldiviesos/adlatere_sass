@@ -70,6 +70,24 @@
                             @error('status') <span class="text-danger er">{{ $message }}</span> @enderror
                         </div>
                     </div>
+                    @if($requiereReemplazo)
+                    <div class="alert alert-warning mt-3">
+                        <strong>Casos activos: transfiera antes de cambiar el perfil</strong>
+                        <ul class="mb-2">
+                            @foreach($casosAfectados as $c)
+                            <li>Juicio {{ $c['cod'] }} (ID {{ $c['id'] }})</li>
+                            @endforeach
+                        </ul>
+                        <label class="form-label">Abogado reemplazante *</label>
+                        <select wire:model.defer="reemplazo_id" class="form-select form-select-lg">
+                            <option value="">Seleccione...</option>
+                            @foreach(\App\Models\User::where('status','ACTIVE')->where('id','!=',$selected_id)->orderBy('name')->get() as $r)
+                            <option value="{{ $r->id }}">{{ $r->name }} ({{ $r->profile }})</option>
+                            @endforeach
+                        </select>
+                        <button type="button" wire:click.prevent="ejecutarReemplazo" class="btn btn-warning mt-2">Transferir casos</button>
+                    </div>
+                    @endif
 
                     <div>
                         <label  class="form-label">Password</label>

@@ -32,7 +32,7 @@ class Consultas extends Component
     // Formulario
     public $customer_id, $asunto_id, $abogado_id, $costo = 0, $notas;
     public $estado_pago = 'pendiente', $estado_atencion = 'pendiente';
-    public $fecha_pago, $metodo_pago = 'Efectivo', $comprobante, $facturar_ahora = false;
+    public $fecha_pago, $metodo_pago = 'Efectivo', $comprobante, $comprobante_actual, $facturar_ahora = false;
 
     // Cadena materia -> procedimiento -> asunto
     public $materias = [], $procedimientos = [], $asuntos = [];
@@ -57,7 +57,7 @@ class Consultas extends Component
         $this->materias = Materia::orderBy('nombre', 'asc')->get();
         // Abogados = usuarios del sistema (todos los activos, incl. Admin:
         // hoy todos tus usuarios son Admin y el filtro anterior dejaba el combo vacío)
-        $this->abogados = \App\Models\User::where('status', 'ACTIVE')
+        $this->abogados = \App\Models\User::where('profile', 'abogado')->where('status', 'ACTIVE')
             ->orderBy('name', 'asc')->get();
         // Panel propio del abogado: solo sus asignadas, sin alta de consultas
         if (request()->route() && request()->route()->getName() === 'mis-consultas') {
@@ -133,19 +133,38 @@ class Consultas extends Component
         $this->asunto_id = null;
     }
 
+    // Autollenado según condición de pago elegida por recepción
+    public function updatedEstadoPago($value)
+    {
+        if ($value === 'no_factura') {
+            $this->costo = 0;
+            $this->fecha_pago = null;
+            $this->metodo_pago = 'No se cobra';
+            $this->facturar_ahora = false;
+        }
+        if ($value === 'pendiente') {
+            // Los datos del cobro se llenan cuando se pague (botón $ o edición)
+            $this->fecha_pago = null;
+            $this->metodo_pago = 'Efectivo';
+            $this->facturar_ahora = false;
+        }
+        if ($value === 'pagada' && !$this->fecha_pago) {
+            $this->fecha_pago = now()->toDateString();
+        }
+    }
+
     public function render()
     {
         if ($this->esPanelAbogado) {
             $this->soloMias = true; // el panel propio siempre filtra por asignadas
         }
+        // Recepción (admin o menu_consultas) ve TODAS. Solo el abogado
+        // puro (sin menu_consultas) queda acotado a sus asignadas.
+        $veTodas = $this->esAdmin() || auth()->user()->can('menu_consultas');
         $q = Consulta::with(['customer', 'asunto.procedimiento.materia', 'abogado', 'juicio']);
 
-        if (!$this->esAdmin() || $this->soloMias) {
-            if (!$this->esAdmin()) {
-                $q->where('abogado_id', auth()->id());
-            } elseif ($this->soloMias) {
-                $q->where('abogado_id', auth()->id());
-            }
+        if (!$veTodas || ($this->esAdmin() && $this->soloMias)) {
+            $q->where('abogado_id', auth()->id());
         }
 
         if ($this->filtroAtencion !== 'todos') {
@@ -170,22 +189,29 @@ class Consultas extends Component
         $info = $q->orderBy('id', 'desc')->paginate($this->pagination);
 
         $base = Consulta::query();
-        if (!$this->esAdmin() || $this->soloMias) {
+        if (!$veTodas || ($this->esAdmin() && $this->soloMias)) {
             $base->where('abogado_id', auth()->id());
         }
         if ($this->filtroAtencion !== 'todos') {
             $base->where('estado_atencion', $this->filtroAtencion);
         }
+        // Cuadros de cuadre: facturadas vs no facturadas (conteo + valores)
         $totales = [
-            'cobrado'   => (clone $base)->whereIn('estado_pago', ['pagada', 'facturada'])->sum('costo'),
-            'pendiente' => (clone $base)->where('estado_pago', 'pendiente')->sum('costo'),
-            'cortesias' => (clone $base)->where('estado_pago', 'no_factura')->count(),
+            'facturadas_n'     => (clone $base)->where('estado_pago', 'facturada')->count(),
+            'facturadas_valor' => (clone $base)->where('estado_pago', 'facturada')->sum('costo'),
+            'nofacturadas_n'     => (clone $base)->where('estado_pago', '!=', 'facturada')->count(),
+            'nofacturadas_valor' => (clone $base)->where('estado_pago', '!=', 'facturada')->sum('costo'),
         ];
+
+        $puedeEntrar = $this->esPanelAbogado
+            ? auth()->user()->can('menu_mis_consultas')
+            : auth()->user()->can('menu_consultas');
 
         return view('livewire.consultas.component', [
             'consultas' => $info,
             'puedeAdministrar' => $this->puedeAdministrar(),
             'puedeVerNotas' => $this->puedeVerNotas(),
+            'puedeEntrar' => $puedeEntrar,
             'totales' => $totales,
         ])->layout('layouts.theme.app');
     }
@@ -228,7 +254,7 @@ class Consultas extends Component
             'estado_pago', 'estado_atencion', 'selected_id',
             'materia_id', 'procedimiento_id', 'searchCustomer',
             'cliente_nombre', 'customers', 'showDropdown',
-            'fecha_pago', 'metodo_pago', 'comprobante', 'facturar_ahora',
+            'fecha_pago', 'metodo_pago', 'comprobante', 'comprobante_actual', 'facturar_ahora',
         ]);
         $this->costo = 0;
         $this->estado_pago = 'pendiente';
@@ -244,9 +270,20 @@ class Consultas extends Component
     public function Store()
     {
         if (!$this->puedeAdministrar()) return;
+        if (!$this->selected_id && auth()->user()->cannot('crear_consulta')) return;
+        if ($this->selected_id && auth()->user()->cannot('editar_datos_consulta')) return;
+        $anterior = $this->selected_id ? Consulta::find($this->selected_id) : null;
+
         $this->validate(array_merge(Consulta::rules(), [
             'comprobante' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
         ]), Consulta::$messages);
+
+        // Si no es efectivo, el comprobante es obligatorio (transferencia, tarjeta u otro)
+        if ($this->estado_pago === 'pagada' && $this->metodo_pago !== 'Efectivo'
+            && !$this->comprobante && !($anterior->comprobante_ruta ?? null)) {
+            $this->addError('comprobante', 'Adjunte el comprobante de la transferencia/pago.');
+            return;
+        }
 
         $ruta = null;
         if ($this->comprobante) {
@@ -257,20 +294,27 @@ class Consultas extends Component
             'customer_id' => $this->customer_id,
             'asunto_id'   => $this->asunto_id,
             'abogado_id'  => $this->abogado_id ?: null,
-            'costo'       => $this->costo,
+            'costo'       => $this->estado_pago === 'no_factura' ? 0 : $this->costo,
             'notas'       => $this->notas,
             'estado_pago' => $this->estado_pago,
             'fecha_pago'  => $this->estado_pago === 'pagada' ? ($this->fecha_pago ?: now()->toDateString()) : null,
-            'metodo_pago' => $this->estado_pago === 'pagada' ? $this->metodo_pago : null,
-            'comprobante_ruta' => $ruta ?: Consulta::find($this->selected_id)->comprobante_ruta ?? null,
+            'metodo_pago' => $this->estado_pago === 'pagada' ? $this->metodo_pago : ($this->estado_pago === 'no_factura' ? 'No se cobra' : null),
+            'comprobante_ruta' => $ruta ?: ($anterior->comprobante_ruta ?? null),
         ]);
+
+        // Al editar también se persiste el estado de atención (si lo cambió aquí).
+        // Nunca se puede marcar 'convertida' desde este formulario.
+        if ($this->selected_id && in_array($this->estado_atencion, ['pendiente', 'atendida'])) {
+            $consulta->estado_atencion = $this->estado_atencion;
+            $consulta->save();
+        }
 
         $msg = $this->selected_id > 0 ? 'Consulta actualizada' : 'Consulta registrada';
 
-        // Si al crear marcó pagada + facturar ahora, genera el borrador de una vez
+        // Si al crear marcó pagada + facturar ahora, avisa que facturación viene después
         if (!$this->selected_id && $consulta->estado_pago === 'pagada' && $this->facturar_ahora) {
             $this->selected_id = $consulta->id;
-            $this->enviarFacturacion($consulta->id);
+            $this->facturarPendiente();
         }
 
         $this->resetForm();
@@ -278,12 +322,45 @@ class Consultas extends Component
         $this->dispatchBrowserEvent('noty', ['msg' => $msg, 'type' => 'success', 'action' => '']);
     }
 
+    // Facturación automática: pendiente de implementar (muestra aviso por ahora)
+    public function facturarPendiente()
+    {
+        $this->dispatchBrowserEvent('noty', ['msg' => 'Pendiente: el método de facturación automática está en construcción.', 'type' => 'success', 'action' => '']);
+    }
+
+    // Descarga del comprobante de pago (solo recepción; el abogado no ve cobros)
+    public function descargarComprobante($id)
+    {
+        if (!$this->puedeAdministrar()) return;
+        $consulta = Consulta::find($id ?: $this->selected_id);
+        if (!$consulta || !$consulta->comprobante_ruta) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Esta consulta no tiene comprobante cargado.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        if (!\Storage::disk('public')->exists($consulta->comprobante_ruta)) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'El archivo ya no existe en el servidor.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        $ext = strtolower(pathinfo($consulta->comprobante_ruta, PATHINFO_EXTENSION));
+        return \Storage::disk('public')->download($consulta->comprobante_ruta, 'comprobante-consulta-' . $consulta->id . '.' . $ext);
+    }
+
     // Abogado asignado: solo guarda notas y estado de atención. Nunca toca pagos ni datos.
     public function guardarNotas()
     {
         $consulta = Consulta::find($this->selected_id);
-        if (!$consulta) return;
-        if (!$this->esAdmin() && (int) $consulta->abogado_id !== (int) auth()->id()) return;
+        if (!$consulta) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La consulta ya no existe. Recargue la página.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        if (!$this->esAdmin() && (int) $consulta->abogado_id !== (int) auth()->id()) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el abogado asignado puede guardar notas.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        if (auth()->user()->cannot('guardar_notas_consulta')) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Su perfil no tiene permiso para guardar notas.', 'type' => 'error', 'action' => '']);
+            return;
+        }
         $this->validate(['notas' => 'nullable|string']);
         $consulta->notas = $this->notas;
         if (in_array($this->estado_atencion, ['pendiente', 'atendida'])) {
@@ -291,7 +368,7 @@ class Consultas extends Component
         }
         $consulta->save();
         $this->dispatchBrowserEvent('set-consulta-editor-content', ['content' => $this->notas ?? '']);
-        $this->dispatchBrowserEvent('noty', ['msg' => 'Notas guardadas.', 'type' => 'success', 'action' => '']);
+        $this->dispatchBrowserEvent('noty', ['msg' => 'Notas y estado de atención guardados.', 'type' => 'success', 'action' => '']);
     }
 
     public function Edit($id)
@@ -315,6 +392,7 @@ class Consultas extends Component
         $this->estado_atencion = $consulta->estado_atencion;
         $this->fecha_pago = $consulta->fecha_pago ? $consulta->fecha_pago->format('Y-m-d') : null;
         $this->metodo_pago = $consulta->metodo_pago ?: 'Efectivo';
+        $this->comprobante_actual = $consulta->comprobante_ruta;
 
         // Cadena jerárquica para que el asunto quede seleccionado
         $this->procedimiento_id = $consulta->asunto->procedimiento_id ?? null;
@@ -340,6 +418,10 @@ class Consultas extends Component
             $this->dispatchBrowserEvent('noty', ['msg' => 'No tiene permiso para atender esta consulta.', 'type' => 'success', 'action' => '']);
             return;
         }
+        if (auth()->user()->cannot('atender_consulta')) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Su perfil no tiene permiso para atender consultas.', 'type' => 'error', 'action' => '']);
+            return;
+        }
         if ($consulta->estado_atencion === 'convertida') {
             $this->dispatchBrowserEvent('noty', ['msg' => 'La consulta ya fue convertida en juicio.', 'type' => 'success', 'action' => '']);
             return;
@@ -360,6 +442,7 @@ class Consultas extends Component
     {
         $consulta = Consulta::find($id);
         if (!$consulta || !$this->puedeAdministrar()) return;
+        if (auth()->user()->cannot('marcar_pagada_consulta')) return;
         if ($consulta->estado_pago === 'facturada' || $consulta->factura_id) return;
         $consulta->estado_pago = 'no_factura';
         $consulta->save();
@@ -371,6 +454,7 @@ class Consultas extends Component
     {
         $consulta = Consulta::find($id);
         if (!$consulta || !$this->puedeAdministrar()) return;
+        if (auth()->user()->cannot('marcar_pagada_consulta')) return;
         if ($consulta->estado_pago === 'facturada' || $consulta->factura_id) return;
         $consulta->estado_pago = 'pagada';
         $consulta->fecha_pago = $consulta->fecha_pago ?: now()->toDateString();
@@ -388,6 +472,7 @@ class Consultas extends Component
             $this->dispatchBrowserEvent('noty', ['msg' => 'No tiene permiso para facturar. Solo recepción.', 'type' => 'success', 'action' => '']);
             return;
         }
+        if (auth()->user()->cannot('facturar_consulta')) return;
         if ($consulta->estado_pago === 'facturada' || $consulta->factura_id) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'La consulta ya fue facturada.', 'type' => 'success', 'action' => '']);
             return;
@@ -461,6 +546,7 @@ class Consultas extends Component
             $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el abogado asignado o el admin pueden convertirla en juicio.', 'type' => 'success', 'action' => '']);
             return;
         }
+        if (auth()->user()->cannot('convertir_consulta')) return;
         if ($consulta->estado_atencion === 'convertida' || $consulta->juicio_id) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'La consulta ya fue convertida en juicio.', 'type' => 'success', 'action' => '']);
             return;
@@ -487,10 +573,10 @@ class Consultas extends Component
                 $juicio->participantes()->attach($consulta->customer_id, ['rol' => 'actor']);
             }
 
-            // Abogado de la consulta -> patrocinador de la carátula
-            if ($consulta->abogado_id) {
-                $juicio->abogados()->attach($consulta->abogado_id, ['rol_en_juicio' => 'Abogado Patrocinador']);
-            }
+                 // Abogado de la consulta -> patrocinador de la carátula (nunca en cero)
+            $idAbogado = $consulta->abogado_id ?: auth()->id();
+            $consulta->abogado_id = $consulta->abogado_id ?: auth()->id();
+            $juicio->abogados()->attach($idAbogado, ['rol_en_juicio' => 'Abogado Patrocinador']);
 
             // Comprobante de la consulta -> gestor documental del juicio nuevo
             if ($consulta->comprobante_ruta) {
@@ -549,7 +635,7 @@ class Consultas extends Component
     public function destroy($id)
     {
         $consulta = Consulta::find($id);
-        if (!$consulta || !$this->esAdmin()) return;
+        if (!$consulta || auth()->user()->cannot('eliminar_consulta')) return;
         if ($consulta->juicio_id || $consulta->factura_id) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'No se puede eliminar: ya tiene juicio o factura vinculada.', 'type' => 'success', 'action' => '']);
             return;

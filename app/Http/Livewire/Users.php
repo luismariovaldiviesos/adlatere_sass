@@ -11,6 +11,7 @@ use App\Models\Materia;
 use Livewire\WithFileUploads;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\DB;
 
 class Users extends Component
 {
@@ -29,6 +30,8 @@ class Users extends Component
     public $firma_archivo;
     public $firma_password;
     public $tieneFirma = false;        // ← NUEVO: para mostrar estado en edición
+
+        public $requiereReemplazo = false, $reemplazo_id, $casosAfectados = [];
 
     public function render()
     {
@@ -82,7 +85,8 @@ class Users extends Component
         $this->resetPage();
         $this->reset('name','ci','phone', 'status','selected_id','temppass','search','componentName', 
         'email','password','profile','form','especialidadesSeleccionadas','searchEspecialidad', 
-        'firma_archivo', 'firma_password', 'tieneFirma');  // ← AGREGADO tieneFirma
+        'firma_archivo', 'firma_password', 'tieneFirma', // ← AGREGADO tieneFirma
+        'requiereReemplazo', 'reemplazo_id', 'casosAfectados' );  
         $this->profile = 'cajero';
         $this->status = 'ACTIVE';
     }
@@ -136,6 +140,24 @@ class Users extends Component
             'firma_archivo.mimes' => 'El archivo debe ser .p12 o .pfx.',
             'firma_archivo.max'   => 'El archivo no debe superar 2 MB.',
         ]);
+               // B1. Si cambia perfil/rol o se bloquea, exigir reasignación previa
+        $anterior = $this->selected_id ? \App\Models\User::find($this->selected_id) : null;
+        $cambiaRol = $anterior && $anterior->profile !== $this->profile;
+        $seBloquea = $anterior && $anterior->status !== 'LOCKED' && $this->status === 'LOCKED';
+        if ($anterior && ($cambiaRol || $seBloquea)) {
+            $juicios = \App\Models\Juicio::whereHas('abogados', function($q) use ($anterior) {
+                $q->where('user_id', $anterior->id)
+                  ->whereRaw("TRIM(LOWER(rol_en_juicio)) LIKE ?", ['%abogado%patrocinador%']);
+            })->get(['id', 'cod_satje']);
+            $nCons = \App\Models\Consulta::where('abogado_id', $anterior->id)
+                ->whereIn('estado_atencion', ['pendiente', 'atendida'])->count();
+            if ($juicios->count() > 0 || $nCons > 0) {
+                $this->requiereReemplazo = true;
+                $this->casosAfectados = $juicios->map(fn($j) => ['id' => $j->id, 'cod' => $j->cod_satje])->toArray();
+                $this->dispatchBrowserEvent('noty', ['msg' => 'Tiene casos activos: seleccione reemplazante abajo y pulse Transferir casos.', 'type' => 'error', 'action' => '']);
+                return;
+            }
+        }
 
         // 3. Crear/Actualizar usuario
         $user =  User::updateOrCreate(
@@ -179,14 +201,58 @@ class Users extends Component
         $this->resetUI();
     }
 
+        public function ejecutarReemplazo()
+    {
+        $this->validate(['reemplazo_id' => 'required|exists:users,id'], [
+            'reemplazo_id.required' => 'Seleccione el abogado reemplazante.',
+        ]);
+        $viejo = \App\Models\User::find($this->selected_id);
+        $nuevo = \App\Models\User::find($this->reemplazo_id);
+        if (!$viejo || !$nuevo || (int) $viejo->id === (int) $nuevo->id) return;
+        DB::transaction(function() use ($viejo, $nuevo) {
+            $juicios = \App\Models\Juicio::whereHas('abogados', fn($q) => $q->where('user_id', $viejo->id))->get();
+            foreach ($juicios as $j) {
+                $pivote = $j->abogados()->where('user_id', $viejo->id)->first();
+                $rol = $pivote ? $pivote->pivot->rol_en_juicio : 'Abogado Patrocinador';
+                $desde = $pivote ? $pivote->pivot->created_at : $j->created_at;
+                // 1. Adjuntar entrante PRIMERO (el juicio nunca queda en cero)
+                if (!$j->abogados()->where('user_id', $nuevo->id)->exists()) {
+                    $j->abogados()->attach($nuevo->id, ['rol_en_juicio' => $rol]);
+                }
+                // 2. Snapshot de la gestión del saliente
+                $acts = \App\Models\Actividad::where('juicio_id', $j->id)->where('user_id', $viejo->id)->where('created_at', '>=', $desde)->count();
+                $firmas = \App\Models\Actividad::where('juicio_id', $j->id)->where('firmado_por_user_id', $viejo->id)->count();
+                $pagos = \App\Models\PagosJuicio::where('user_id', $viejo->id)->whereHas('finanza', fn($q) => $q->where('juicio_id', $j->id))->count();
+                // 3. Quitar saliente + historial inmutable
+                $j->abogados()->detach($viejo->id);
+                \App\Models\JuicioHistorialEstado::create([
+                    'juicio_id' => $j->id, 'user_id' => auth()->id(),
+                    'estado_procesal_id' => $j->estado_procesal_id,
+                    'tipo_movimiento' => 'abogado_reasignado',
+                    'referencia_tipo' => 'User', 'referencia_id' => $nuevo->id,
+                    'descripcion' => "Reasignado de {$viejo->name} a {$nuevo->name}. Gestión del saliente desde {$desde->format('d/m/Y')}: {$acts} actividades, {$firmas} firmas, {$pagos} abonos.",
+                ]);
+            }
+            \App\Models\Consulta::where('abogado_id', $viejo->id)
+                ->whereIn('estado_atencion', ['pendiente', 'atendida'])
+                ->update(['abogado_id' => $nuevo->id]);
+        });
+        $this->requiereReemplazo = false;
+        $this->reemplazo_id = null;
+        $this->casosAfectados = [];
+        $this->dispatchBrowserEvent('noty', ['msg' => 'Casos transferidos. Pulse Guardar para aplicar el cambio.', 'type' => 'success', 'action' => '']);
+    }
+
     public function Destroy(User $user)
     {
-        if ($user->sales->count() < 1 && $user->especialidades->count() < 1) {     
+        $tieneJuicios = \App\Models\Juicio::whereHas('abogados', fn($q) => $q->where('user_id', $user->id))->exists();
+        $tieneConsultas = \App\Models\Consulta::where('abogado_id', $user->id)->whereIn('estado_atencion', ['pendiente','atendida'])->exists();
+        if ($user->sales->count() < 1 && $user->especialidades->count() < 1 && !$tieneJuicios && !$tieneConsultas) {     
             $user->especialidades()->detach();
             $user->delete();
             $this->noty("El usuario <b>$user->name</b> fue eliminado del sistema");
         } else{
-            $this->noty('no es posible eliminar el usuario, tiene ventas o especialidades asociadas');
+            $this->noty('no es posible eliminar el usuario, tiene ventas, especialidades o casos asignados', 'noty', false, 'error');
         }
     }
 }

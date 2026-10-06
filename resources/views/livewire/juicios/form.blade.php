@@ -1,4 +1,11 @@
 {{-- FORM con pestañas (sin datos). Lógica en Livewire\Alumno, métodos usan dd(). --}}
+@php
+    // Precarga única de colecciones de pestañas (loadMissing = 0 consultas si ya están).
+    // La carga maestra trae lo mínimo; esto completa lo que muestran las pestañas.
+    if (isset($juicio) && $juicio) {
+        $juicio->loadMissing(['actividades.tipoActividad', 'audiencias', 'documentos', 'funcionarios', 'finanza.pagos.cliente', 'abogados.especialidades', 'participantes']);
+    }
+@endphp
 <div x-data="{ tab: @entangle('tab').defer }" class="content space-y-6">
 
     {{-- BARRA DE PESTAÑAS --}}

@@ -10,7 +10,7 @@
         </a>
     </li>
     @endcan
-    @can('menu_facturar')
+    @can('menu_juicios')
     <li>
         <a href="{{ route('juicios') }}" class="side-menu">
             <div class="side-menu__icon"> <i data-feather="dollar-sign"></i> </div>
@@ -18,7 +18,7 @@
         </a>
     </li>
     @endcan
-    @can('menu_facturar')
+    @can('menu_consultas')
     <li>
         <a href="{{ route('consultas') }}" class="side-menu">
             <div class="side-menu__icon"> <i data-feather="message-square"></i> </div>
@@ -26,12 +26,14 @@
         </a>
     </li>
     @endcan
+    @can('menu_mis_consultas')
     <li>
         <a href="{{ route('mis-consultas') }}" class="side-menu">
             <div class="side-menu__icon"> <i data-feather="clipboard"></i> </div>
             <div class="side-menu__title"> MIS CONSULTAS  </div>
         </a>
     </li>
+    @endcan
 
     <li>
         <a href="javascript:;" class="side-menu">

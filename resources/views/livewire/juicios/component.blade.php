@@ -1,5 +1,7 @@
 <div>
 
+    @if($puedeEntrar)
+
     @if (!$form)
 
         <div class="intro-y col-span-12">
@@ -25,6 +27,7 @@
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >PROCEDIMIENTO</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >ASUNTO</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >ESTADO PROCESAL</th>
+                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >ABOGADO</th>
                                     
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >FECHA INICIO</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap text-center" >ACCIONES</th>
@@ -53,7 +56,9 @@
                                         <td class="dark:border-dark-5">
                                             <h6 class="mb-1 font-medium">{{ $juicio->estadoProcesal->nombre ?? '—' }}</h6>
                                         </td>
-                                       
+                                      <td class="dark:border-dark-5">
+                                            <h6 class="mb-1 font-medium">{{ $juicio->abogados->pluck('name')->implode(', ') ?: '—' }}</h6>
+                                        </td>
                                         <td class="dark:border-dark-5">
                                             <h6 class="mb-1 font-medium">{{ $juicio->fecha_inicio ?? '—' }}</h6>
                                         </td>
@@ -61,18 +66,20 @@
 
                                         <td class="dark:border-dark-5 text-center">
                                             <div class="d-flex justify-content-center">
-                                                {{-- @if ($customer->orders->count() < 1) --}}
+                                                @can('eliminar_juicio')
                                                     <button class="btn btn-danger text-white border-0"
                                                     onclick="destroy('juicios','Destroy', {{ $juicio->id }})"
                                                     type="button">
                                                         <i class=" fas fa-trash f-2x"></i>
                                                     </button>
-                                                {{-- @endif --}}
+                                                @endcan
+                                                @can('editar_juicio')
                                                 <button class="btn btn-warning text-white border-0 ml-3"
                                                     wire:click.prevent="Edit({{ $juicio->id }})"
                                                     type="button">
                                                         <i class=" fas fa-edit f-2x"></i>
                                                 </button>
+                                                @endcan
 
                                                 <button type="button" wire:click="openRoadmap({{ $juicio->id }})" class="btn btn-sm btn-outline-primary" title="Ver Roadmap">
                                                     <i class="fas fa-route"></i> Roadmap
@@ -203,7 +210,11 @@
     </script>
 </div>
 
-
+    @else
+    <div class="alert alert-danger" role="alert">
+        <strong>¡Lo sentimos!</strong> No tienes permisos para ver esta sección.
+    </div>
+    @endif
 
 </div>
 

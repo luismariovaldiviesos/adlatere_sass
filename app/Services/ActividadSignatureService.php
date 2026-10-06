@@ -77,7 +77,7 @@ class ActividadSignatureService {
         if ($actividad->estado_firma === 'firmada') {
             throw new \Exception('La actividad ya está firmada.');
         }
-        if (!$actividad->juicio->abogados()->where('user_id', $abogado->id)->wherePivot('rol_en_juicio', 'Abogado Patrocinador')->exists()) {
+        if (!$actividad->juicio->abogados()->where('user_id', $abogado->id)->whereRaw("TRIM(LOWER(rol_en_juicio)) LIKE ?", ['%abogado%patrocinador%'])->exists()) {
             throw new \Exception('Solo el abogado patrocinador del juicio puede firmar esta actividad.');
         }
         if (empty($abogado->firma_path) || empty($abogado->firma_password)) {

@@ -89,6 +89,14 @@
 
     {{-- LISTADO DE AUDIENCIAS --}}
     @if(isset($juicio) && $juicio->audiencias->count() > 0)
+    @php
+        // Mapa acta-por-audiencia en 1 sola consulta (evita N+1 por fila)
+        $actasMap = \App\Models\Documento::where('origen_tipo', 'Audiencia')
+            ->whereIn('origen_id', $juicio->audiencias->pluck('id'))
+            ->orderBy('id', 'desc')
+            ->get()
+            ->keyBy('origen_id');
+    @endphp
     <div class="mt-8 border-t border-gray-200 pt-8">
         <h3 class="text-xl font-bold mb-4">Audiencias del Juicio</h3>
         <div class="overflow-x-auto">
@@ -154,10 +162,8 @@
                         </td>
                         <td>
                          @php
-                            $documentoActa = \App\Models\Documento::where('origen_tipo', 'Audiencia')
-                                ->where('origen_id', $aud->id)
-                                ->latest()  // ← Por si quedan duplicados históricos, muestra el más reciente
-                                ->first();
+                            // Del mapa precargado (el más reciente por orden id desc); sin consultas por fila
+                            $documentoActa = $actasMap[$aud->id] ?? null;
                         @endphp
                             @if($documentoActa)
                                 <a href="{{ route('tenant.media', ['path' => $documentoActa->ruta_archivo]) }}" 

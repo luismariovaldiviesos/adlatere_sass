@@ -157,7 +157,8 @@
             </thead>
             <tbody>
                 @php
-                    $participantes = $selected_id > 0 ? \App\Models\Juicio::find($selected_id)->participantes : [];
+                    // Reutiliza el juicio ya cargado (con filtro de permisos); 1 sola consulta si falta
+                    $participantes = (isset($juicio) && $juicio) ? $juicio->loadMissing('participantes')->participantes : [];
                 @endphp
 
                 @forelse($participantes as $p)

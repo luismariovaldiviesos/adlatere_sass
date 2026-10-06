@@ -139,7 +139,10 @@ class Juicios extends Component
         return false;
     }
 
-    // CARGA MAESTRA: un solo Juicio con todas sus relaciones. Reutilizar en todos los métodos.
+    // CARGA MAESTRA MÍNIMA: solo lo que usan carátula, sidebar, visibilidad y
+    // patrocinador. Las colecciones pesadas (actividades, audiencias,
+    // funcionarios, documentos, finanza) se cargan bajo demanda por pestaña
+    // con loadMissing/load(). Así cada request Livewire serializa menos datos.
     // Aplica filtro de visibilidad: no-admin solo carga juicios donde es abogado asignado.
     private function cargarJuicioMaestro($id = null, $forzar = false)
     {
@@ -152,9 +155,7 @@ class Juicios extends Component
             'asunto.procedimiento.materia',
             'unidadJudicial.canton.provincia',
             'actores', 'demandados', 'estadoProcesal',
-            'actividades.tipoActividad', 'audiencias',
-            'abogados', 'funcionarios',
-            'finanza.pagos.cliente', 'documentos'
+            'abogados',
         ]);
         if (!$this->esAdmin()) {
             $uid = auth()->id();
@@ -164,6 +165,51 @@ class Juicios extends Component
         }
         $this->juicio = $q->find($id);
         return $this->juicio;
+    }
+
+    //criterio unico es patrocinador (vale para 1 o varios abogados)
+    private function esPatrocinador($juicioId, $userId){
+        return \App\Models\Juicio::where('id', $juicioId)
+            ->whereHas('abogados', function($q) use ($userId){
+                $q->where('user_id', $userId)
+                  ->whereRaw("TRIM(LOWER(rol_en_juicio)) LIKE ?", ['%abogado%patrocinador%']);
+            })->exists();
+    }
+
+       private function contarPatrocinadores($juicioId)
+    {
+        $j = \App\Models\Juicio::find($juicioId);
+        if (!$j) return 0;
+        return $j->abogados->filter(function($a) {
+            return str_contains(strtolower(trim($a->pivot->rol_en_juicio ?? '')), 'abogado')
+                && str_contains(strtolower(trim($a->pivot->rol_en_juicio ?? '')), 'patrocinador');
+        })->count();
+    }
+
+        // Bloquea cualquier trámite si el juicio no tiene patrocinador. Sin consultas extra
+    // cuando el juicio ya está cargado (filtra la relación en memoria).
+    private function exigirPatrocinador()
+    {
+        if (!$this->selected_id) {
+            $this->noty('Seleccione un juicio primero.', 'noty', false);
+            return false;
+        }
+        $j = ($this->juicio && $this->juicio->id == $this->selected_id)
+            ? $this->juicio
+            : $this->cargarJuicioMaestro($this->selected_id, true);
+        if (!$j) {
+            $this->noty('No tiene acceso a este juicio.', 'noty', false);
+            return false;
+        }
+        $n = $j->abogados->filter(function($a) {
+            $rol = strtolower(trim($a->pivot->rol_en_juicio ?? ''));
+            return str_contains($rol, 'abogado') && str_contains($rol, 'patrocinador');
+        })->count();
+        if ($n < 1) {
+            $this->noty('Trámite bloqueado: el juicio no tiene abogado patrocinador. Asígnele uno en la pestaña Abogados.', 'noty', false);
+            return false;
+        }
+        return true;
     }
 
     // buscador dinamico para sujetos procesales
@@ -225,7 +271,7 @@ class Juicios extends Component
 
     public function render()
     {
-        $info = Juicio::with('asunto.procedimiento.materia'); // Carga la relación automáticamente
+        $info = Juicio::with('asunto.procedimiento.materia', 'abogados'); // Carga la relación automáticamente
         // Visibilidad: admin todo, abogado solo sus juicios asignados
         if (!$this->esAdmin()) {
             $uid = auth()->id();
@@ -233,31 +279,39 @@ class Juicios extends Component
                 $q->where('user_id', $uid);
             });
         }
-        $info = $info->where(function($q) {
-                $q->where('cod_satje', 'like', "%{$this->search}%")
-                  ->orWhereHas('asunto', function($query) { // Permite buscar también por el nombre del asunto
-                      $query->where('nombre', 'like', "%{$this->search}%");
-                  });
-            })
-            ->orderBy('id', 'desc') // Los juicios más nuevos primero
+        // Sin texto no se filtra (evita LIKE '%%' + EXISTS que barren tablas sin índice)
+        if (trim($this->search) !== '') {
+            $info = $info->where(function($q) {
+                    $q->where('cod_satje', 'like', "%{$this->search}%")
+                      ->orWhereHas('asunto', function($query) { // Permite buscar también por el nombre del asunto
+                          $query->where('nombre', 'like', "%{$this->search}%");
+                      });
+                });
+        }
+        $info = $info->orderBy('id', 'desc') // Los juicios más nuevos primero
             ->paginate($this->pagination);
 
         return view('livewire.juicios.component', [
             'juicios' => $info,
-            'tipos_actividades' => \App\Models\TipoActividad::orderBy('nombre', 'asc')->get(),
-           'lista_actividadades' => \App\Models\Actividad::orderBy('fecha_actividad', 'desc')->get()
+           // 'tipos_actividades' => \App\Models\TipoActividad::orderBy('nombre', 'asc')->get(),
+           'tipos_actividades' => $this->form ? \App\Models\TipoActividad::orderBy('nombre','asc')->get() : [],
+           //'lista_actividadades' => \App\Models\Actividad::orderBy('fecha_actividad', 'desc')->get(),
+            'puedeEntrar' => auth()->user()->can('menu_juicios'),
         ])->layout('layouts.theme.app');
     }
 
 
 
     public function noty($msg, $eventName = 'noty', $reset = true, $action =""){
-        $this->dispatchBrowserEvent($eventName, ['msg'=>$msg, 'type' => 'success', 'action' => $action ]);
+        // El 4to parámetro también acepta el tipo de aviso ('success','error','warning','info')
+        $type = in_array($action, ['success', 'error', 'warning', 'info']) ? $action : 'success';
+        $this->dispatchBrowserEvent($eventName, ['msg'=>$msg, 'type' => $type, 'action' => $action ]);
         if($reset) $this->resetUI();
     }
 
        public function  addNew()
     {
+        if (auth()->user()->cannot('agregar_juicio')) return;
         $this->resetUI();
         $this->editModeJuicio = false;
         $this->form = true;
@@ -282,9 +336,17 @@ class Juicios extends Component
         $this->asuntos = [];
     }
 
-    public function saveJuicio(){
+       public function saveJuicio(){
         $this->validate(Juicio::rules($this->selected_id), Juicio::messages());
         $eraNuevo = !$this->selected_id;
+        // En edición (incluye juicios viejos sin patrocinador) se exige patrocinador.
+        // La reparación se hace por la pestaña Abogados (addAbogado no tiene este bloqueo).
+        if (!$eraNuevo && !$this->exigirPatrocinador()) return;
+        if ($eraNuevo && auth()->user()->cannot('agregar_juicio')) return;
+         if ($eraNuevo && !$this->abogado_id && $this->esAdmin()) {
+            $this->noty('Seleccione el abogado patrocinador (búsquelo en la pestaña Abogados) antes de crear el juicio.', 'noty', false);
+            return;
+        }
         
        $juicio =  Juicio::updateOrCreate(['id' => $this->selected_id], [
             'cod_satje' => $this->cod_satje,
@@ -295,15 +357,28 @@ class Juicios extends Component
             'prioridad' => $this->prioridad ?? 'Baja'
         ]);
 
-        // Si un abogado crea el juicio, asignarlo como patrocinador para no perder visibilidad
-        if ($eraNuevo && !$this->esAdmin()) {
-            if (!$juicio->abogados()->where('user_id', auth()->id())->exists()) {
-                $juicio->abogados()->attach(auth()->id(), ['rol_en_juicio' => 'Abogado Patrocinador']);
+        // Al crear: garantizar patrocinador ANTES de recargar (si no, el filtro
+        // de visibilidad devuelve null al abogado creador). Prioridad:
+        // 1) abogado elegido en el form, 2) el propio creador si no es admin.
+        if ($eraNuevo) {
+            $idAb = $this->abogado_id ?: (!$this->esAdmin() ? auth()->id() : null);
+            if ($idAb && !$juicio->abogados()->where('user_id', $idAb)->exists()) {
+                $juicio->abogados()->attach($idAb, ['rol_en_juicio' => 'Abogado Patrocinador']);
+                \App\Models\JuicioHistorialEstado::create([
+                    'juicio_id'          => $juicio->id,
+                    'user_id'            => auth()->id(),
+                    'estado_procesal_id' => $juicio->estado_procesal_id,
+                    'tipo_movimiento'    => 'abogado_asignado',
+                    'referencia_tipo'    => 'User',
+                    'referencia_id'      => $idAb,
+                    'descripcion'        => 'Se asignó el abogado patrocinador inicial del juicio.',
+                ]);
             }
         }
         
         $this->selected_id = $juicio->id;
         $this->cargarJuicioMaestro($juicio->id, true);
+        
         
         //historial de auditoría
         \App\Models\JuicioHistorialEstado::create([
@@ -345,8 +420,7 @@ class Juicios extends Component
     }
 
     public function addParticipante(){
-        //dd($this->selected_id, $this->cliente_id, $this->rol);
-        
+        if (!$this->exigirPatrocinador()) return;        
         if(!$this->selected_id || $this->selected_id <= 0){
             $this->noty( 'Debe guardar el juicio primero.', 'noty', false);
              $this->tab = 'juicio'; // volver a la pestaña de juicio para guardar primero
@@ -369,6 +443,7 @@ class Juicios extends Component
             return; 
         }
         $juicio->participantes()->attach($this->cliente_id, ['rol' => $this->rol]);
+        if ($this->juicio) $this->juicio->load('actores', 'demandados');
          $this->noty('Sujeto procesal agregado con éxito.', 'noty', false);
          //historial de auditoría
          \App\Models\JuicioHistorialEstado::create([
@@ -475,7 +550,10 @@ class Juicios extends Component
     public function editParticipante($id){
         //dd($id);
             $participante = \App\Models\Customer::find($id);
-            $pivotData = $participante->juicios()->where('juicio_id', $this->selected_id)->first()->pivot;
+            if (!$participante) { $this->noty('Sujeto no encontrado.', 'noty', false, 'error'); return; }
+            $pivotRow = $participante->juicios()->where('juicio_id', $this->selected_id)->first();
+            if (!$pivotRow) { $this->noty('Ese sujeto no pertenece a este juicio.', 'noty', false, 'error'); return; }
+            $pivotData = $pivotRow->pivot;
             $this->cliente_id = $participante->id;
             $this->searchCustomer = $participante->businame;
             $this->rol = $pivotData->rol;
@@ -487,9 +565,11 @@ class Juicios extends Component
 
 
     public function removeParticipante($id){
+        if (!$this->exigirPatrocinador()) return;
         $juicio = $this->cargarJuicioMaestro();
         if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
         $juicio->participantes()->detach($id);
+        if ($this->juicio) $this->juicio->load('actores', 'demandados');
         $this->noty('Sujeto procesal removido con éxito.', 'noty', false);
         \App\Models\JuicioHistorialEstado::create([
             'juicio_id'          => $this->selected_id,
@@ -503,6 +583,7 @@ class Juicios extends Component
     }
 
 public function editParticipanteEnJuicio(){
+    if (!$this->exigirPatrocinador()) return;
     $juicio = $this->cargarJuicioMaestro();
     if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
     if ($this->old_cliente_id && $this->old_cliente_id != $this->cliente_id) {
@@ -525,8 +606,8 @@ public function editParticipanteEnJuicio(){
         'descripcion'        => 'Se cambió el rol del sujeto procesal a ' . $this->rol,
     ]);
 
-    // Refrescar el juicio para que la interfaz se actualice
-    $this->cargarJuicioMaestro(null, true);
+    // Refrescar solo actores/demandados del sidebar
+    if ($this->juicio) $this->juicio->load('actores', 'demandados');
 
     // Limpiamos los cajones para agregar otro
     $this->reset(['cliente_id', 'searchCustomer', 'rol', 'customers']);
@@ -642,7 +723,7 @@ public function editParticipanteEnJuicio(){
   
 
    public function addActividad(){
-
+    if (!$this->exigirPatrocinador()) return;
     $this->validate([
         'tipo_actividad_id' => 'required',
         'fecha_actividad' => 'required',
@@ -655,7 +736,8 @@ public function editParticipanteEnJuicio(){
     }
 
     if ($this->editModeActividad) {
-            $actividad = \App\Models\Actividad::find($this->selected_actividad_id);
+            $actividad = \App\Models\Actividad::where('id', $this->selected_actividad_id)->where('juicio_id', $this->selected_id)->first();
+            if (!$actividad) { $this->noty('Actividad no encontrada en este juicio.', 'noty', false, 'error'); return; }
               $tipoActividad = \App\Models\TipoActividad::find($this->tipo_actividad_id);
 
                $nuevoEstadoFirma = ($tipoActividad && $tipoActividad->es_firmable) ? 'pendiente' : 'no_requerida';
@@ -724,15 +806,16 @@ public function editParticipanteEnJuicio(){
         $this->estado_procesal_id = $this->nuevo_estado_id; // Sincronizar UI
     }
 
-    // Recargar el juicio para refrescar el listado y el sidebar
-    $this->cargarJuicioMaestro(null, true);
+    // Recargar solo actividades y estado procesal (lo único que pudo cambiar aquí)
+    if ($this->juicio) $this->juicio->load('actividades.tipoActividad', 'estadoProcesal');
 
     $this->resetActividadInputs();
 
    }
 
    public function editActividad($id) {
-        $actividad = \App\Models\Actividad::find($id);
+        $actividad = \App\Models\Actividad::where('id', $id)->where('juicio_id', $this->selected_id)->first();
+        if (!$actividad) { $this->noty('Actividad no encontrada en este juicio.', 'noty', false, 'error'); return; }
         $this->selected_actividad_id = $id;
         $this->tipo_actividad_id = $actividad->tipo_actividad_id;
         $this->origen = $actividad->origen;
@@ -749,8 +832,11 @@ public function editParticipanteEnJuicio(){
    }
 
    public function destroyActividad($id) {
-        \App\Models\Actividad::find($id)->delete();
-        $this->cargarJuicioMaestro(null, true);
+    if (!$this->exigirPatrocinador()) return;
+        $act = \App\Models\Actividad::where('id', $id)->where('juicio_id', $this->selected_id)->first();
+        if (!$act) { $this->noty('Actividad no encontrada en este juicio.', 'noty', false, 'error'); return; }
+        $act->delete();
+        if ($this->juicio) $this->juicio->load('actividades.tipoActividad');
         $this->noty('Actividad eliminada', 'noty', false);
         \App\Models\JuicioHistorialEstado::create([
             'juicio_id'          => $this->selected_id,
@@ -773,7 +859,7 @@ public function editParticipanteEnJuicio(){
    
 
    public function saveAudiencia(){
-
+    if (!$this->exigirPatrocinador()) return;
     $this->validate([
                     'aud_archivo' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
                 ], [
@@ -785,7 +871,9 @@ public function editParticipanteEnJuicio(){
   
     if ($this->editModeAudiencia) {
         // MODO EDICIÓN
-        \App\Models\Audiencia::find($this->audiencia_id)->update([
+        $audEdit = \App\Models\Audiencia::where('id', $this->audiencia_id)->where('juicio_id', $this->selected_id)->first();
+        if (!$audEdit) { $this->noty('Audiencia no encontrada en este juicio.', 'noty', false, 'error'); return; }
+        $audEdit->update([
             'fecha_hora'      => $this->aud_fecha_hora,
             'tipo_audiencia'  => $this->aud_tipo_audiencia,
             'sala_enlace'     => $this->aud_sala_enlace,
@@ -872,13 +960,14 @@ public function editParticipanteEnJuicio(){
         // Limpiamos el archivo temporal
         $this->aud_archivo = null;
     }
-        // Refrescar el modelo para que el listado y sidebar se actualicen
-        $this->cargarJuicioMaestro(null, true);
+        // Refrescar solo audiencias y documentos del expediente
+        if ($this->juicio) $this->juicio->load('audiencias', 'documentos');
         $this->resetAudienciaInputs();
    }
 
    public function editAudiencia($id){
-    $aud =  \App\Models\Audiencia::find($id);
+    $aud =  \App\Models\Audiencia::where('id', $id)->where('juicio_id', $this->selected_id)->first();
+    if (!$aud) { $this->noty('Audiencia no encontrada en este juicio.', 'noty', false, 'error'); return; }
     $this->audiencia_id = $id;
     $this->aud_fecha_hora = \Carbon\Carbon::parse($aud->fecha_hora)->format('Y-m-d\TH:i');
     $this->aud_tipo_audiencia = $aud->tipo_audiencia;
@@ -888,9 +977,12 @@ public function editParticipanteEnJuicio(){
     $this->editModeAudiencia = true;
    }
 
-   public function destroyAudiencia($id){
-    \App\Models\Audiencia::find($id)->delete();
-    $this->cargarJuicioMaestro(null, true);
+    public function destroyAudiencia($id){
+    if (!$this->exigirPatrocinador()) return;
+    $audDel = \App\Models\Audiencia::where('id', $id)->where('juicio_id', $this->selected_id)->first();
+    if (!$audDel) { $this->noty('Audiencia no encontrada en este juicio.', 'noty', false, 'error'); return; }
+    $audDel->delete();
+    if ($this->juicio) $this->juicio->load('audiencias');
       if ($this->audiencia_id == $id) {
         $this->resetAudienciaInputs();
     }
@@ -925,6 +1017,7 @@ public function editParticipanteEnJuicio(){
 // ─────────────────────────────────────────
 
     public function saveDocumentoGeneral(){
+        if (!$this->exigirPatrocinador()) return;
         $this->validate([
             'doc_nombre'      => 'required|string|max:255',
             'doc_origen_tipo' => 'required|string|max:255',
@@ -963,12 +1056,16 @@ public function editParticipanteEnJuicio(){
     $this->reset(['doc_nombre', 'doc_archivo']);
     $this->doc_origen_tipo = 'General';
     
-    // Refrescar modelo
-    $this->cargarJuicioMaestro(null, true);
+    // Refrescar solo documentos del expediente
+    if ($this->juicio) $this->juicio->load('documentos');
     }
 
     public function destroyDocumento($id){
-        $doc = \App\Models\Documento::find($id);
+        if (!$this->exigirPatrocinador()) return;
+        $doc = \App\Models\Documento::where('id', $id)->where('juicio_id', $this->selected_id)->first();
+        if (!$doc) { $this->noty('Documento no encontrado en este juicio.', 'noty', false, 'error'); return; }
+        $docId = $doc->id;
+        $docNombre = $doc->nombre;
         // Eliminar el archivo físicamente
         if (\Storage::disk('public')->exists($doc->ruta_archivo)) {
             \Storage::disk('public')->delete($doc->ruta_archivo);
@@ -982,15 +1079,16 @@ public function editParticipanteEnJuicio(){
             'estado_procesal_id' => $this->estado_procesal_id, 
             'tipo_movimiento' => 'documento_eliminado',
             'referencia_tipo' => 'Documento',
-            'referencia_id'   => $doc->id,
-            'descripcion'     => 'Se eliminó el documento: ' . $doc->nombre,
+            'referencia_id'   => $docId,
+            'descripcion'     => 'Se eliminó el documento: ' . $docNombre,
         ]);
         $this->noty('Documento eliminado.', 'noty', false);
-         $this->cargarJuicioMaestro(null, true);
+        if ($this->juicio) $this->juicio->load('documentos');
     }
 
 
     public function saveFinanzas(){
+        if (!$this->exigirPatrocinador()) return;
         $this->validate([
         'fin_honorarios' => 'required|numeric|min:0',
         'fin_gastos'     => 'required|numeric|min:0',
@@ -1016,11 +1114,12 @@ public function editParticipanteEnJuicio(){
     ]);
 
     $this->noty('Costos del juicio actualizados.', 'noty', false);
-    $this->cargarJuicioMaestro(null, true);
+    if ($this->juicio) $this->juicio->load('finanza.pagos.cliente');
 
     }
 
     public function savePago(){
+        if (!$this->exigirPatrocinador()) return;
         $this->validate([
         'pago_customer_id' => 'required',
         'pago_monto'       => 'required|numeric|min:0.01',
@@ -1066,7 +1165,7 @@ public function editParticipanteEnJuicio(){
             'nombre'       => 'Comprobante de Pago: $ ' . $this->pago_monto . ' (' . $this->pago_metodo . ')',
             'ruta_archivo' => $ruta_comprobante,
             'tipo_archivo' => strtolower($extension),
-            'peso_kb'      => $pesoKb,
+            'tamaño_archivo' => round($pesoKb, 2),
         ]);
     }
 
@@ -1083,14 +1182,18 @@ public function editParticipanteEnJuicio(){
       // Limpiar formulario
     $this->reset(['pago_customer_id', 'pago_monto', 'pago_fecha', 'pago_referencia', 'pago_notas', 'pago_comprobante']);
     $this->pago_metodo = 'Transferencia';
-    $this->cargarJuicioMaestro(null, true);
+    if ($this->juicio) $this->juicio->load('finanza.pagos.cliente', 'documentos');
 
     }
 
     public function destroyPago($id)
     {
-        $pago = \App\Models\PagosJuicio::find($id);
-        
+        if (!$this->exigirPatrocinador()) return;
+        $pago = \App\Models\PagosJuicio::where('id', $id)->whereHas('finanza', function($q) {
+            $q->where('juicio_id', $this->selected_id);
+        })->first();
+        if (!$pago) { $this->noty('Abono no encontrado en este juicio.', 'noty', false, 'error'); return; }
+
         // Si tenía comprobante, buscamos el registro en Documentos y lo borramos físicamente
         if($pago->comprobante_ruta) {
             if (\Storage::disk('public')->exists($pago->comprobante_ruta)) {
@@ -1109,7 +1212,7 @@ public function editParticipanteEnJuicio(){
             'descripcion'        => 'Se eliminó un abono por $ ' . number_format($pago->monto, 2),
         ]);
         $this->noty('Abono eliminado.', 'noty', false);
-        $this->cargarJuicioMaestro(null, true);
+        if ($this->juicio) $this->juicio->load('finanza.pagos.cliente', 'documentos');
     }   
 
 
@@ -1149,6 +1252,7 @@ public function editParticipanteEnJuicio(){
 
     //metodo para asignar un funcionario a un juicio
     public function addFuncionario(){
+        if (!$this->exigirPatrocinador()) return;
         if(!$this->selected_id || $this->selected_id <=0){
             $this->noty('Debe guardar el juicio primero.', 'noty', false);
              $this->tab = 'juicio'; // volver a la pestaña de juicio para guardar primero
@@ -1173,6 +1277,7 @@ public function editParticipanteEnJuicio(){
         }
         //guardar en la tabla pivote
         $juicio->funcionarios()->attach($this->funcionario_id, ['rol_en_juicio' => $this->rol_en_juicio]);
+        if ($this->juicio) $this->juicio->load('funcionarios');
         \App\Models\JuicioHistorialEstado::create([
         'juicio_id'          => $this->selected_id,
         'user_id'            => auth()->id(),
@@ -1188,10 +1293,12 @@ public function editParticipanteEnJuicio(){
     }
 
     public function removeFuncionario($funcionarioId){
+        if (!$this->exigirPatrocinador()) return;
         if (!$this->selected_id || $this->selected_id <= 0) return;
         $juicio = $this->cargarJuicioMaestro();
         if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
         $juicio->funcionarios()->detach($funcionarioId);
+        if ($this->juicio) $this->juicio->load('funcionarios');
         \App\Models\JuicioHistorialEstado::create([
         'juicio_id'          => $this->selected_id,
         'user_id'            => auth()->id(),
@@ -1207,6 +1314,10 @@ public function editParticipanteEnJuicio(){
     //descargar acta de word
     public function descargarWord(Audiencia $audiencia){
         //dd($audiencia->acta_resumen);
+        if (!$this->esAdmin() && !\App\Models\Juicio::where('id', $audiencia->juicio_id)->whereHas('abogados', fn($q) => $q->where('user_id', auth()->id()))->exists()) {
+            $this->noty('No tiene permiso para descargar este documento.', 'noty', false, 'error');
+            return;
+        }
         $contenido = $audiencia->acta_resumen;
         $documentoWord = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
                     <head><meta charset='utf-8'><title>Acta Resumen</title></head>
@@ -1230,6 +1341,10 @@ public function editParticipanteEnJuicio(){
     // Descargar acta resumen en PDF (misma fuente que el Word: campo acta_resumen)
 public function descargarPdf(Audiencia $audiencia)
 {
+    if (!$this->esAdmin() && !\App\Models\Juicio::where('id', $audiencia->juicio_id)->whereHas('abogados', fn($q) => $q->where('user_id', auth()->id()))->exists()) {
+        $this->noty('No tiene permiso para descargar este documento.', 'noty', false, 'error');
+        return;
+    }
     $audiencia->refresh(); // trae el texto recién editado, no el de caché
 
     if (empty(trim(strip_tags($audiencia->acta_resumen ?? '')))) {
@@ -1260,20 +1375,25 @@ public function descargarPdf(Audiencia $audiencia)
 
 
     // metodos de abogados patrocinadores de los juicios
-    public function updatedSearchAbogado($value){
-        $this->abogado_id = null;
-        $this->showAbogadoDropdown = true; 
-        if(strlen($value) > 0){
-            // Busca en la tabla users
-            $this->abogados_list = \App\Models\User::where('name', 'like', "%$value%")
-                ->orWhere('email', 'like', "%$value%")
-                ->orderBy('name','asc')
-                ->limit(5)
-                ->get();
-        } else {
-            $this->abogados_list = [];
-        }
+  public function updatedSearchAbogado($value){
+    $this->abogado_id = null;
+    $this->showAbogadoDropdown = true; 
+    
+    if(strlen($value) > 0){
+        // Busca en la tabla users asegurando que solo sean abogados
+        $this->abogados_list = \App\Models\User::where('profile', 'abogado')
+            ->where(function($query) use ($value) {
+                $query->where('name', 'like', "%{$value}%")
+                      ->orWhere('email', 'like', "%{$value}%");
+            })
+            ->orderBy('name', 'asc')
+            ->limit(5)
+            ->get();
+    } else {
+        $this->abogados_list = [];
     }
+}
+
 
     public function selectAbogado($id, $name){
         $this->abogado_id = $id;
@@ -1314,7 +1434,7 @@ public function descargarPdf(Audiencia $audiencia)
             'descripcion'        => 'Se asignó un abogado patrocinador al juicio.',
         ]);
 
-        $this->cargarJuicioMaestro(null, true);
+        if ($this->juicio) $this->juicio->load('abogados');
         $this->reset(['abogado_id', 'searchAbogado', 'abogados_list']);
     }
 
@@ -1322,6 +1442,20 @@ public function descargarPdf(Audiencia $audiencia)
         if (!$this->selected_id || $this->selected_id <= 0) return;
         $juicio = $this->cargarJuicioMaestro();
         if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
+        // Conteo en memoria sobre la relación ya cargada (sin consultas extra)
+        $esPatro = $juicio->abogados->contains(function($a) use ($userId) {
+            return (int) $a->id === (int) $userId
+                && str_contains(strtolower(trim($a->pivot->rol_en_juicio ?? '')), 'abogado')
+                && str_contains(strtolower(trim($a->pivot->rol_en_juicio ?? '')), 'patrocinador');
+        });
+        $totalPatro = $juicio->abogados->filter(function($a) {
+            $rol = strtolower(trim($a->pivot->rol_en_juicio ?? ''));
+            return str_contains($rol, 'abogado') && str_contains($rol, 'patrocinador');
+        })->count();
+         if ($esPatro && $totalPatro <= 1) {
+            $this->noty('No se puede quitar: es el único patrocinador. Asigne otro abogado primero.', 'noty', false);
+            return;
+        }
         $juicio->abogados()->detach($userId);
         
         \App\Models\JuicioHistorialEstado::create([
@@ -1335,7 +1469,7 @@ public function descargarPdf(Audiencia $audiencia)
         ]);
 
         $this->noty('Abogado removido del juicio.', 'noty', false);
-        $this->cargarJuicioMaestro(null, true);
+        if ($this->juicio) $this->juicio->load('abogados');
     }
 
 
@@ -1355,8 +1489,14 @@ public function descargarPdf(Audiencia $audiencia)
                 return;
             }
         }
-        $this->juicioRoadmap = \App\Models\Juicio::with('estadoProcesal')->find($id);
-        
+        // Si es el juicio ya abierto, reutilizar la carga maestra (estadoProcesal incluido)
+        if ($this->juicio && $this->juicio->id == $id) {
+            $this->juicio->loadMissing(['estadoProcesal']);
+            $this->juicioRoadmap = $this->juicio;
+        } else {
+            $this->juicioRoadmap = \App\Models\Juicio::with('estadoProcesal')->find($id);
+        }
+
         // Obtenemos el historial cronológicamente (de más antiguo a más reciente)
         $this->historialRoadmap = \App\Models\JuicioHistorialEstado::with('user')
             ->where('juicio_id', $id)
@@ -1392,7 +1532,7 @@ public function abrirModalFirmar($actividadId)
         return;
     }
     // Validar que sea abogado patrocinador
-    if (!$actividad->juicio->abogados()->where('user_id', auth()->id())->whereRaw("TRIM(LOWER(rol_en_juicio)) LIKE ?", ['%abogado%patrocinador%'])->exists()) 
+    if (!$this->esPatrocinador($actividad->juicio_id, auth()->id()))
         {
         $this->noty('Solo el abogado patrocinador puede firmar', 'noty', false, 'error');
         return;
@@ -1413,6 +1553,7 @@ public function abrirModalFirmar($actividadId)
 // Confirmar firma con contraseña del certificado
 public function confirmarFirma()
 {
+    if (auth()->user()->cannot('firmar_actividad')) return;
     $this->validate(['firmaPasswordConfirm' => 'required'], [
         'firmaPasswordConfirm.required' => 'Ingrese la contraseña de su certificado',
     ]);
@@ -1425,8 +1566,8 @@ public function confirmarFirma()
         $this->firmaPasswordConfirm = '';
         $this->noty('Actividad firmada correctamente', 'noty', false, 'success');
         
-        // Refrescar lista - reutiliza carga maestra
-        $this->cargarJuicioMaestro(null, true);
+        // Refrescar solo actividades y abogados (lo único que pudo cambiar)
+        if ($this->juicio) $this->juicio->load('actividades.tipoActividad', 'abogados');
         
     } catch (\Exception $e) {
         \Log::error('Error firmando actividad: ' . $e->getMessage());
@@ -1448,6 +1589,13 @@ public function descargarFirmado($actividadId)
     $actividad = \App\Models\Actividad::find($actividadId);
     if (!$actividad || !$actividad->pdf_firmado_path) {
         $this->noty('No hay PDF firmado disponible', 'noty', false, 'error');
+        return;
+    }
+    // Solo quien puede ver el juicio dueño del documento (mismo criterio que la carga maestra)
+    $veJuicio = $this->esAdmin() || \App\Models\Juicio::where('id', $actividad->juicio_id)
+        ->whereHas('abogados', fn($q) => $q->where('user_id', auth()->id()))->exists();
+    if (!$veJuicio) {
+        $this->noty('No tiene permiso para descargar este documento.', 'noty', false, 'error');
         return;
     }
     return response()->streamDownload(function () use ($actividad) {

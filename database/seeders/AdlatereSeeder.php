@@ -15,6 +15,8 @@ use App\Models\EstadoProcesal;
 use App\Models\Especialidad;
 use App\Models\Funcionario;
 use App\Models\TipoActividad;
+use Spatie\Permission\Models\Role;
+use Spatie\Permission\Models\Permission;
 
 class AdlatereSeeder extends Seeder
 {
@@ -289,7 +291,355 @@ class AdlatereSeeder extends Seeder
             TipoActividad::updateOrCreate(['nombre' => 'Contrato']);        
             TipoActividad::updateOrCreate(['nombre' => 'Notificación']);        
             TipoActividad::updateOrCreate(['nombre' => 'Diligencia']);        
-        
+
+
+             Role::create(['name'=>'Abogado']);
+             Role::create(['name'=>'Asistente']);
+
+
+            // permisos para juicios menue
+            Permission::firstOrCreate([
+                'name' => 'menu_juicios',
+                'guard_name' => 'web',
+                ]);
+          
+
+            //permisos individuales 
+            //para juicios            
+
+            Permission::firstOrCreate([
+                'name' => 'agregar_juicio',
+                'guard_name' => 'web',
+                ]); 
+            Permission::firstOrCreate([
+                'name' => 'eliminar_juicio',
+                'guard_name' => 'web',
+                ]); 
+            Permission::firstOrCreate([
+                'name' => 'editar_juicio',
+                'guard_name' => 'web',
+                ]); 
+                //pestañas de juicios
+            Permission::firstOrCreate([
+                'name' => 'ver_pestana_caratula',
+                'guard_name' => 'web',
+                ]); 
+            Permission::firstOrCreate([
+                'name' => 'ver_pestana_sujetos',
+                'guard_name' => 'web',
+                ]); 
+            Permission::firstOrCreate([
+                'name' => 'ver_pestana_audiencias',
+                'guard_name' => 'web',
+                ]); 
+            Permission::firstOrCreate([
+                'name' => 'ver_pestana_documentos',
+                'guard_name' => 'web',
+                ]); 
+            Permission::firstOrCreate([
+                'name' => 'ver_pestana_finanzas',
+                'guard_name' => 'web',
+                ]); 
+            Permission::firstOrCreate([
+                'name' => 'ver_pestana_funcionarios',
+                'guard_name' => 'web',
+                ]); 
+            Permission::firstOrCreate([
+                'name' => 'ver_pestana_abogados',
+                'guard_name' => 'web',
+                ]); 
+
+            // independientes para pestañas de juicios
+              Permission::firstOrCreate([
+                'name' => 'actualizar_caratula',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'agregar_sujeto',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'editar_sujeto',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'eliminar_sujeto',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'agregar_actividad',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'editar_actividad',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'eliminar_actividad',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'firmar_actividad',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'agregar_audiencia',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'editar_audiencia',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'eliminar_audiencia',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'registrar_documento',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'ver_documento',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'eliminar_documento',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'crear_finanza',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'guarda_abono_finanza',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'facturar_abono_finanza',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'eliminar_abono_finanza',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'asignar_funcionario',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'eliminar_funcionario',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'asignar_abogado',
+                'guard_name' => 'web',
+                ]); 
+              Permission::firstOrCreate([
+                'name' => 'eliminar_abogado',
+                'guard_name' => 'web',
+                ]); 
+
+
+            //permisos para menu consultas
+             Permission::firstOrCreate([
+                'name' => 'menu_consultas',
+                'guard_name' => 'web',
+                ]);
+
+
+            // permisos independientes para menu consultas
+             Permission::firstOrCreate([
+                'name' => 'crear_consulta',
+                'guard_name' => 'web',
+                ]);
+             Permission::firstOrCreate([
+                'name' => 'guardar_datos_consulta',
+                'guard_name' => 'web',
+                ]);
+             Permission::firstOrCreate([
+                'name' => 'guardar_notas_consulta',
+                'guard_name' => 'web',
+                ]);
+             Permission::firstOrCreate([
+                'name' => 'editar_datos_consulta',
+                'guard_name' => 'web',
+                ]);
+             Permission::firstOrCreate([
+                'name' => 'marcar_pagada_consulta',
+                'guard_name' => 'web',
+                ]);
+
+
+
+
+            Permission::firstOrCreate([
+                'name' => 'menu_mis_consultas',
+                'guard_name' => 'web',
+                ]);
+
+            
+
+
+            Permission::firstOrCreate([
+                'name' => 'menu_gestion_procesal',
+                'guard_name' => 'web',
+                ]);
+
+                // permisos independientes para menu gestion procesal
+
+                 Permission::firstOrCreate([
+                'name' => 'menu_materias',
+                'guard_name' => 'web',
+                ]);
+                //materias
+                 Permission::firstOrCreate([
+                'name' => 'crear_materia',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'editar_materia',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'eliminar_materia',
+                'guard_name' => 'web',
+                ]);
+                //procedimientos
+                 Permission::firstOrCreate([
+                'name' => 'menu_procedimientos',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'crear_procedimiento',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'editar_procedimiento',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'eliminar_procedimiento',
+                'guard_name' => 'web',
+                ]);
+                //asuntos
+                 Permission::firstOrCreate([
+                'name' => 'menu_asuntos',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'crear_asunto',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'editar_asunto',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'eliminar_asunto',
+                'guard_name' => 'web',
+                ]);
+                //fases procesales
+                 Permission::firstOrCreate([
+                'name' => 'menu_fases_procesales',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'crear_fase_procesal',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'editar_fase_procesal',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'eliminar_fase_procesal',
+                'guard_name' => 'web',
+                ]);
+                //estados procesales
+                 Permission::firstOrCreate([
+                'name' => 'menu_estados_procesales',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'crear_estado_procesal',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'editar_estado_procesal',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'eliminar_estado_procesal',
+                'guard_name' => 'web',
+                ]);
+                
+                //especialidades
+                 Permission::firstOrCreate([
+                'name' => 'menu_especialidades',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'crear_especialidad',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'editar_especialidad',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'eliminar_especialidad',
+                'guard_name' => 'web',
+                ]);
+                //tipos de actividades
+                 Permission::firstOrCreate([
+                'name' => 'menu_tipos_actividades',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'crear_tipo_actividad',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'editar_tipo_actividad',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'eliminar_tipo_actividad',
+                'guard_name' => 'web',
+                ]);
+                //plantillas de tipos de actividades
+                 Permission::firstOrCreate([
+                'name' => 'menu_plantillas_tipos_actividades',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'crear_plantilla_tipo_actividad',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'editar_plantilla_tipo_actividad',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'eliminar_plantilla_tipo_actividad',
+                'guard_name' => 'web',
+                ]);
+                 Permission::firstOrCreate([
+                'name' => 'previsualizar_plantilla_tipo_actividad',
+                'guard_name' => 'web',
+                ]);
+
+            Permission::firstOrCreate([
+                'name' => 'menu_sitios',
+                'guard_name' => 'web',
+                ]);
+
+            
+
+
+
+        $this->agregaPermisosAdmin();
+            
         
         
     }

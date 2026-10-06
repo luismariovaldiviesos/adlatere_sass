@@ -11,9 +11,9 @@ class Consulta extends Model
 
     protected $fillable = [
         'customer_id', 'asunto_id', 'abogado_id', 'costo',
-        'estado_pago', 'estado_atencion', 'notas',
+        'estado_pago_nuevo', 'estado_atencion', 'notas',
         'factura_id', 'juicio_id', 'fecha_atencion',
-        'fecha_pago', 'metodo_pago', 'comprobante_ruta',
+        'fecha_pago', 'metodo_pago', 'comprobante_ruta', 'requiere_factura'
     ];
 
     protected $casts = [

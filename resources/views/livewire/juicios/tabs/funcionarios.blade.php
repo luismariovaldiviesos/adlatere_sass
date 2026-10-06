@@ -73,7 +73,8 @@
             </thead>
             <tbody>
                 @php
-                    $funcionariosAsignados = $selected_id > 0 ? \App\Models\Juicio::find($selected_id)->funcionarios : [];
+                    // Reutiliza el juicio ya cargado (con filtro de permisos); sin consultas extra
+                    $funcionariosAsignados = (isset($juicio) && $juicio) ? $juicio->funcionarios : [];
                 @endphp
 
                 @forelse($funcionariosAsignados as $fa)

@@ -45,7 +45,12 @@
             </thead>
             <tbody>
                 @php
-                    $abogadosAsignados = $selected_id > 0 ? \App\Models\Juicio::find($selected_id)->abogados : [];
+                    // Reutiliza el juicio ya cargado (con filtro de permisos); precarga especialidades una sola vez
+                    $abogadosAsignados = (isset($juicio) && $juicio) ? $juicio->abogados : [];
+                    if ($abogadosAsignados instanceof \Illuminate\Support\Collection) {
+                        $juicio->loadMissing(['abogados.especialidades']);
+                        $abogadosAsignados = $juicio->abogados;
+                    }
                 @endphp
 
                 @forelse($abogadosAsignados as $abg)

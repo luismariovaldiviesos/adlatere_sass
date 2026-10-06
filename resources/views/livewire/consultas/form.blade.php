@@ -85,6 +85,7 @@
                 <option value="facturada" disabled>Facturada (automático)</option>
             </select>
         </div>
+        @if($estado_pago === 'pagada')
         <div class="col-span-12 sm:col-span-4">
             <label class="form-label">Fecha de pago</label>
             <input type="date" wire:model.defer="fecha_pago" class="form-control">
@@ -99,14 +100,21 @@
             </select>
         </div>
         <div class="col-span-12 sm:col-span-4">
-            <label class="form-label">Comprobante (opcional)</label>
+            <label class="form-label">Comprobante (opcional en efectivo, obligatorio otro método)</label>
             <input type="file" wire:model="comprobante" class="form-control">
+            @error('comprobante') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
+            @if($comprobante_actual)
+            <button type="button" wire:click.prevent="descargarComprobante({{ $selected_id }})" class="btn btn-outline-primary btn-sm mt-2">
+                <i class="fas fa-download"></i> Ver/descargar comprobante actual
+            </button>
+            @endif
         </div>
         @if($selected_id == 0)
         <div class="col-span-12 sm:col-span-4 flex items-end gap-2 pb-1">
             <input type="checkbox" wire:model="facturar_ahora" id="facturarAhora" class="form-check-input">
             <label for="facturarAhora" class="text-sm">Crear factura ahora (solo si está pagada)</label>
         </div>
+        @endif
         @endif
     @else
         <div class="col-span-12 bg-gray-100 rounded p-3 text-sm">
@@ -129,10 +137,10 @@
         <div class="col-span-12">
             <label class="form-label">Notas de la consulta (hoja de trabajo)</label>
             <div wire:ignore class="document-editor" x-data="{}"
-                x-on:set-consulta-editor-content.window="if(window.consultaEditorInstance){ window.consultaEditorInstance.root.innerHTML = $event.detail.content || ''; }">
+                x-on:set-consulta-editor-content.window="window.consultaPendingContent = $event.detail.content || ''; try { if(window.consultaEditorInstance && window.consultaEditorInstance.root.isConnected){ window.consultaEditorInstance.root.innerHTML = window.consultaPendingContent; window.consultaPendingContent = null; } } catch(e){}">
                 <div id="toolbar-consulta-container"></div>
                 <div class="editable-container">
-                    <div id="editor-consulta-hoja"></div>
+                    <div id="editor-consulta-hoja">{!! $notas ?? '' !!}</div>
                 </div>
             </div>
             <button type="button" class="btn btn-outline-secondary mt-2"
@@ -175,27 +183,42 @@
     function startConsultaWordEditor() {
         const editorDom = document.querySelector('#editor-consulta-hoja');
         if (!editorDom) return;
-        if (editorDom.classList.contains('ql-container')) return;
-        var quill = new Quill('#editor-consulta-hoja', {
-            theme: 'snow',
-            placeholder: 'Redacte los pormenores de la consulta aquí...',
-            modules: { toolbar: [
-                [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                ['bold', 'italic', 'underline', 'strike'],
-                [{ 'align': [] }],
-                [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                [{ 'indent': '-1'}, { 'indent': '+1' }],
-                ['clean']
-            ]}
-        });
-        const toolbarContainer = document.querySelector('#toolbar-consulta-container');
-        const quillToolbar = document.querySelector('.editable-container .ql-toolbar');
-        if (toolbarContainer && quillToolbar) {
-            toolbarContainer.appendChild(quillToolbar);
+        // Si el DOM fue reemplazado, la instancia anterior quedó huérfana: descartarla
+        if (window.consultaEditorInstance) {
+            try {
+                if (!window.consultaEditorInstance.root.isConnected) { window.consultaEditorInstance = null; }
+            } catch(e) { window.consultaEditorInstance = null; }
         }
-        window.consultaEditorInstance = quill;
-        @this.set('notas', quill.root.innerHTML);
-        quill.on('text-change', function() { @this.set('notas', quill.root.innerHTML); });
+        if (!editorDom.classList.contains('ql-container')) {
+            var quill = new Quill('#editor-consulta-hoja', {
+                theme: 'snow',
+                placeholder: 'Redacte los pormenores de la consulta aquí...',
+                modules: { toolbar: [
+                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+                    ['bold', 'italic', 'underline', 'strike'],
+                    [{ 'align': [] }],
+                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
+                    [{ 'indent': '-1'}, { 'indent': '+1' }],
+                    ['clean']
+                ]}
+            });
+            const toolbarContainer = document.querySelector('#toolbar-consulta-container');
+            const quillToolbar = document.querySelector('.editable-container .ql-toolbar');
+            if (toolbarContainer && quillToolbar) {
+                toolbarContainer.appendChild(quillToolbar);
+            }
+            window.consultaEditorInstance = quill;
+            // NO se hace @this.set aquí: Quill ya tomó el HTML inicial del servidor.
+            // Solo se sincroniza cuando el usuario escribe.
+            quill.on('text-change', function() { @this.set('notas', quill.root.innerHTML); });
+        }
+        // Aplicar contenido pendiente (llegó antes de que el editor existiera)
+        if (window.consultaPendingContent !== undefined && window.consultaPendingContent !== null && window.consultaEditorInstance) {
+            try {
+                window.consultaEditorInstance.root.innerHTML = window.consultaPendingContent;
+                window.consultaPendingContent = null;
+            } catch(e) {}
+        }
     }
     setTimeout(() => { loadConsultaQuillEditor(); }, 100);
 </script>

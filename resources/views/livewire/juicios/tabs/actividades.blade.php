@@ -102,27 +102,11 @@
         </div>
     </div>
 
-    {{-- DEBUG ABSOLUTO (SIEMPRE VISIBLE - FUERA DE CUALQUIER @if) --}}
     @php
-        $hayJuicio = isset($juicio);
-        $juicioId = $hayJuicio ? $juicio->id : 'NULL';
-        $actsCount = $hayJuicio ? $juicio->actividades->count() : 0;
-        $actsLoaded = $hayJuicio && $juicio->relationLoaded('actividades') ? 'SÍ' : 'NO';
+        $hayJuicio = isset($juicio) && $juicio;
         $userId = auth()->id();
         $esAbogado = $hayJuicio ? $juicio->abogados()->where('user_id', $userId)->whereRaw("TRIM(LOWER(rol_en_juicio)) LIKE ?", ['%abogado%patrocinador%'])->exists() : false;
     @endphp
-
-    <div style="background:#e7f3ff;border:2px solid #0d6efd;padding:15px;margin:15px 0;font-family:monospace;font-size:12px;color:#084298;">
-    <strong>DEBUG ABSOLUTO:</strong>
-    Juicio existe: {{ $hayJuicio ? 'SÍ' : 'NO' }} | ID: {{ $juicioId }}
-    | Actividades: {{ $actsCount }} | Loaded: {{ $actsLoaded }}
-    | User: {{ $userId }} | EsAbogadoPatro: {{ $esAbogado ? 'SÍ' : 'NO' }}
-    @if($hayJuicio && $actsCount > 0)
-        @foreach($juicio->actividades->sortByDesc('fecha_actividad') as $a)
-            <br>ID: {{ $a->id }} | {{ $a->tipoActividad->nombre ?? 'SIN TIPO' }} | Firmable: {{ $a->tipoActividad->es_firmable ? 'SÍ' : 'NO' }} | Estado: {{ $a->estado_firma }}
-        @endforeach
-    @endif
-    </div>
 
     {{-- LISTADO (solo si hay actividades) --}}
     @if(isset($juicio) && $juicio->actividades->count() > 0)
@@ -144,8 +128,7 @@
                 <tbody>
                     @php
                         $actividades = $juicio->actividades->sortByDesc('fecha_actividad');
-                        $userId = auth()->id();
-                        $esAbogadoPatro = $juicio->abogados()->where('user_id', $userId)->whereRaw("TRIM(LOWER(rol_en_juicio)) LIKE ?", ['%abogado%patrocinador%'])->exists();
+                        $esAbogadoPatro = $esAbogado;
                     @endphp
                     
                     @foreach($actividades as $act)
@@ -191,9 +174,11 @@
                                     @endif
                                 </div>
                             @elseif($puedeFirmar)
+                                @can('firmar_actividad')
                                 <button wire:click="abrirModalFirmar({{ $act->id }})" class="btn btn-sm btn-warning" title="Firmar digitalmente">
                                     <i data-lucide="signature" class="w-4 h-4 mr-1"></i> Firmar
                                 </button>
+                                @endcan
                             @elseif($esFirmable)
                                 <span class="badge badge-warning badge-outline text-xs" title="Solo abogado patrocinador puede firmar">
                                     <i data-lucide="lock" class="w-3 h-3 mr-1"></i> Solo abogado
