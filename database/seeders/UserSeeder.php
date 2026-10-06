@@ -16,7 +16,7 @@ class UserSeeder extends Seeder
      */
     public function run()
     {
-       $user = User::create([
+       $user = User::firstOrCreate([
             'name' => 'Luis Mario Valdivieso',
             'ci' => '0104649843',
             'phone' => '09873086688',
@@ -25,7 +25,6 @@ class UserSeeder extends Seeder
             'status' => 'ACTIVE',
             'password' => bcrypt('administrador')
         ]);
-
         $user->syncRoles('Admin');
 
 

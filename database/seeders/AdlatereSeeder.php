@@ -293,8 +293,8 @@ class AdlatereSeeder extends Seeder
             TipoActividad::updateOrCreate(['nombre' => 'Diligencia']);        
 
 
-             Role::create(['name'=>'Abogado']);
-             Role::create(['name'=>'Asistente']);
+             Role::firstOrCreate(['name'=>'Abogado']);
+             Role::firstOrCreate(['name'=>'Asistente']);
 
 
             // permisos para juicios menue
@@ -638,9 +638,16 @@ class AdlatereSeeder extends Seeder
 
 
 
-        $this->agregaPermisosAdmin();
-            
+        $this->agregaPermisosAdmin();           
         
         
     }
+
+    public function agregaPermisosAdmin(){
+    $permisos = Permission::all();
+    $rol = Role::findByName('Admin');
+    foreach ($permisos as $permiso) {
+        $rol->givePermissionTo($permiso->name);
+    }
+}
 }

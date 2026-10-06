@@ -16,7 +16,7 @@ class PermisosSeeder extends Seeder
     public function run()
     {
         //roles
-        Role::create(['name'=>'Admin']);
-        Role::create(['name'=>'Employee']);
+        Role::firstOrCreate(['name'=>'Admin']);
+        Role::firstOrCreate(['name'=>'Employee']);
     }
 }
