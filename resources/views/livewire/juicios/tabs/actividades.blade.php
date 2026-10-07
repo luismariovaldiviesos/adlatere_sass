@@ -105,7 +105,11 @@
     @php
         $hayJuicio = isset($juicio) && $juicio;
         $userId = auth()->id();
-        $esAbogado = $hayJuicio ? $juicio->abogados()->where('user_id', $userId)->whereRaw("TRIM(LOWER(rol_en_juicio)) LIKE ?", ['%abogado%patrocinador%'])->exists() : false;
+        $esAbogado = $hayJuicio ? $juicio->abogados->contains(function($a) use ($userId) {
+            return (int) $a->id === (int) $userId
+                && str_contains(strtolower(trim($a->pivot->rol_en_juicio ?? '')), 'abogado')
+                && str_contains(strtolower(trim($a->pivot->rol_en_juicio ?? '')), 'patrocinador');
+        }) : false;
     @endphp
 
     {{-- LISTADO (solo si hay actividades) --}}

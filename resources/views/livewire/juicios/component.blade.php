@@ -124,12 +124,15 @@
                 <!-- Caja del modal centrada -->
                 <div class="bg-white rounded-lg p-6 relative shadow-2xl overflow-y-auto" style="width: 90%; max-width: 800px; max-height: 90vh;">
                     
-                    <!-- Cabecera del Modal -->
-                    <div class="flex justify-between items-center border-b pb-3 mb-4 sticky top-0 bg-white z-10">
-                        <h2 class="text-xl font-bold text-gray-800">
-                            <i class="fas fa-map-signs mr-2" style="color: #1e3a8a;"></i> Roadmap del Juicio: {{ $juicioRoadmap->cod_satje }}
+                    <!-- Cabecera del Modal (fija: el botón Cerrar siempre visible aunque haya muchos items) -->
+                    <div class="flex justify-between items-center px-4 py-3 mb-4 sticky top-0 z-10 rounded-t-lg shadow" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);">
+                        <h2 class="text-xl font-bold text-white">
+                            <i class="fas fa-map-signs mr-2"></i> Roadmap del Juicio: {{ $juicioRoadmap->cod_satje }}
                         </h2>
-                        <button wire:click="closeRoadmap" class="text-gray-500 hover:text-red-500 text-3xl font-bold leading-none">&times;</button>
+                        <div class="flex items-center gap-2">
+                            <button wire:click="closeRoadmap" onclick="this.closest('.fixed').style.display='none'" class="btn btn-sm px-4 font-bold" style="background-color: #60a5fa; color: #000; border: 1px solid #1e3a8a;">Cerrar</button>
+                            <button wire:click="closeRoadmap" onclick="this.closest('.fixed').style.display='none'" class="text-white hover:text-gray-200 text-3xl font-bold leading-none">&times;</button>
+                        </div>
                     </div>
 
                     <!-- Resumen Estado Actual -->
@@ -178,11 +181,6 @@
                                 <i class="fas fa-info-circle mr-2"></i> No hay historial registrado para este juicio aún.
                             </div>
                         @endforelse
-                    </div>
-                    
-                    <!-- Pie del Modal -->
-                    <div class="mt-8 text-right border-t pt-4">
-                        <button wire:click="closeRoadmap" class="btn btn-secondary px-8 py-2">Cerrar Roadmap</button>
                     </div>
                 </div>
             </div>

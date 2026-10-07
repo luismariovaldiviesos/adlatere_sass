@@ -271,7 +271,7 @@ class Juicios extends Component
 
     public function render()
     {
-        $info = Juicio::with('asunto.procedimiento.materia', 'abogados'); // Carga la relación automáticamente
+        $info = Juicio::with('asunto.procedimiento.materia', 'abogados', 'estadoProcesal'); // Carga la relación automáticamente
         // Visibilidad: admin todo, abogado solo sus juicios asignados
         if (!$this->esAdmin()) {
             $uid = auth()->id();

@@ -24,8 +24,11 @@ class FinanzasJuicio extends Model
     {
         return $this->belongsTo(Juicio::class, 'juicio_id');
     }
-    //accesors para total pagado
+    //accesors para total pagado (reutiliza la colección en memoria si ya está cargada)
     public function getTotalPagadoAttribute(){
+        if ($this->relationLoaded('pagos')) {
+            return (float) $this->pagos->where('estado', 'Aprobado')->sum('monto');
+        }
         return $this->pagos()->where('estado','Aprobado')->sum('monto');
     }
 
