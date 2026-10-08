@@ -61,7 +61,7 @@ class Customer extends Model
 
 
     public function juicios (){
-        return $this->belongsToMany(Juicio::class, 'juicio_participante')->withPivot('rol');
+        return $this->belongsToMany(Juicio::class, 'juicio_participante')->withPivot('rol', 'es_cliente');
     }
 
 

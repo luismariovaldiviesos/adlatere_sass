@@ -10,6 +10,57 @@ class Juicio extends Model
     use HasFactory;
     protected $fillable = ['cod_satje', 'asunto_id','estado_procesal_id', 'fecha_inicio', 'prioridad', 'unidad_id'];
 
+    protected $casts = [
+        'ultima_actividad_at' => 'datetime',
+    ];
+
+    // Recalcula el último movimiento (lo llaman los observers de
+    // Actividad/Audiencia/Documento; sin esto no hay semáforo fiable)
+    public static function recalcularUltimaActividad($juicioId)
+    {
+        $j = static::find($juicioId);
+        if (!$j) return;
+        $ultAct = \App\Models\Actividad::where('juicio_id', $juicioId)->max('fecha_actividad');
+        $ultAud = \App\Models\Audiencia::where('juicio_id', $juicioId)->max('fecha_hora');
+        $ultDoc = \App\Models\Documento::where('juicio_id', $juicioId)->max('created_at');
+        $max = collect([$ultAct, $ultAud, $ultDoc])->filter()->map(fn($f) => \Carbon\Carbon::parse($f))->max();
+        $j->ultima_actividad_at = $max ?: $j->fecha_inicio;
+        $j->saveQuietly(); // sin disparar eventos (evita loops)
+    }
+
+    protected static function booted()
+    {
+        // Un juicio nuevo nace con el reloj en su fecha de inicio
+        static::creating(function ($j) {
+            $j->ultima_actividad_at = $j->ultima_actividad_at ?: ($j->fecha_inicio ?? now());
+        });
+    }
+
+    // Semáforo de alertas: ['color' => green|yellow|red|gray, 'dias', 'hex', 'texto']
+    public function getSemaforoAttribute()
+    {
+        $cfg = \App\Models\PrioridadAlerta::config();
+        $base = $this->ultima_actividad_at ?: $this->fecha_inicio;
+        $dias = $base ? \Carbon\Carbon::parse($base)->diffInDays(now()) : 0;
+        $c = $cfg[$this->prioridad] ?? null;
+        if (!$c) {
+            return ['color' => 'gray', 'dias' => $dias, 'hex' => '#9ca3af',
+                'texto' => $dias . ' días sin movimiento (sin configuración)'];
+        }
+        if ($dias <= $c->dias_verde) {
+            $hex = '#22c55e'; $nivel = 'verde';
+        } elseif ($dias <= $c->dias_amarillo) {
+            $hex = '#eab308'; $nivel = 'amarillo';
+        } else {
+            $hex = '#ef4444'; $nivel = 'rojo';
+        }
+        $texto = $dias . ' días sin movimiento · ' . $this->prioridad . ' en ' . $nivel . ' (rojo a los ' . $c->dias_rojo . ')';
+        if (!empty($c->mensaje)) {
+            $texto .= ' · ' . $c->mensaje;
+        }
+        return ['color' => $nivel, 'dias' => $dias, 'hex' => $hex, 'texto' => $texto];
+    }
+
     public static function rules($id){
        if($id <=0 ){
             return [
@@ -67,8 +118,13 @@ class Juicio extends Model
     //relacion principal con participantes (clientes)
     public function participantes(){
         return $this->belongsToMany(Customer::class, 'juicio_participante')
-                    ->withPivot('rol') // para acceder al rol del participante en el juicio
+                    ->withPivot('rol', 'es_cliente') // rol + marca de cliente del despacho
                     ->withTimestamps();
+    }
+
+    // Clientes del despacho en este juicio (pueden ser actores, demandados o ambos)
+    public function clientes(){
+        return $this->participantes()->wherePivot('es_cliente', true);
     }
 
     public function actores (){

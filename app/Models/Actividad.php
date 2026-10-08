@@ -27,6 +27,12 @@ class Actividad extends Model
             'firma_metadatos' => 'array',
     ];
 
+    protected static function booted()
+    {
+        static::saved(fn($a) => \App\Models\Juicio::recalcularUltimaActividad($a->juicio_id));
+        static::deleted(fn($a) => \App\Models\Juicio::recalcularUltimaActividad($a->juicio_id));
+    }
+
    public static function rules($id){
         if($id <= 0){
             return [

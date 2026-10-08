@@ -1,6 +1,6 @@
 <nav class="side-nav">
     {{-- MENU CENTRAL (LANDLORD) --}}
-    @if(!tenant())
+ {{-- @if(!tenant())
         <a href="{{ url('/dash') }}" class="intro-x flex items-center pl-5 pt-4">
             <img alt="logo" class="w-6" src="{{ asset('dist/images/logo.svg') }}">
             <span class="hidden xl:block text-white text-lg ml-3"><span class="font-medium">FACTA SaaS</span> </span>
@@ -26,13 +26,17 @@
                 </a>
             </li>
         </ul>
-    @else
+    @else --}}
         {{-- MENU DEL INQUILINO (TENANT) CON PERMISOS --}}
         
         @can('menu_dashboard')
         <a href="{{ url('dash') }}" class="intro-x flex items-center pl-5 pt-4">
             <img alt="logo" class="w-6" src="{{ asset('dist/images/logo.svg') }}">
             <span class="hidden xl:block text-white text-lg ml-3"><span class="font-medium">DASHBOARD</span> </span>
+        </a>
+        <a href="{{ route('calendario') }}" class="side-menu">
+            <div class="side-menu__icon"> <i data-feather="calendar"></i> </div>
+            <div class="side-menu__title"> CALENDARIO  </div>
         </a>
         @endcan
 
@@ -66,5 +70,5 @@
             @include('layouts.modules.adlatere_sidebar')
         @endcan
 
-    @endif
+    {{--@endif --}}
 </nav>

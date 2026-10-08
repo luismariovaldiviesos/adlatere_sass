@@ -80,6 +80,11 @@ class ActividadSignatureService {
         if (!$actividad->juicio->abogados()->where('user_id', $abogado->id)->whereRaw("TRIM(LOWER(rol_en_juicio)) LIKE ?", ['%abogado%patrocinador%'])->exists()) {
             throw new \Exception('Solo el abogado patrocinador del juicio puede firmar esta actividad.');
         }
+        $esAbogado = (isset($abogado->profile) && $abogado->profile === 'Abogado')
+            || (method_exists($abogado, 'hasRole') && $abogado->hasRole('Abogado'));
+        if (!$esAbogado) {
+            throw new \Exception('Solo un usuario con perfil de abogado puede firmar.');
+        }
         if (empty($abogado->firma_path) || empty($abogado->firma_password)) {
             throw new \Exception('No tienes configurada tu firma electrónica en tu perfil.');
         }

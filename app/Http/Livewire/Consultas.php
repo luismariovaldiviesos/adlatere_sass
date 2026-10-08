@@ -97,6 +97,17 @@ class Consultas extends Component
         return $this->abogado_id && (int) $this->abogado_id === (int) auth()->id();
     }
 
+    // Perfil abogado (por campo profile o rol Spatie). Atender, notas y
+    // convertir exigen este perfil ADEMÁS de la asignación.
+    private function esAbogado($user = null)
+    {
+        $u = $user ?: auth()->user();
+        if (!$u) return false;
+        if (isset($u->profile) && $u->profile === 'Abogado') return true;
+        if (method_exists($u, 'hasRole') && $u->hasRole('Abogado')) return true;
+        return false;
+    }
+
     public function updatedSearchCustomer($value)
     {
         $this->customer_id = null;
@@ -353,6 +364,10 @@ class Consultas extends Component
             $this->dispatchBrowserEvent('noty', ['msg' => 'La consulta ya no existe. Recargue la página.', 'type' => 'error', 'action' => '']);
             return;
         }
+        if (!$this->esAbogado()) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo un usuario con perfil de abogado puede guardar notas.', 'type' => 'error', 'action' => '']);
+            return;
+        }
         if (!$this->esAdmin() && (int) $consulta->abogado_id !== (int) auth()->id()) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el abogado asignado puede guardar notas.', 'type' => 'error', 'action' => '']);
             return;
@@ -416,6 +431,10 @@ class Consultas extends Component
         if (!$consulta) return;
         if (!$this->puedeOperar($consulta)) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'No tiene permiso para atender esta consulta.', 'type' => 'success', 'action' => '']);
+            return;
+        }
+        if (!$this->esAbogado()) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo un usuario con perfil de abogado puede atender consultas.', 'type' => 'error', 'action' => '']);
             return;
         }
         if (auth()->user()->cannot('atender_consulta')) {
@@ -542,6 +561,10 @@ class Consultas extends Component
     {
         $consulta = Consulta::with(['customer', 'asunto'])->find($id);
         if (!$consulta) return;
+        if (!$this->esAbogado()) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo un usuario con perfil de abogado puede convertir en juicio.', 'type' => 'error', 'action' => '']);
+            return;
+        }
         if (!$this->esAdmin() && (int) $consulta->abogado_id !== (int) auth()->id()) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el abogado asignado o el admin pueden convertirla en juicio.', 'type' => 'success', 'action' => '']);
             return;
@@ -568,9 +591,11 @@ class Consultas extends Component
                 'prioridad'          => 'Media',
             ]);
 
-            // Cliente de la consulta -> actor de la carátula (pivot juicio_participante, rol actor)
+            // Cliente de la consulta -> actor de la carátula, marcado como cliente del despacho
             if (!$juicio->participantes()->where('customer_id', $consulta->customer_id)->exists()) {
-                $juicio->participantes()->attach($consulta->customer_id, ['rol' => 'actor']);
+                $juicio->participantes()->attach($consulta->customer_id, ['rol' => 'actor', 'es_cliente' => true]);
+            } else {
+                $juicio->participantes()->updateExistingPivot($consulta->customer_id, ['es_cliente' => true]);
             }
 
                  // Abogado de la consulta -> patrocinador de la carátula (nunca en cero)

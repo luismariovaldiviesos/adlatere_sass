@@ -22,4 +22,10 @@ class Documento extends Model
     {
         return $this->belongsTo(Juicio::class);
     }
+
+    protected static function booted()
+    {
+        static::saved(fn($d) => $d->juicio_id ? \App\Models\Juicio::recalcularUltimaActividad($d->juicio_id) : null);
+        static::deleted(fn($d) => $d->juicio_id ? \App\Models\Juicio::recalcularUltimaActividad($d->juicio_id) : null);
+    }
 }

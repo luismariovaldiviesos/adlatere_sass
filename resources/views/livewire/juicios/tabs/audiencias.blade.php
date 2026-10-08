@@ -33,6 +33,7 @@
             <label class="form-label text-base">Sala / Enlace</label>
             <input type="text" wire:model.defer="aud_sala_enlace" class="form-control h-12 text-lg"
                    placeholder="Ej: Sala 4 o https://meet.google.com/...">
+            @error('aud_sala_enlace') <x-alert msg="{{ $message }}" /> @enderror
         </div>
 
         {{-- ACTA / RESUMEN --}}

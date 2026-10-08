@@ -50,7 +50,8 @@ class Juicios extends Component
     public $cliente_id = null;
     public $juicio_id = null;
     public $cliente_nombre = '';
-    public $rol = ''; // 'ACTOR', 'DEMANDADO', 'TERCERO'
+    public $rol = ''; // 'actor', 'demandado' (igual que el ENUM en base)
+    public $es_cliente = false; // marca cliente del despacho en este juicio
     // --- CREACIÓN RÁPIDA (QUICK CUSTOMER) ---
     public $showCreateCustomer = false; 
     public $q_businame, $q_valueidenti, $q_typeidenti = 'cedula', $q_address, $q_phone, $q_email;
@@ -212,6 +213,48 @@ class Juicios extends Component
         return true;
     }
 
+    // Perfil abogado (por campo profile o rol Spatie)
+    private function esAbogado($user = null)
+    {
+        $u = $user ?: auth()->user();
+        if (!$u) return false;
+        if (isset($u->profile) && $u->profile === 'Abogado') return true;
+        if (method_exists($u, 'hasRole') && $u->hasRole('Abogado')) return true;
+        return false;
+    }
+
+    // Solo tramita quien ES patrocinador de ESTE juicio Y tiene perfil de abogado.
+    // El admin ve todo pero no tramita (salvo que tenga perfil Abogado).
+    private function usuarioPuedeTramitar()
+    {
+        if (!$this->selected_id) {
+            $this->noty('Seleccione un juicio primero.', 'noty', false);
+            return false;
+        }
+        $j = ($this->juicio && $this->juicio->id == $this->selected_id)
+            ? $this->juicio
+            : $this->cargarJuicioMaestro($this->selected_id, true);
+        if (!$j) {
+            $this->noty('No tiene acceso a este juicio.', 'noty', false);
+            return false;
+        }
+        if (!$this->esAbogado()) {
+            $this->noty('Solo el abogado patrocinador puede tramitar en este juicio.', 'noty', false);
+            return false;
+        }
+        $uid = auth()->id();
+        $n = $j->abogados->filter(function($a) use ($uid) {
+            if ((int) $a->id !== (int) $uid) return false;
+            $rol = strtolower(trim($a->pivot->rol_en_juicio ?? ''));
+            return str_contains($rol, 'abogado') && str_contains($rol, 'patrocinador');
+        })->count();
+        if ($n < 1) {
+            $this->noty('Solo el abogado patrocinador asignado puede tramitar en este juicio.', 'noty', false);
+            return false;
+        }
+        return true;
+    }
+
     // buscador dinamico para sujetos procesales
     public function updatedSearchCustomer($value){
 
@@ -341,7 +384,7 @@ class Juicios extends Component
         $eraNuevo = !$this->selected_id;
         // En edición (incluye juicios viejos sin patrocinador) se exige patrocinador.
         // La reparación se hace por la pestaña Abogados (addAbogado no tiene este bloqueo).
-        if (!$eraNuevo && !$this->exigirPatrocinador()) return;
+        if (!$eraNuevo && !$this->usuarioPuedeTramitar()) return;
         if ($eraNuevo && auth()->user()->cannot('agregar_juicio')) return;
          if ($eraNuevo && !$this->abogado_id && $this->esAdmin()) {
             $this->noty('Seleccione el abogado patrocinador (búsquelo en la pestaña Abogados) antes de crear el juicio.', 'noty', false);
@@ -420,7 +463,7 @@ class Juicios extends Component
     }
 
     public function addParticipante(){
-        if (!$this->exigirPatrocinador()) return;        
+        if (!$this->usuarioPuedeTramitar()) return;        
         if(!$this->selected_id || $this->selected_id <= 0){
             $this->noty( 'Debe guardar el juicio primero.', 'noty', false);
              $this->tab = 'juicio'; // volver a la pestaña de juicio para guardar primero
@@ -431,19 +474,24 @@ class Juicios extends Component
                 return;           
             }
     
-            if(!$this->rol || !in_array($this->rol, ['actor', 'demandado', 'tercero'])){
+            if(!$this->rol || !in_array($this->rol, ['actor', 'demandado'])){
                 $this->noty( 'Seleccione un rol válido para el participante.', 'noty', false);
-                return;           
+                return;
             }
 
         $juicio = $this->cargarJuicioMaestro();
         if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
         if($juicio->participantes()->where('customer_id', $this->cliente_id)->exists()){
             $this->noty( 'Este sujeto ya es participante en el juicio.', 'noty', false);
-            return; 
+            return;
         }
-        $juicio->participantes()->attach($this->cliente_id, ['rol' => $this->rol]);
-        if ($this->juicio) $this->juicio->load('actores', 'demandados');
+        // Conflicto de intereses: los clientes deben estar todos del mismo lado
+        if ($this->es_cliente && $juicio->participantes()->wherePivot('es_cliente', true)->wherePivot('rol', '!=', $this->rol)->exists()) {
+            $this->noty('Conflicto de intereses: ya hay un cliente del despacho en la contraparte.', 'noty', false, 'error');
+            return;
+        }
+        $juicio->participantes()->attach($this->cliente_id, ['rol' => $this->rol, 'es_cliente' => (bool) $this->es_cliente]);
+        if ($this->juicio) $this->juicio->load('actores', 'demandados', 'participantes');
          $this->noty('Sujeto procesal agregado con éxito.', 'noty', false);
          //historial de auditoría
          \App\Models\JuicioHistorialEstado::create([
@@ -456,7 +504,7 @@ class Juicios extends Component
         'descripcion'        => 'Se agregó un ' . $this->rol . ' al juicio.',
     ]);
           // Limpiamos los cajones para agregar otro
-        $this->reset(['cliente_id', 'searchCustomer', 'rol', 'customers']);
+        $this->reset(['cliente_id', 'searchCustomer', 'rol', 'es_cliente', 'customers']);
         $this->customers = [];
 
     }
@@ -523,6 +571,9 @@ class Juicios extends Component
         $this->fin_honorarios = $finanza->honorarios_totales;
        $this->fin_gastos = $finanza->gastos_extras;
         $this->fin_notas_acuerdo = $finanza->notas_acuerdo;
+        // Pagador por defecto: primer cliente del despacho marcado
+        $cliPago = $juicio->participantes()->wherePivot('es_cliente', true)->first();
+        $this->pago_customer_id = $cliPago ? $cliPago->id : null;
         $this->selected_id = $juicio->id;
         $this->cod_satje = $juicio->cod_satje;
         $this->asunto_id = $juicio->asunto_id;
@@ -557,6 +608,7 @@ class Juicios extends Component
             $this->cliente_id = $participante->id;
             $this->searchCustomer = $participante->businame;
             $this->rol = $pivotData->rol;
+            $this->es_cliente = (bool) ($pivotData->es_cliente ?? false);
             $this->editModeSujeto = true;
             //dd($this->cliente_id, $this->searchCustomer, $this->rol);
             $this->old_cliente_id = $participante->id;
@@ -565,11 +617,11 @@ class Juicios extends Component
 
 
     public function removeParticipante($id){
-        if (!$this->exigirPatrocinador()) return;
+        if (!$this->usuarioPuedeTramitar()) return;
         $juicio = $this->cargarJuicioMaestro();
         if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
         $juicio->participantes()->detach($id);
-        if ($this->juicio) $this->juicio->load('actores', 'demandados');
+        if ($this->juicio) $this->juicio->load('actores', 'demandados', 'participantes');
         $this->noty('Sujeto procesal removido con éxito.', 'noty', false);
         \App\Models\JuicioHistorialEstado::create([
             'juicio_id'          => $this->selected_id,
@@ -583,16 +635,21 @@ class Juicios extends Component
     }
 
 public function editParticipanteEnJuicio(){
-    if (!$this->exigirPatrocinador()) return;
+    if (!$this->usuarioPuedeTramitar()) return;
     $juicio = $this->cargarJuicioMaestro();
     if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
+    // Conflicto de intereses: al guardar no pueden quedar clientes en ambos lados (se excluye a sí mismo)
+    if ($this->es_cliente && $juicio->participantes()->where('customer_id', '!=', $this->cliente_id)->wherePivot('es_cliente', true)->wherePivot('rol', '!=', $this->rol)->exists()) {
+        $this->noty('Conflicto de intereses: ya hay un cliente del despacho en la contraparte.', 'noty', false, 'error');
+        return;
+    }
     if ($this->old_cliente_id && $this->old_cliente_id != $this->cliente_id) {
     // Si el usuario buscó a una persona diferente, quitamos al anterior y agregamos al nuevo
     $juicio->participantes()->detach($this->old_cliente_id);
-    $juicio->participantes()->attach($this->cliente_id, ['rol' => $this->rol]);
+    $juicio->participantes()->attach($this->cliente_id, ['rol' => $this->rol, 'es_cliente' => (bool) $this->es_cliente]);
     } else {
-        // Si es la misma persona y solo le están cambiando el rol
-        $juicio->participantes()->updateExistingPivot($this->cliente_id, ['rol' => $this->rol]);
+        // Si es la misma persona: se cambia rol y/o marca de cliente (la marca sobrevive al cambio de rol)
+        $juicio->participantes()->updateExistingPivot($this->cliente_id, ['rol' => $this->rol, 'es_cliente' => (bool) $this->es_cliente]);
     }
     $this->noty('Rol del sujeto procesal actualizado con éxito.', 'noty', false);
     
@@ -606,11 +663,11 @@ public function editParticipanteEnJuicio(){
         'descripcion'        => 'Se cambió el rol del sujeto procesal a ' . $this->rol,
     ]);
 
-    // Refrescar solo actores/demandados del sidebar
-    if ($this->juicio) $this->juicio->load('actores', 'demandados');
+    // Refrescar sidebar y tabla de sujetos (participantes incluye la marca de cliente)
+    if ($this->juicio) $this->juicio->load('actores', 'demandados', 'participantes');
 
     // Limpiamos los cajones para agregar otro
-    $this->reset(['cliente_id', 'searchCustomer', 'rol', 'customers']);
+    $this->reset(['cliente_id', 'searchCustomer', 'rol', 'es_cliente', 'customers']);
     $this->editModeSujeto = false;
     $this->customers = [];
     }
@@ -656,6 +713,10 @@ public function editParticipanteEnJuicio(){
 
        $actores = $juicio->actores->pluck('businame')->implode(', ');
        $demandados = $juicio->demandados->pluck('businame')->implode(', ');
+        // Clientes del despacho (marcados, en cualquier lado; sin consultas extra)
+        $clientes = $juicio->actores->merge($juicio->demandados)
+            ->filter(fn($p) => !empty($p->pivot->es_cliente))->unique('id');
+        $nombres_clientes = $clientes->pluck('businame')->implode(', ');
        //juez ponente 
          $juez = $juicio->funcionarios->first(function($f) {
             return strtolower($f->pivot->rol_en_juicio) === 'juez ponente' 
@@ -692,6 +753,11 @@ public function editParticipanteEnJuicio(){
             'DEMANDADOS_DIRECCION'      => $demandados_direccion,
             'DEMANDADOS_CORREO'         => $demandados_correo,
             'DEMANDADOS_TELEFONO'       => $demandados_telefono,
+            'CLIENTE' => $nombres_clientes,
+            'CLIENTE_IDENTIFICACION'    => $clientes->pluck('valueidenti')->implode(', '),
+            'CLIENTE_DIRECCION'         => $clientes->pluck('address')->implode(' | '),
+            'CLIENTE_CORREO'            => $clientes->pluck('email')->implode(', '),
+            'CLIENTE_TELEFONO'          => $clientes->pluck('phone')->implode(', '),
            'FECHA_ACTUAL' => \Carbon\Carbon::now()->translatedFormat('d \d\e F \d\e Y'),
              'JUEZ' => $juez,
             'SECRETARIO' => $secretario,
@@ -723,7 +789,7 @@ public function editParticipanteEnJuicio(){
   
 
    public function addActividad(){
-    if (!$this->exigirPatrocinador()) return;
+    if (!$this->usuarioPuedeTramitar()) return;
     $this->validate([
         'tipo_actividad_id' => 'required',
         'fecha_actividad' => 'required',
@@ -832,7 +898,7 @@ public function editParticipanteEnJuicio(){
    }
 
    public function destroyActividad($id) {
-    if (!$this->exigirPatrocinador()) return;
+    if (!$this->usuarioPuedeTramitar()) return;
         $act = \App\Models\Actividad::where('id', $id)->where('juicio_id', $this->selected_id)->first();
         if (!$act) { $this->noty('Actividad no encontrada en este juicio.', 'noty', false, 'error'); return; }
         $act->delete();
@@ -859,10 +925,22 @@ public function editParticipanteEnJuicio(){
    
 
    public function saveAudiencia(){
-    if (!$this->exigirPatrocinador()) return;
+    if (!$this->usuarioPuedeTramitar()) return;
     $this->validate([
+                    'aud_fecha_hora' => 'required|date',
+                    'aud_tipo_audiencia' => 'required|string|max:255',
+                    'aud_sala_enlace' => 'nullable|string|max:255',
+                    'aud_estado' => 'required|in:Programada,Realizada,Suspendida,Fallida',
+                    'aud_acta_resumen' => 'nullable|string',
                     'aud_archivo' => 'nullable|file|mimes:pdf,doc,docx|max:10240',
                 ], [
+                    'aud_fecha_hora.required' => 'Indique la fecha y hora de la audiencia.',
+                    'aud_fecha_hora.date' => 'La fecha y hora no es válida.',
+                    'aud_tipo_audiencia.required' => 'Indique el tipo de audiencia.',
+                    'aud_tipo_audiencia.max' => 'El tipo no debe superar 255 caracteres.',
+                    'aud_sala_enlace.max' => 'La sala/enlace no debe superar 255 caracteres.',
+                    'aud_estado.required' => 'Seleccione el estado.',
+                    'aud_estado.in' => 'Estado no válido.',
                     'aud_archivo.file'  => 'El archivo no se cargó completamente. Espere a que termine la subida e intente de nuevo.',
                     'aud_archivo.mimes' => 'Solo se permiten archivos PDF, DOC o DOCX.',
                     'aud_archivo.max'   => 'El archivo no debe superar los 10 MB.',
@@ -978,7 +1056,7 @@ public function editParticipanteEnJuicio(){
    }
 
     public function destroyAudiencia($id){
-    if (!$this->exigirPatrocinador()) return;
+    if (!$this->usuarioPuedeTramitar()) return;
     $audDel = \App\Models\Audiencia::where('id', $id)->where('juicio_id', $this->selected_id)->first();
     if (!$audDel) { $this->noty('Audiencia no encontrada en este juicio.', 'noty', false, 'error'); return; }
     $audDel->delete();
@@ -1017,7 +1095,7 @@ public function editParticipanteEnJuicio(){
 // ─────────────────────────────────────────
 
     public function saveDocumentoGeneral(){
-        if (!$this->exigirPatrocinador()) return;
+        if (!$this->usuarioPuedeTramitar()) return;
         $this->validate([
             'doc_nombre'      => 'required|string|max:255',
             'doc_origen_tipo' => 'required|string|max:255',
@@ -1061,7 +1139,7 @@ public function editParticipanteEnJuicio(){
     }
 
     public function destroyDocumento($id){
-        if (!$this->exigirPatrocinador()) return;
+        if (!$this->usuarioPuedeTramitar()) return;
         $doc = \App\Models\Documento::where('id', $id)->where('juicio_id', $this->selected_id)->first();
         if (!$doc) { $this->noty('Documento no encontrado en este juicio.', 'noty', false, 'error'); return; }
         $docId = $doc->id;
@@ -1088,7 +1166,7 @@ public function editParticipanteEnJuicio(){
 
 
     public function saveFinanzas(){
-        if (!$this->exigirPatrocinador()) return;
+        if (!$this->usuarioPuedeTramitar()) return;
         $this->validate([
         'fin_honorarios' => 'required|numeric|min:0',
         'fin_gastos'     => 'required|numeric|min:0',
@@ -1119,7 +1197,13 @@ public function editParticipanteEnJuicio(){
     }
 
     public function savePago(){
-        if (!$this->exigirPatrocinador()) return;
+        if (!$this->usuarioPuedeTramitar()) return;
+        // Sin cliente del despacho marcado no hay a quién cobrarle
+        $juicioPago = $this->juicio && $this->juicio->id == $this->selected_id ? $this->juicio : $this->cargarJuicioMaestro($this->selected_id, true);
+        if (!$juicioPago || !$juicioPago->participantes()->wherePivot('es_cliente', true)->exists()) {
+            $this->noty('Marque primero al cliente del despacho en la pestaña Sujetos.', 'noty', false, 'error');
+            return;
+        }
         $this->validate([
         'pago_customer_id' => 'required',
         'pago_monto'       => 'required|numeric|min:0.01',
@@ -1188,7 +1272,7 @@ public function editParticipanteEnJuicio(){
 
     public function destroyPago($id)
     {
-        if (!$this->exigirPatrocinador()) return;
+        if (!$this->usuarioPuedeTramitar()) return;
         $pago = \App\Models\PagosJuicio::where('id', $id)->whereHas('finanza', function($q) {
             $q->where('juicio_id', $this->selected_id);
         })->first();
@@ -1252,7 +1336,7 @@ public function editParticipanteEnJuicio(){
 
     //metodo para asignar un funcionario a un juicio
     public function addFuncionario(){
-        if (!$this->exigirPatrocinador()) return;
+        if (!$this->usuarioPuedeTramitar()) return;
         if(!$this->selected_id || $this->selected_id <=0){
             $this->noty('Debe guardar el juicio primero.', 'noty', false);
              $this->tab = 'juicio'; // volver a la pestaña de juicio para guardar primero
@@ -1293,7 +1377,7 @@ public function editParticipanteEnJuicio(){
     }
 
     public function removeFuncionario($funcionarioId){
-        if (!$this->exigirPatrocinador()) return;
+        if (!$this->usuarioPuedeTramitar()) return;
         if (!$this->selected_id || $this->selected_id <= 0) return;
         $juicio = $this->cargarJuicioMaestro();
         if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
@@ -1406,8 +1490,10 @@ public function descargarPdf(Audiencia $audiencia)
         if(!$this->selected_id || $this->selected_id <= 0){
             $this->noty('Debe guardar el juicio primero.', 'noty', false);
             $this->tab = 'juicio';
-            return;           
+            return;
         }
+        // Gestionar abogados: el admin o quien tramita en el juicio (dueño incluido)
+        if (!$this->esAdmin() && !$this->usuarioPuedeTramitar()) return;
         if (!$this->abogado_id || $this->abogado_id <= 0){
             $this->noty('Seleccione un abogado válido.', 'noty', false);
             return;           
@@ -1440,6 +1526,8 @@ public function descargarPdf(Audiencia $audiencia)
 
     public function removeAbogado($userId){
         if (!$this->selected_id || $this->selected_id <= 0) return;
+        // Gestionar abogados: el admin o quien tramita en el juicio (dueño incluido)
+        if (!$this->esAdmin() && !$this->usuarioPuedeTramitar()) return;
         $juicio = $this->cargarJuicioMaestro();
         if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
         // Conteo en memoria sobre la relación ya cargada (sin consultas extra)
@@ -1532,9 +1620,14 @@ public function abrirModalFirmar($actividadId)
         return;
     }
     // Validar que sea abogado patrocinador
-    if (!$this->esPatrocinador($actividad->juicio_id, auth()->id()))
+    if (!$actividad->juicio->abogados()->where('user_id', auth()->id())->whereRaw("TRIM(LOWER(rol_en_juicio)) LIKE ?", ['%abogado%patrocinador%'])->exists())
         {
         $this->noty('Solo el abogado patrocinador puede firmar', 'noty', false, 'error');
+        return;
+    }
+    // Solo un usuario con perfil de abogado puede firmar (aunque esté vinculado)
+    if (!$this->esAbogado()) {
+        $this->noty('Solo un usuario con perfil de abogado puede firmar.', 'noty', false, 'error');
         return;
     }
     // Validar certificado

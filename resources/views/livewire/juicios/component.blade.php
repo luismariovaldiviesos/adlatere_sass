@@ -81,6 +81,14 @@
                                                 </button>
                                                 @endcan
 
+                                                @php
+                                                    $sem = $juicio->semaforo;
+                                                    $semTxt = $sem['color'] === 'yellow' ? '#000' : '#fff';
+                                                @endphp
+                                                <span title="{{ $sem['texto'] }}" style="display:inline-flex;align-items:center;gap:5px;background-color:{{ $sem['hex'] }};color:{{ $semTxt }};font-weight:700;font-size:11px;padding:3px 10px;border-radius:9999px;margin-right:6px;vertical-align:middle;box-shadow:0 0 8px {{ $sem['hex'] }};white-space:nowrap;">
+                                                    <span style="display:inline-block;width:8px;height:8px;border-radius:9999px;background-color:{{ $semTxt }};"></span>
+                                                    {{ $sem['dias'] }}d · {{ strtoupper($sem['color']) }}
+                                                </span>
                                                 <button type="button" wire:click="openRoadmap({{ $juicio->id }})" class="btn btn-sm btn-outline-primary" title="Ver Roadmap">
                                                     <i class="fas fa-route"></i> Roadmap
                                                 </button>

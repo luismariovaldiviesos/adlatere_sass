@@ -61,4 +61,10 @@ class Audiencia extends Model
     {
         return $this->belongsTo(Juicio::class);
     }
+
+    protected static function booted()
+    {
+        static::saved(fn($a) => \App\Models\Juicio::recalcularUltimaActividad($a->juicio_id));
+        static::deleted(fn($a) => \App\Models\Juicio::recalcularUltimaActividad($a->juicio_id));
+    }
 }

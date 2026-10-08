@@ -76,6 +76,11 @@
 </div> --}}
 
 <div class="p-8 space-y-6">
+    @if(isset($juicio) && $juicio && !$juicio->participantes()->wherePivot('es_cliente', true)->exists())
+    <div class="alert alert-warning" role="alert">
+        <strong>Sin cliente marcado:</strong> este juicio aún no tiene cliente del despacho. Márquelo con la casilla al agregar o editar un sujeto.
+    </div>
+    @endif
     <div class="grid grid-cols-12 gap-6 items-end">
         
         {{-- BUSCADOR DINÁMICO DE CUSTOMERS Y BOTÓN NUEVO --}}
@@ -124,6 +129,10 @@
                 <option value="demandado">DEMANDADO</option>
             </select>
             @error('rol') <span class="text-theme-6 mt-1">{{ $message }}</span> @enderror
+            <div class="flex items-center gap-2 mt-2">
+                <input type="checkbox" wire:model.defer="es_cliente" id="esCliente" class="form-check-input">
+                <label for="esCliente" class="text-sm font-bold">Es cliente del despacho</label>
+            </div>
         </div>
 
         {{-- BOTON AGREGAR AL JUICIO --}}
@@ -152,6 +161,7 @@
                     <th class="p-4 font-bold border-b-2">Identificación</th>
                     <th class="p-4 font-bold border-b-2">Nombre Completo / Razón Social</th>
                     <th class="p-4 font-bold border-b-2 text-center">Rol</th>
+                    <th class="p-4 font-bold border-b-2 text-center">Cliente</th>
                     <th class="p-4 font-bold border-b-2 text-center">Acciones</th>
                 </tr>
             </thead>
@@ -172,6 +182,13 @@
                         </span>
                     </td>
                     <td class="p-4 text-center border-b">
+                        @if(!empty($p->pivot->es_cliente))
+                            <span class="px-3 py-1 rounded-full text-xs font-bold shadow-sm bg-blue-100 text-blue-800">CLIENTE</span>
+                        @else
+                            <span class="text-gray-300">—</span>
+                        @endif
+                    </td>
+                    <td class="p-4 text-center border-b">
                         <button class="btn btn-outline-primary btn-sm mr-2" wire:click="editParticipante({{ $p->id }})" title="Editar Rol">
                             <i class="fas fa-edit"></i>
 
@@ -181,9 +198,9 @@
                         </button>
                     </td>
                 </tr>
-                @empty
-                <tr>
-                    <td colspan="4" class="p-10 text-center text-gray-500 text-lg">
+                                @empty
+                                    <tr>
+                                        <td colspan="5" class="p-10 text-center text-gray-500 text-lg">
                         <i class="fas fa-users fa-3x mb-3 text-gray-300 block"></i>
                         Aún no hay sujetos procesales asignados a este juicio.
                     </td>

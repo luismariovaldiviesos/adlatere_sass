@@ -38,6 +38,8 @@ use App\Http\Livewire\Especialidades;
 use App\Http\Livewire\Funcionarios;
 use App\Http\Livewire\Juicios;
 use App\Http\Livewire\Consultas;
+use App\Http\Livewire\PrioridadAlertas;
+use App\Http\Livewire\Calendario;
 use App\Http\Livewire\TiposActividades;
 use App\Http\Livewire\PlantillasTiposActividad;
 
@@ -114,6 +116,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('juicios', Juicios::class)->name('juicios');
     Route::get('consultas', Consultas::class)->name('consultas');
     Route::get('mis-consultas', Consultas::class)->name('mis-consultas');
+    Route::get('prioridad-alertas', PrioridadAlertas::class)->name('prioridad-alertas');
+    Route::get('calendario', Calendario::class)->name('calendario');
     Route::get('tipoactividad', TiposActividades::class)->name('tipoactividad');
     Route::get('plantillas-tipos-actividad', PlantillasTiposActividad::class)->name('plantillas-tipos-actividad');
 });

@@ -65,11 +65,12 @@
             <select wire:model.defer="pago_customer_id" class="form-select h-12 text-lg">
                 <option value="">Seleccione el cliente...</option>
                 @if(isset($juicio))
-                    @foreach($juicio->actores as $actor)
-                        <option value="{{ $actor->id }}">{{ $actor->businame }} (Actor)</option>
-                    @endforeach
-                    @foreach($juicio->demandados as $demandado)
-                        <option value="{{ $demandado->id }}">{{ $demandado->businame }} (Demandado)</option>
+                    @php
+                        $pagadores = $juicio->actores->merge($juicio->demandados)
+                            ->filter(fn($p) => !empty($p->pivot->es_cliente))->unique('id');
+                    @endphp
+                    @foreach($pagadores as $pag)
+                        <option value="{{ $pag->id }}">{{ $pag->businame }} ({{ ucfirst($pag->pivot->rol) }})</option>
                     @endforeach
                 @endif
             </select>

@@ -634,6 +634,16 @@ class AdlatereSeeder extends Seeder
                 'guard_name' => 'web',
                 ]);
 
+            // Umbrales del semáforo de alertas por prioridad (días sin movimiento)
+            foreach ([
+                ['prioridad' => 'Urgente', 'dias_verde' => 1, 'dias_amarillo' => 2, 'dias_rojo' => 3],
+                ['prioridad' => 'Alta',    'dias_verde' => 2, 'dias_amarillo' => 5, 'dias_rojo' => 7],
+                ['prioridad' => 'Media',   'dias_verde' => 3, 'dias_amarillo' => 10, 'dias_rojo' => 15],
+                ['prioridad' => 'Baja',    'dias_verde' => 5, 'dias_amarillo' => 15, 'dias_rojo' => 25],
+            ] as $r) {
+                \App\Models\PrioridadAlerta::updateOrCreate(['prioridad' => $r['prioridad']], $r);
+            }
+
             
 
 
