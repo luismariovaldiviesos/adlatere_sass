@@ -32,4 +32,14 @@ class PagosJuicio extends Model
     {
         return $this->belongsTo(\App\Models\Factura::class, 'factura_id');
     }
+
+    protected static function booted()
+    {
+        $tocar = function ($p) {
+            $fin = $p->finanza;
+            if ($fin) \App\Models\Juicio::recalcularUltimaActividad($fin->juicio_id);
+        };
+        static::saved($tocar);
+        static::deleted($tocar);
+    }
 }

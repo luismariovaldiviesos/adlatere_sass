@@ -15,6 +15,8 @@ class Diario extends Component
 {
 
     public $numVentas, $totVentas, $day, $clientes, $salesByPaymentMethod_Data = [];
+    // Otros ingresos del día (lectura): abonos de juicios + consultas cobradas, sin duplicar en caja
+    public $otrosIngresos = '0.00', $otrosIngresosCount = 0;
     
     // Properties for "Important Notes" Alerts
     public $pendingInvoicesCount = 0;
@@ -93,6 +95,21 @@ class Diario extends Component
 
          // 5. Signature Expiry
          $this->checkSignatureExpiry();
+
+         // 6. Otros ingresos de hoy (solo lectura: no duplican caja ni SRI)
+         $hoy = Carbon::today()->toDateString();
+         $qAbonos = \App\Models\PagosJuicio::where('estado', 'Aprobado')->whereDate('fecha_pago', $hoy);
+         if (Auth()->user()->profile != 'Admin') {
+             $qAbonos->where('user_id', Auth()->user()->id);
+         }
+         $abonosHoy = (float) $qAbonos->sum('monto');
+         $nAbonos = (clone $qAbonos)->count();
+         $consHoy = (float) \App\Models\Consulta::whereIn('estado_pago', ['pagada', 'en_facturacion', 'facturada'])
+             ->whereDate('fecha_pago', $hoy)->sum('costo');
+         $nCons = \App\Models\Consulta::whereIn('estado_pago', ['pagada', 'en_facturacion', 'facturada'])
+             ->whereDate('fecha_pago', $hoy)->count();
+         $this->otrosIngresos = number_format($abonosHoy + $consHoy, 2);
+         $this->otrosIngresosCount = $nAbonos + $nCons;
     }
 
     public function checkSignatureExpiry()

@@ -54,6 +54,7 @@
                             <option value="todos">Todas</option>
                             <option value="pendiente">Pendientes de pago</option>
                             <option value="pagada">Pagadas</option>
+                            <option value="en_facturacion">En facturación</option>
                             <option value="facturada">Facturadas</option>
                             <option value="no_factura">No se cobra</option>
                         </select>
@@ -125,6 +126,8 @@
                                         <td>
                                             @if($con->estado_pago === 'facturada')
                                                 <span class="badge bg-success text-blue">Facturada</span>
+                                            @elseif($con->estado_pago === 'en_facturacion')
+                                                <span class="badge bg-info text-blue">En facturación</span>
                                             @elseif($con->estado_pago === 'pagada')
                                                 <span class="badge bg-primary text-blue">Pagada</span>
                                             @elseif($con->estado_pago === 'no_factura')
@@ -161,8 +164,14 @@
                                                 @can('facturar_consulta')
                                                 @if($puedeAdministrar && $con->estado_pago === 'pagada' && !$con->factura_id)
                                                 <button class="btn btn-info text-blue border-0"
-                                                    wire:click.prevent="facturarPendiente" title="Facturación (pendiente de implementar)">
+                                                    wire:click.prevent="enviarFacturacion({{ $con->id }})" title="Crear borrador de factura">
                                                     <i class="fas fa-file-invoice-dollar"></i>
+                                                </button>
+                                                @endif
+                                                @if($puedeAdministrar && $con->estado_pago === 'en_facturacion' && $con->factura_id)
+                                                <button class="btn btn-success text-white border-0"
+                                                    wire:click.prevent="emitirFacturaConsulta({{ $con->id }})" title="Emitir borrador al SRI">
+                                                    <i class="fas fa-paper-plane"></i>
                                                 </button>
                                                 @endif
                                                 @endcan

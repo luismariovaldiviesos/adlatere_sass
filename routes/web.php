@@ -11,6 +11,7 @@ use App\Http\Livewire\Cajas;
 use App\Http\Livewire\Categories;
 use App\Http\Livewire\Customers;
 use App\Http\Livewire\Dashboard;
+use App\Http\Livewire\EstadoFinanciero;
 use App\Http\Livewire\DeletedList;
 use App\Http\Livewire\Descuentos;
 use App\Http\Livewire\Diario;
@@ -118,6 +119,7 @@ Route::middleware(['auth'])->group(function () {
     Route::get('mis-consultas', Consultas::class)->name('mis-consultas');
     Route::get('prioridad-alertas', PrioridadAlertas::class)->name('prioridad-alertas');
     Route::get('calendario', Calendario::class)->name('calendario');
+    Route::get('estado-financiero', EstadoFinanciero::class)->name('estado-financiero');
     Route::get('tipoactividad', TiposActividades::class)->name('tipoactividad');
     Route::get('plantillas-tipos-actividad', PlantillasTiposActividad::class)->name('plantillas-tipos-actividad');
 });

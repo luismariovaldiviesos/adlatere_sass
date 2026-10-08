@@ -154,7 +154,11 @@
                                 <br><span class="text-xs text-slate-500">Ref: {{ $pago->referencia_transaccion }}</span>
                             @endif
                         </td>
-                        <td class="text-right font-bold text-success">$ {{ number_format($pago->monto, 2) }}</td>
+                        <td class="text-right font-bold text-success">$ {{ number_format($pago->monto, 2) }}
+                            @if($pago->estado === 'Anulado')
+                                <br><span class="px-2 py-0.5 rounded-full text-xs font-bold bg-red-100 text-red-800">ANULADO</span>
+                            @endif
+                        </td>
                         <td class="text-center">
                             @if($pago->comprobante_ruta)
                                 <a href="{{ route('tenant.media', ['path' => $pago->comprobante_ruta]) }}" target="_blank" class="btn btn-sm btn-warning text-white flex items-center justify-center w-24 mx-auto">
@@ -183,12 +187,12 @@
                                     @endif
                                 @endif
 
-                                {{-- Botón Eliminar --}}
-                                @if(!$pago->factura_id)
+                                {{-- Botón Anular (no se borra: conserva rastro e historial) --}}
+                                @if($pago->estado !== 'Anulado' && !$pago->factura_id)
                                 <a class="btn btn-sm btn-danger text-white flex items-center" href="javascript:;"
-                                   onclick="confirm('¿Seguro que desea eliminar este pago? Esto alterará el saldo.') || event.stopImmediatePropagation()"
+                                   onclick="confirm('¿Seguro que desea ANULAR este pago? Se conserva el registro y bajará del saldo.') || event.stopImmediatePropagation()"
                                    wire:click="destroyPago({{ $pago->id }})">
-                                    <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> Eliminar
+                                    <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> Anular
                                 </a>
                                 @endif
                             </div>

@@ -1278,24 +1278,28 @@ public function editParticipanteEnJuicio(){
         })->first();
         if (!$pago) { $this->noty('Abono no encontrado en este juicio.', 'noty', false, 'error'); return; }
 
-        // Si tenía comprobante, buscamos el registro en Documentos y lo borramos físicamente
-        if($pago->comprobante_ruta) {
-            if (\Storage::disk('public')->exists($pago->comprobante_ruta)) {
-                \Storage::disk('public')->delete($pago->comprobante_ruta);
+        // Si ya tiene factura AUTORIZADA, primero nota de crédito (no se anula directo)
+        if ($pago->factura_id) {
+            $fac = \App\Models\Factura::find($pago->factura_id);
+            if ($fac && $fac->numeroAutorizacion) {
+                $this->noty('El abono tiene factura autorizada: emita nota de crédito antes de anularlo.', 'noty', false, 'error');
+                return;
             }
-            \App\Models\Documento::where('origen_tipo', 'Finanzas')->where('origen_id', $pago->id)->delete();
         }
-        $pago->delete();
+        // Anular en vez de borrar: conserva comprobante, documento e historial (el saldo excluye anulados)
+        $montoAnulado = $pago->monto;
+        $pago->estado = 'Anulado';
+        $pago->save();
        \App\Models\JuicioHistorialEstado::create([
             'juicio_id'          => $this->selected_id,
             'user_id'            => auth()->id(),
             'estado_procesal_id' => $this->estado_procesal_id,
-            'tipo_movimiento'    => 'pago_eliminado',
+            'tipo_movimiento'    => 'pago_anulado',
             'referencia_tipo'    => 'PagosJuicio',
             'referencia_id'      => $id,
-            'descripcion'        => 'Se eliminó un abono por $ ' . number_format($pago->monto, 2),
+            'descripcion'        => 'Se anuló un abono por $ ' . number_format($montoAnulado, 2),
         ]);
-        $this->noty('Abono eliminado.', 'noty', false);
+        $this->noty('Abono anulado.', 'noty', false);
         if ($this->juicio) $this->juicio->load('finanza.pagos.cliente', 'documentos');
     }   
 

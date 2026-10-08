@@ -40,6 +40,18 @@ class Factura extends Model
 
     protected $dates = ['deleted_at']; // Indica que deleted_at es una fecha
 
+    // Al eliminar (soft) una factura se desvinculan sus abonos y consultas:
+    // el dinero cobrado sigue existiendo, solo queda de nuevo por facturar.
+    protected static function booted()
+    {
+        static::deleting(function ($factura) {
+            \App\Models\PagosJuicio::where('factura_id', $factura->id)->update(['factura_id' => null]);
+            \App\Models\Consulta::where('factura_id', $factura->id)
+                ->whereIn('estado_pago', ['en_facturacion', 'facturada'])
+                ->update(['estado_pago' => 'pagada']);
+        });
+    }
+
     protected $fillable = ['secuencial','numeroAutorizacion','fechaAutorizacion','codDoc','claveAcceso','customer_id',
                             'user_id','subtotal','descuento','total','formaPago',
                             'factura_modificada_id', 'motivo_nc' // New Fields for NC

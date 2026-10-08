@@ -523,6 +523,17 @@ class Facturas extends Component
             $tipo = $customer->typeidenti;
             $tipeIDenti = ($tipo == 'ruc') ? '04' : '05'; // default to cedula
 
+            // F1: un abono se factura una sola vez (anti doble-facturación)
+            if ($this->pago_juicio_id) {
+                $pagoPrevio = \App\Models\PagosJuicio::find($this->pago_juicio_id);
+                if (!$pagoPrevio || $pagoPrevio->estado !== 'Aprobado' || $pagoPrevio->factura_id) {
+                    $this->noty('BLOQUEADO: el abono ya fue facturado, fue anulado o no existe.', 'noty', 'error');
+                    $this->dispatchBrowserEvent('sale-error');
+                    DB::rollback();
+                    return;
+                }
+            }
+
             $factura  =  Factura::create([
                 'secuencial' => $this->secuencial,
                 'codDoc' => '01',
@@ -632,9 +643,42 @@ class Facturas extends Component
                     $authResponse = $sriService->consultarAutorizacion($signedXmlObj, $factura->id);
 
                     if (isset($authResponse['estado']) && $authResponse['estado'] == 'AUTORIZADO') {
-                        $factura->fechaAutorizacion = Carbon::now(); 
+                        $factura->fechaAutorizacion = Carbon::now();
                         $factura->numeroAutorizacion = $authResponse['numeroAutorizacion'];
                         $factura->save();
+
+                        // F2: si esta factura nació de una consulta, marcarla facturada (autorizada real)
+                        $conFac = \App\Models\Consulta::where('factura_id', $factura->id)->first();
+                        if ($conFac && $conFac->estado_pago !== 'facturada') {
+                            $conFac->estado_pago = 'facturada';
+                            $conFac->save();
+                        }
+
+                        // F2: si es NOTA DE CRÉDITO autorizada, anular los abonos de la factura original
+                        // (el dinero se devolvió: no puede seguir sumando al saldo como cobrado)
+                        if ($factura->codDoc === '04' && $factura->factura_modificada_id) {
+                            $abonosNC = \App\Models\PagosJuicio::where('factura_id', $factura->factura_modificada_id)
+                                ->where('estado', 'Aprobado')->get();
+                            foreach ($abonosNC as $ab) {
+                                $ab->estado = 'Anulado';
+                                $ab->save();
+                                $finJ = $ab->finanza ? $ab->finanza->juicio_id : null;
+                                if ($finJ) {
+                                    \App\Models\JuicioHistorialEstado::create([
+                                        'juicio_id' => $finJ,
+                                        'user_id' => auth()->id(),
+                                        'estado_procesal_id' => \App\Models\Juicio::find($finJ)->estado_procesal_id ?? null,
+                                        'tipo_movimiento' => 'pago_anulado',
+                                        'referencia_tipo' => 'PagosJuicio',
+                                        'referencia_id' => $ab->id,
+                                        'descripcion' => 'Abono anulado por nota de crédito #' . $factura->secuencial,
+                                    ]);
+                                }
+                            }
+                            if ($abonosNC->count() > 0) {
+                                Log::info('Abonos anulados por NC', ['nc_id' => $factura->id, 'count' => $abonosNC->count()]);
+                            }
+                        }
                         
                         // Enviar correo
                         try {

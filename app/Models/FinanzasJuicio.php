@@ -24,6 +24,12 @@ class FinanzasJuicio extends Model
     {
         return $this->belongsTo(Juicio::class, 'juicio_id');
     }
+
+    protected static function booted()
+    {
+        static::saved(fn($f) => \App\Models\Juicio::recalcularUltimaActividad($f->juicio_id));
+        static::deleted(fn($f) => \App\Models\Juicio::recalcularUltimaActividad($f->juicio_id));
+    }
     //accesors para total pagado (reutiliza la colección en memoria si ya está cargada)
     public function getTotalPagadoAttribute(){
         if ($this->relationLoaded('pagos')) {

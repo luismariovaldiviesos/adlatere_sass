@@ -125,6 +125,15 @@
             </li>
             @endcan
 
+            @can('menu_reportes')
+            <li>
+                <a href="{{ route('estado-financiero') }}" class="side-menu">
+                    <div class="side-menu__icon"> <i data-feather="trending-up"></i> </div>
+                    <div class="side-menu__title"> ESTADO FINANCIERO  </div>
+                </a>
+            </li>
+            @endcan
+
             @can('menu_ventas_diarias')
             <li>
                 <a href="{{ route('diario') }}" class="side-menu">

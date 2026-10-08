@@ -82,6 +82,7 @@
                 <option value="pendiente">Pendiente de pago</option>
                 <option value="pagada">Pagada</option>
                 <option value="no_factura">No se cobra (cortesía)</option>
+                <option value="en_facturacion" disabled>En facturación (automático)</option>
                 <option value="facturada" disabled>Facturada (automático)</option>
             </select>
         </div>

@@ -15,7 +15,7 @@ class Juicio extends Model
     ];
 
     // Recalcula el último movimiento (lo llaman los observers de
-    // Actividad/Audiencia/Documento; sin esto no hay semáforo fiable)
+    // Actividad/Audiencia/Documento/Finanzas/Pagos; sin esto no hay semáforo fiable)
     public static function recalcularUltimaActividad($juicioId)
     {
         $j = static::find($juicioId);
@@ -23,7 +23,10 @@ class Juicio extends Model
         $ultAct = \App\Models\Actividad::where('juicio_id', $juicioId)->max('fecha_actividad');
         $ultAud = \App\Models\Audiencia::where('juicio_id', $juicioId)->max('fecha_hora');
         $ultDoc = \App\Models\Documento::where('juicio_id', $juicioId)->max('created_at');
-        $max = collect([$ultAct, $ultAud, $ultDoc])->filter()->map(fn($f) => \Carbon\Carbon::parse($f))->max();
+        $finId = \App\Models\FinanzasJuicio::where('juicio_id', $juicioId)->value('id');
+        $ultPago = $finId ? \App\Models\PagosJuicio::where('finanzas_juicios_id', $finId)->max('fecha_pago') : null;
+        $ultFin = \App\Models\FinanzasJuicio::where('juicio_id', $juicioId)->max('updated_at');
+        $max = collect([$ultAct, $ultAud, $ultDoc, $ultPago, $ultFin])->filter()->map(fn($f) => \Carbon\Carbon::parse($f))->max();
         $j->ultima_actividad_at = $max ?: $j->fecha_inicio;
         $j->saveQuietly(); // sin disparar eventos (evita loops)
     }

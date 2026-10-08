@@ -230,6 +230,13 @@ License: You must have a valid license purchased only from themeforest(the above
                                                     @endif
                                                 </div>
 
+                                                {{-- 6. Otros ingresos (abonos + consultas, solo lectura) --}}
+                                                <div class="p-5">
+                                                    <div class="text-base font-medium truncate text-theme-1">💰 Otros ingresos de hoy</div>
+                                                    <div class="text-gray-500 mt-1">Abonos y consultas cobradas</div>
+                                                    <div class="text-gray-600 text-justify mt-1">Hoy ingresaron <b>${{ $otrosIngresos }}</b> en <b>{{ $otrosIngresosCount }}</b> cobros fuera de facturación (no duplican caja).</div>
+                                                </div>
+
                                                 {{-- 5. Ventas Growth --}}
                                                 <div class="p-5">
                                                     <div class="text-base font-medium truncate text-theme-9">🚀 Crecimiento Ventas</div>

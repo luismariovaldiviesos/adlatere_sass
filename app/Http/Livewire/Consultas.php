@@ -322,21 +322,15 @@ class Consultas extends Component
 
         $msg = $this->selected_id > 0 ? 'Consulta actualizada' : 'Consulta registrada';
 
-        // Si al crear marcó pagada + facturar ahora, avisa que facturación viene después
+        // Si al crear marcó pagada + facturar ahora, crea el borrador de una vez
         if (!$this->selected_id && $consulta->estado_pago === 'pagada' && $this->facturar_ahora) {
             $this->selected_id = $consulta->id;
-            $this->facturarPendiente();
+            $this->enviarFacturacion($consulta->id);
         }
 
         $this->resetForm();
         $this->form = false;
         $this->dispatchBrowserEvent('noty', ['msg' => $msg, 'type' => 'success', 'action' => '']);
-    }
-
-    // Facturación automática: pendiente de implementar (muestra aviso por ahora)
-    public function facturarPendiente()
-    {
-        $this->dispatchBrowserEvent('noty', ['msg' => 'Pendiente: el método de facturación automática está en construcción.', 'type' => 'success', 'action' => '']);
     }
 
     // Descarga del comprobante de pago (solo recepción; el abogado no ve cobros)
@@ -544,7 +538,7 @@ class Consultas extends Component
             ]);
 
             $consulta->factura_id = $factura->id;
-            $consulta->estado_pago = 'facturada';
+            $consulta->estado_pago = 'en_facturacion'; // pasa a 'facturada' solo al autorizar el SRI
             $consulta->save();
 
             DB::commit();
@@ -553,6 +547,108 @@ class Consultas extends Component
             DB::rollBack();
             \Log::error('Error enviando consulta a facturación: ' . $e->getMessage());
             $this->dispatchBrowserEvent('noty', ['msg' => 'Error al facturar: ' . $e->getMessage(), 'type' => 'success', 'action' => '']);
+        }
+    }
+
+    // Emitir al SRI el borrador de una consulta (mismo pipeline que Facturas::storeSale)
+    public function emitirFacturaConsulta($consultaId)
+    {
+        $consulta = Consulta::with(['customer', 'asunto'])->find($consultaId);
+        if (!$consulta || !$consulta->factura_id) return;
+        if (!$this->puedeAdministrar() || auth()->user()->cannot('facturar_consulta')) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'No tiene permiso para emitir facturas.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        $factura = Factura::find($consulta->factura_id);
+        if (!$factura) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'El borrador ya no existe.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        if ($factura->numeroAutorizacion) {
+            $consulta->estado_pago = 'facturada';
+            $consulta->save();
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La factura ya estaba autorizada.', 'type' => 'success', 'action' => '']);
+            return;
+        }
+        $customer = $factura->customer;
+        if (!$customer) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La factura no tiene cliente válido.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+
+        try {
+            // Si otro comprobante tomó el secuencial mientras tanto, regenerarlo
+            $choca = Factura::where('secuencial', $factura->secuencial)
+                ->where('codDoc', $factura->codDoc)
+                ->where('id', '!=', $factura->id)
+                ->whereNull('deleted_at')->exists();
+            if ($choca) {
+                $factura->secuencial = (new Factura())->secuencial($factura->codDoc);
+                $factura->claveAcceso = (new Factura())->claveAcceso($factura->codDoc);
+                $factura->save();
+            }
+
+            $tipeIDenti = ($customer->typeidenti == 'ruc') ? '04' : '05';
+            $items = [];
+            foreach ($factura->detalles as $det) {
+                $prod = \App\Models\Product::find($det->product_id);
+                $taxes = [];
+                if ($prod && $prod->impuestos) {
+                    foreach ($prod->impuestos as $tax) {
+                        $taxes[] = [
+                            'nombre' => $tax->nombre,
+                            'codigo' => $tax->codigo,
+                            'codigo_porcentaje' => $tax->codigo_porcentaje,
+                            'porcentaje' => (float) $tax->porcentaje,
+                        ];
+                    }
+                }
+                $items[] = [
+                    'id' => $det->product_id,
+                    'name' => $det->descripcion,
+                    'qty' => $det->cantidad,
+                    'price' => $det->precioUnitario,
+                    'descuento' => $det->descuento,
+                    'impuestos' => $taxes,
+                ];
+            }
+
+            $xmlService = app(\App\Services\XmlGeneratorService::class);
+            $signatureService = app(\App\Services\SignatureService::class);
+            $sriService = app(\App\Services\SriSoapService::class);
+
+            $xmlFile = $xmlService->generate(
+                $factura->id, $tipeIDenti, $customer->businame, $customer->valueidenti,
+                $customer->address, $factura->subtotal, $factura->descuento, $factura->total,
+                $items, $factura->secuencial, $factura->claveAcceso,
+                $factura->impuestos->toArray(), $factura->empresa(),
+                $factura->created_at->format('d/m/Y'), $factura->formaPago
+            );
+            $signedXmlObj = $signatureService->firmarFactura($xmlFile, $factura->id, $factura->empresa());
+            $sriService->enviarAlSri($signedXmlObj, $factura->id);
+            $authResponse = $sriService->consultarAutorizacion($signedXmlObj, $factura->id);
+
+            if (isset($authResponse['estado']) && $authResponse['estado'] == 'AUTORIZADO') {
+                $factura->fechaAutorizacion = \Carbon\Carbon::now();
+                $factura->numeroAutorizacion = $authResponse['numeroAutorizacion'];
+                $factura->save();
+                $consulta->estado_pago = 'facturada';
+                $consulta->save();
+                try {
+                    $pdfController = new \App\Http\Controllers\PdfController();
+                    $pdfController->generatePdf($factura, false);
+                    \App\Jobs\SendInvoiceEmail::dispatchSync($factura);
+                } catch (\Exception $e) {
+                    \Log::error('Error enviando correo factura consulta: ' . $e->getMessage());
+                }
+                $this->dispatchBrowserEvent('noty', ['msg' => 'FACTURA AUTORIZADA POR EL SRI', 'type' => 'success', 'action' => '']);
+            } else {
+                $estado = $authResponse['estado'] ?? 'DESCONOCIDO';
+                $this->dispatchBrowserEvent('noty', ['msg' => 'Factura enviada pero NO AUTORIZADA aún. Estado: ' . $estado . '. Revise Reprocesar.', 'type' => 'error', 'action' => '']);
+            }
+        } catch (\Exception $e) {
+            \Log::error('Error emitiendo borrador consulta #' . $consulta->id . ': ' . $e->getMessage());
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Error al emitir: ' . $e->getMessage(), 'type' => 'error', 'action' => '']);
         }
     }
 

@@ -30,7 +30,7 @@ class Consulta extends Model
             'abogado_id'  => 'nullable|exists:users,id',
             'costo'       => 'required|numeric|min:0',
             'notas'       => 'nullable|string',
-            'estado_pago' => 'nullable|in:pendiente,pagada,facturada,no_factura',
+            'estado_pago' => 'nullable|in:pendiente,pagada,en_facturacion,facturada,no_factura',
             'fecha_pago'  => 'nullable|date',
             'metodo_pago' => 'nullable|string|max:30',
         ];
