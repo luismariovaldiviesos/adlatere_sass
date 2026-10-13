@@ -34,6 +34,14 @@
         </a>
     </li>
     @endcan
+    @can('menu_tareas')
+    <li>
+        <a href="{{ route('tareas') }}" class="side-menu">
+            <div class="side-menu__icon"> <i data-feather="check-square"></i> </div>
+            <div class="side-menu__title"> TAREAS  </div>
+        </a>
+    </li>
+    @endcan
 
     <li>
         <a href="javascript:;" class="side-menu">

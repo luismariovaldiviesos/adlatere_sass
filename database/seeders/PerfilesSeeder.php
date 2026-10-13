@@ -21,12 +21,14 @@ class PerfilesSeeder extends Seeder
         'RECEPCION' => ['menu_facturar', 'menu_consultas', 'ver_facturacion', 'crear_consulta', 'editar_datos_consulta', 'marcar_pagada_consulta', 'facturar_consulta'],
         'CLIENTES_GESTION' => ['menu_personas', 'menu_clientes', 'ver_cliente', 'crear_cliente'],
         'CAJA_DIA' => ['menu_ventas_diarias', 'ver_venta_diaria'],
+        'TAREAS_GESTION' => ['menu_tareas', 'crear_tarea', 'eliminar_tarea'],
+        'TAREAS_EJECUCION' => ['menu_tareas', 'completar_tarea', 'convertir_tarea'],
     ];
 
     // Perfil => bloques que recibe
     public const PERFIL_BLOQUES = [
-        'Abogado' => ['BASE', 'SECCION_FACTURACION', 'JUICIOS_ABOGADO', 'MIS_CONSULTAS', 'CLIENTES_LECTURA'],
-        'Asistente' => ['BASE', 'SECCION_FACTURACION', 'RECEPCION', 'CLIENTES_GESTION', 'CAJA_DIA'],
+        'Abogado' => ['BASE', 'SECCION_FACTURACION', 'JUICIOS_ABOGADO', 'MIS_CONSULTAS', 'CLIENTES_LECTURA', 'TAREAS_EJECUCION'],
+        'Asistente' => ['BASE', 'SECCION_FACTURACION', 'RECEPCION', 'CLIENTES_GESTION', 'CAJA_DIA', 'TAREAS_GESTION'],
     ];
 
     public static function permisosDe(array $bloques): array
@@ -44,6 +46,11 @@ class PerfilesSeeder extends Seeder
     public function run()
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
+
+        // Permisos del módulo Tareas (se crean aquí para no depender del orden de seeders)
+        foreach (['menu_tareas', 'crear_tarea', 'completar_tarea', 'convertir_tarea', 'eliminar_tarea'] as $p) {
+            Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
+        }
 
         Role::firstOrCreate(['name' => 'Admin']);
         Role::firstOrCreate(['name' => 'Employee']);
