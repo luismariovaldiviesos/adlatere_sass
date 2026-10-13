@@ -513,6 +513,12 @@ class Consultas extends Component
                     'stock' => 0,
                 ]
             );
+            // Auto-reparación: el servicio siempre lleva IVA 0% (base = costo).
+            // Si alguien se lo quitó en el catálogo, se repone solo.
+            $iva0 = \App\Models\Impuesto::where('codigo', '2')->where('codigo_porcentaje', 0)->first();
+            if ($iva0) {
+                $producto->impuestos()->syncWithoutDetaching([$iva0->id]);
+            }
 
             $tmp = new Factura();
             $factura = Factura::create([
@@ -573,6 +579,12 @@ class Consultas extends Component
         $customer = $factura->customer;
         if (!$customer) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'La factura no tiene cliente válido.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        // Pre-validación: sin impuesto el SRI rechaza la estructura (antes de intentarlo)
+        $prodChequeo = \App\Models\Product::where('code', 'SERV-CONSULTA')->first();
+        if (!$prodChequeo || $prodChequeo->impuestos()->count() < 1) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'El servicio de consulta no tiene impuesto configurado. Avise al administrador.', 'type' => 'error', 'action' => '']);
             return;
         }
 

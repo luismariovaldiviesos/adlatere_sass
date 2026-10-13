@@ -443,6 +443,27 @@ class PermisosSistemaSeeder extends Seeder
             //asignar impuesto por defecto al producto
             $producto->impuestos()->sync(1);
 
+            // Producto único para consultas: siempre IVA 0% (base = costo, impuesto = 0,
+            // el XML valida sin alterar montos). Se busca por código, no por id.
+            $iva0 = Impuesto::where('codigo', '2')->where('codigo_porcentaje', 0)->first();
+            $servConsulta = Product::firstOrCreate(
+                ['code' => 'SERV-CONSULTA'],
+                [
+                    'category_id' => 1,
+                    'name' => 'Servicio de consulta legal',
+                    'cost' => 0,
+                    'price' => 0,
+                    'descuento' => 0,
+                    'price2' => 0,
+                    'stock' => 0,
+                    'minstock' => 0,
+                    'es_servicio' => true,
+                ]
+            );
+            if ($iva0) {
+                $servConsulta->impuestos()->syncWithoutDetaching([$iva0->id]);
+            }
+
     }
 
 
