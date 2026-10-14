@@ -89,8 +89,8 @@
                                                     <span style="display:inline-block;width:8px;height:8px;border-radius:9999px;background-color:{{ $semTxt }};"></span>
                                                     {{ $sem['dias'] }}d · {{ strtoupper($sem['color']) }}
                                                 </span>
-                                                <button type="button" wire:click="openRoadmap({{ $juicio->id }})" class="btn btn-sm btn-outline-primary" title="Ver Roadmap">
-                                                    <i class="fas fa-route"></i> Roadmap
+                                                <button type="button" wire:click="openRoadmap({{ $juicio->id }})" class="btn btn-sm btn-outline-primary" title="Ver histórico">
+                                                    <i class="fas fa-history"></i> Histórico
                                                 </button>
                                             </div>
                                         </td>
@@ -126,22 +126,25 @@
         {{-- CONTENEDOR PERMANENTE PARA EL MODAL --}}
     <div>
         @if($showRoadmapModal && $juicioRoadmap)
-            <!-- Fondo oscuro -->
-            <div class="fixed top-0 left-0 w-full h-full z-50 flex items-center justify-center" style="background-color: rgba(0,0,0,0.6); backdrop-filter: blur(2px);">
-                
-                <!-- Caja del modal centrada -->
-                <div class="bg-white rounded-lg p-6 relative shadow-2xl overflow-y-auto" style="width: 90%; max-width: 800px; max-height: 90vh;">
-                    
+            <!-- Fondo oscuro (clic fuera de la caja también cierra; sin blur para no relentizar con muchos items) -->
+            <div id="roadmap-overlay" wire:click="closeRoadmap" onclick="if(event.target===this){cerrarRoadmapModal();}" class="fixed top-0 left-0 w-full h-full flex items-center justify-center" style="z-index: 100; background-color: rgba(0,0,0,0.6);">
+                <!-- Caja del modal centrada (borde de ventana estilo modal) -->
+                <div onclick="event.stopPropagation()" class="bg-white rounded-xl relative shadow-2xl overflow-y-auto border-2 border-slate-300" style="width: 90%; max-width: 800px; max-height: 90vh;">
+
                     <!-- Cabecera del Modal (fija: el botón Cerrar siempre visible aunque haya muchos items) -->
-                    <div class="flex justify-between items-center px-4 py-3 mb-4 sticky top-0 z-10 rounded-t-lg shadow" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);">
+                    <div class="flex justify-between items-center px-6 py-3 mb-4 sticky top-0 z-10" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border-radius: 0.7rem 0.7rem 0 0;">
                         <h2 class="text-xl font-bold text-white">
-                            <i class="fas fa-map-signs mr-2"></i> Roadmap del Juicio: {{ $juicioRoadmap->cod_satje }}
+                            <i class="fas fa-history mr-2"></i> Histórico del Juicio: {{ $juicioRoadmap->cod_satje }}
                         </h2>
                         <div class="flex items-center gap-2">
-                            <button wire:click="closeRoadmap" onclick="this.closest('.fixed').style.display='none'" class="btn btn-sm px-4 font-bold" style="background-color: #60a5fa; color: #000; border: 1px solid #1e3a8a;">Cerrar</button>
-                            <button wire:click="closeRoadmap" onclick="this.closest('.fixed').style.display='none'" class="text-white hover:text-gray-200 text-3xl font-bold leading-none">&times;</button>
+                            <button type="button" wire:click="closeRoadmap" wire:loading.attr="disabled" wire:target="closeRoadmap" onclick="cerrarRoadmapModal()" class="btn btn-sm px-4 font-bold" style="background-color: #60a5fa; color: #000; border: 1px solid #1e3a8a;">
+                                <span wire:loading.remove wire:target="closeRoadmap">Cerrar</span>
+                                <span wire:loading wire:target="closeRoadmap">Cerrando…</span>
+                            </button>
+                            <button type="button" wire:click="closeRoadmap" wire:loading.attr="disabled" wire:target="closeRoadmap" onclick="cerrarRoadmapModal()" class="text-white hover:text-gray-200 text-3xl font-bold leading-none px-2" title="Cerrar">&times;</button>
                         </div>
                     </div>
+                    <div class="px-6 pb-6">
 
                     <!-- Resumen Estado Actual -->
                     <div class="p-4 rounded-md mb-6 shadow-sm border" style="background-color: #f0f9ff; border-color: #e0f2fe;">
@@ -151,7 +154,7 @@
                         </p>
                     </div>
 
-                    <!-- TIMELINE GRÁFICO (El Roadmap) -->
+                    <!-- TIMELINE GRÁFICO (El Histórico) -->
                     <div class="relative ml-4 mt-8" style="border-left: 2px solid #1e3a8a;">
                         @forelse($historialRoadmap as $hito)
                             <div class="mb-8 relative group" style="margin-left: 2rem;">
@@ -190,10 +193,17 @@
                             </div>
                         @endforelse
                     </div>
+                    </div>
                 </div>
             </div>
         @endif
     </div>
+    <script>
+        function cerrarRoadmapModal() {
+            var o = document.getElementById('roadmap-overlay');
+            if (o) o.style.display = 'none';
+        }
+    </script>
 
     {{-- para el buscador  --}}
     <script>

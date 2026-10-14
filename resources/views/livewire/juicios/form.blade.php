@@ -6,11 +6,15 @@
         $juicio->loadMissing(['actividades.tipoActividad', 'audiencias', 'documentos', 'funcionarios', 'finanza.pagos.cliente', 'abogados.especialidades', 'participantes']);
     }
 @endphp
-<div x-data="{ tab: @entangle('tab').defer }" class="content space-y-6">
+<div id="juicio-form" x-data="{ tab: @entangle('tab').defer }" class="content space-y-6">
 
     {{-- BARRA DE PESTAÑAS --}}
     <div class="intro-y box p-6">
-        <div class="flex flex-wrap gap-3">
+        <div class="flex flex-wrap gap-3 items-center">
+            <button type="button" wire:click="volverListado" wire:loading.attr="disabled" wire:target="volverListado" onclick="this.style.background='#fef3c7';setTimeout(function(){if(document.getElementById('juicio-form')){window.location.reload();}},2000)" title="Volver al listado de juicios" class="px-6 py-2 btn btn-outline-secondary">
+                <span wire:loading.remove wire:target="volverListado"><i class="fas fa-arrow-left mr-1"></i> Volver</span>
+                <span wire:loading wire:target="volverListado">Volviendo…</span>
+            </button>
             <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='juicio' }"  @click="tab='juicio'">Juicio</button>
             <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='sujetos' }"   @click="tab='sujetos'">Sujetos Procesales</button>
            <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='actividades' }" @click="tab='actividades'; setTimeout(() => { if(typeof loadActividadQuillEditor === 'function') loadActividadQuillEditor(); }, 150)">Actividades</button>

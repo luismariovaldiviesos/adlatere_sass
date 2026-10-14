@@ -79,6 +79,7 @@ class Facturas extends Component
 
      public $monto_externo = null;
      public $pago_juicio_id = null; // ID del pago de juicios que se está facturando
+     public $consulta_id = null; // ID de la consulta que se está facturando
 
 
      // carga al inicio
@@ -127,6 +128,34 @@ class Facturas extends Component
                 // Agregar directamente al carrito
                 $cart = new \App\Services\Cart();
                 $cart->addProduct($producto, 1, '');
+            }
+        }
+
+        // CAPTURAR CONSULTA → AUTO-AGREGAR AL CARRITO (puede cambiar de cliente en el carrito;
+        // si cancela/vacía el carrito no queda ningún rastro: el borrador nace solo al emitir)
+        if (request()->has('consulta_id')) {
+            $con = \App\Models\Consulta::with('customer')->find(request('consulta_id'));
+            if ($con && $con->estado_pago === 'pagada' && !$con->factura_id && $con->customer) {
+                $this->consulta_id = $con->id;
+                $this->customer_id = $con->customer_id;
+                $this->customerSelected = $con->customer->businame;
+
+                $serv = Product::where('code', 'SERV-CONSULTA')->first();
+                if (!$serv) {
+                    $serv = Product::where('es_servicio', true)->first();
+                }
+                if ($serv) {
+                    // El servicio de consulta siempre lleva IVA 0% (si se lo quitaron, reponer)
+                    $iva0 = \App\Models\Impuesto::where('codigo', '2')->where('codigo_porcentaje', 0)->first();
+                    if ($iva0) {
+                        $serv->impuestos()->syncWithoutDetaching([$iva0->id]);
+                    }
+                    $serv->price = (float) $con->costo;
+                    $serv->price2 = (float) $con->costo;
+                    $serv->name = 'Servicio de consulta legal #' . $con->id;
+                    $cartC = new \App\Services\Cart();
+                    $cartC->addProduct($serv, 1, '');
+                }
             }
         }
      }
@@ -652,6 +681,18 @@ class Facturas extends Component
                         if ($conFac && $conFac->estado_pago !== 'facturada') {
                             $conFac->estado_pago = 'facturada';
                             $conFac->save();
+                        }
+
+                        // Vincular factura a la consulta de origen (flujo carrito visible desde consultas)
+                        if ($this->consulta_id) {
+                            $conCart = \App\Models\Consulta::find($this->consulta_id);
+                            if ($conCart && !$conCart->factura_id) {
+                                $conCart->factura_id = $factura->id;
+                                $conCart->estado_pago = 'facturada';
+                                $conCart->save();
+                                Log::info('Consulta vinculada a factura', ['consulta_id' => $this->consulta_id, 'factura_id' => $factura->id]);
+                            }
+                            $this->consulta_id = null;
                         }
 
                         // F2: si es NOTA DE CRÉDITO autorizada, anular los abonos de la factura original

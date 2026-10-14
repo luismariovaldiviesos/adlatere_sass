@@ -367,6 +367,18 @@ class Juicios extends Component
         $this->noty(null, 'close-modal');
     }
 
+      // Volver al listado principal (el CloseModal no cerraba el form)
+      public function volverListado()
+    {
+        \Log::info('VOLVER CLICK', ['user' => auth()->id(), 'selected' => $this->selected_id]);
+        $this->resetUI();
+        $this->form = false;
+        $this->selected_id = 0;
+        $this->juicio = null; // aligera el render del listado
+        $this->tab = 'juicio';
+        $this->action = 'Listado';
+    }
+
         public function resetUI()
     {
         $this->resetPage();

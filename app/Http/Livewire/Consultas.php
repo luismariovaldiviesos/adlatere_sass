@@ -322,10 +322,12 @@ class Consultas extends Component
 
         $msg = $this->selected_id > 0 ? 'Consulta actualizada' : 'Consulta registrada';
 
-        // Si al crear marcó pagada + facturar ahora, crea el borrador de una vez
+        // Si al crear marcó pagada + facturar ahora, ir al carrito visible
         if (!$this->selected_id && $consulta->estado_pago === 'pagada' && $this->facturar_ahora) {
-            $this->selected_id = $consulta->id;
-            $this->enviarFacturacion($consulta->id);
+            $idNueva = $consulta->id;
+            $this->resetForm();
+            $this->form = false;
+            return redirect()->route('facturas', ['consulta_id' => $idNueva]);
         }
 
         $this->resetForm();
@@ -460,6 +462,18 @@ class Consultas extends Component
         $consulta->estado_pago = 'no_factura';
         $consulta->save();
         $this->dispatchBrowserEvent('noty', ['msg' => 'Consulta marcada como no se cobra.', 'type' => 'success', 'action' => '']);
+    }
+
+    // Ir al carrito de Facturación con la consulta precargada (visible: puede
+    // cambiar de cliente ahí; si cancela/vacía el carrito no queda ningún rastro
+    // y el botón de facturar sigue disponible porque aún no hay borrador).
+    public function irAFacturar($id)
+    {
+        $consulta = Consulta::find($id);
+        if (!$consulta) return;
+        if (!$this->puedeAdministrar() || auth()->user()->cannot('facturar_consulta')) return;
+        if ($consulta->estado_pago !== 'pagada' || $consulta->factura_id) return;
+        return redirect()->route('facturas', ['consulta_id' => $consulta->id]);
     }
 
     // Corrección de caja (solo asistente): pendiente -> pagada

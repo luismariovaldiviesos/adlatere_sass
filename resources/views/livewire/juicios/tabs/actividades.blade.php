@@ -205,9 +205,9 @@
     @endif
 </div>
 
-{{-- MODAL FIRMAR (FUERA DE TODO) --}}
+{{-- MODAL FIRMAR (FUERA DE TODO, por debajo del histórico) --}}
 @if($showFirmarModal)
-<div class="fixed top-0 left-0 w-full h-full z-50 flex items-center justify-center" style="background: rgba(0,0,0,0.6);">
+<div class="fixed top-0 left-0 w-full h-full flex items-center justify-center" style="z-index: 90; background: rgba(0,0,0,0.6);">
     <div class="bg-white rounded-lg p-6 relative shadow-2xl overflow-y-auto" style="width: 90%; max-width: 500px;">
         <h3 class="font-bold text-xl mb-4 text-gray-800 border-b pb-2">Firmar Actividad Digitalmente</h3>
         <p class="text-sm text-gray-600 mb-4">

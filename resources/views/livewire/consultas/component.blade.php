@@ -164,7 +164,7 @@
                                                 @can('facturar_consulta')
                                                 @if($puedeAdministrar && $con->estado_pago === 'pagada' && !$con->factura_id)
                                                 <button class="btn btn-info text-blue border-0"
-                                                    wire:click.prevent="enviarFacturacion({{ $con->id }})" title="Crear borrador de factura">
+                                                    wire:click.prevent="irAFacturar({{ $con->id }})" title="Facturar en carrito (puede cambiar de cliente)">
                                                     <i class="fas fa-file-invoice-dollar"></i>
                                                 </button>
                                                 @endif
