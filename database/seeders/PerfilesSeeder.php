@@ -15,7 +15,7 @@ class PerfilesSeeder extends Seeder
     public const BLOQUES = [
         'BASE' => ['menu_dashboard', 'ver_dash'],
         'SECCION_FACTURACION' => ['menu_facturacion'],
-        'JUICIOS_ABOGADO' => ['menu_juicios', 'editar_juicio', 'firmar_actividad'],
+        'JUICIOS_ABOGADO' => ['menu_juicios', 'editar_juicio', 'firmar_actividad', 'eliminar_juicio'],
         'MIS_CONSULTAS' => ['menu_mis_consultas', 'guardar_notas_consulta', 'atender_consulta', 'convertir_consulta'],
         'CLIENTES_LECTURA' => ['menu_personas', 'menu_clientes', 'ver_cliente'],
         'RECEPCION' => ['menu_facturar', 'menu_consultas', 'ver_facturacion', 'crear_consulta', 'editar_datos_consulta', 'marcar_pagada_consulta', 'facturar_consulta'],

@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Juicio extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
     protected $fillable = ['cod_satje', 'asunto_id','estado_procesal_id', 'fecha_inicio', 'prioridad', 'unidad_id'];
 
     protected $casts = [
@@ -155,6 +156,22 @@ class Juicio extends Model
 
     public function finanza(){
         return $this->hasOne(FinanzasJuicio::class, 'juicio_id');
+    }
+
+    public function pagos(){
+        return $this->hasManyThrough(PagosJuicio::class, FinanzasJuicio::class, 'juicio_id', 'finanzas_juicios_id', 'id', 'id');
+    }
+
+    // ¿Tiene movimientos? (usa conteos precargados si existen, si no consulta)
+    public function getTieneContenidoAttribute()
+    {
+        $n = ($this->actividades_count ?? $this->actividades()->count())
+           + ($this->audiencias_count ?? $this->audiencias()->count())
+           + ($this->documentos_count ?? $this->documentos()->count())
+           + ($this->pagos_count ?? $this->pagos()->count());
+        if ($n > 0) return true;
+        $fin = $this->relationLoaded('finanza') ? $this->finanza : $this->finanza()->first();
+        return $fin && (($fin->honorarios_totales ?? 0) + ($fin->gastos_extras ?? 0) > 0);
     }
 
     public function funcionarios (){

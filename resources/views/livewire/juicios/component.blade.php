@@ -15,6 +15,12 @@
             {{-- AQUI LLAMAMOS AL COMPONENTE SEARH --}}
                 <x-search />
             {{-- AQUI LLAMAMOS AL COMPONENTE SEARH --}}
+            @if(auth()->user()->profile === 'Admin')
+            <div class="px-5 flex items-center gap-2">
+                <input type="checkbox" wire:model="verArchivados" id="verArch" class="form-check-input">
+                <label for="verArch" class="text-xs">Ver archivados</label>
+            </div>
+            @endif
 
             <div class="p-5">
                 <div class="preview">
@@ -66,12 +72,25 @@
 
                                         <td class="dark:border-dark-5 text-center">
                                             <div class="d-flex justify-content-center">
+                                                @if($verArchivados)
+                                                <button class="btn btn-success btn-sm" type="button" onclick="restaurar('juicios', {{ $juicio->id }})" title="Restaurar juicio archivado">
+                                                    <i class="fas fa-undo"></i> Restaurar
+                                                </button>
+                                                @else
                                                 @can('eliminar_juicio')
+                                                    @if(!$juicio->tiene_contenido)
                                                     <button class="btn btn-danger text-white border-0"
                                                     onclick="destroy('juicios','Destroy', {{ $juicio->id }})"
-                                                    type="button">
+                                                    type="button" title="Eliminar definitivo (sin movimientos)">
                                                         <i class=" fas fa-trash f-2x"></i>
                                                     </button>
+                                                    @else
+                                                    <button class="btn btn-warning text-white border-0"
+                                                    onclick="destroy('juicios','Destroy', {{ $juicio->id }})"
+                                                    type="button" title="Archivar (conserva datos)">
+                                                        <i class="fas fa-archive f-2x"></i>
+                                                    </button>
+                                                    @endif
                                                 @endcan
                                                 @can('editar_juicio')
                                                 <button class="btn btn-warning text-white border-0 ml-3"
@@ -92,6 +111,7 @@
                                                 <button type="button" wire:click="openRoadmap({{ $juicio->id }})" class="btn btn-sm btn-outline-primary" title="Ver histórico">
                                                     <i class="fas fa-history"></i> Histórico
                                                 </button>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

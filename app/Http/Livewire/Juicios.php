@@ -22,6 +22,7 @@ class Juicios extends Component
 
 
      public $action = 'Listado', $componentName = 'Juicios', $search = '', $form = false, $selected_id = 0;
+    public $verArchivados = false; // filtro de archivados (solo Admin, no se resetea)
     private $pagination =10;
     protected $paginationTheme = 'tailwind';
 
@@ -187,6 +188,25 @@ class Juicios extends Component
         })->count();
     }
 
+    // Dueño operativo: patrocinador más antiguo con usuario vigente; si no hay
+    // nadie asignado ni creador válido, no hay dueño posible (retorna null).
+    private function duenoDelJuicio($juicioId)
+    {
+        $j = \App\Models\Juicio::withTrashed()->find($juicioId);
+        if (!$j) return null;
+        $primero = $j->abogados()
+            ->whereRaw("TRIM(LOWER(juicio_user.rol_en_juicio)) LIKE ?", ['%abogado%patrocinador%'])
+            ->orderBy('juicio_user.created_at', 'asc')
+            ->get()->first(fn($a) => \App\Models\User::where('id', $a->id)->exists());
+        if ($primero) return (int) $primero->id;
+        $creacion = \App\Models\JuicioHistorialEstado::where('juicio_id', $juicioId)
+            ->where('tipo_movimiento', 'juicio_creado')->orderBy('id', 'asc')->first();
+        if ($creacion && \App\Models\User::where('id', $creacion->user_id)->exists()) {
+            return (int) $creacion->user_id;
+        }
+        return null;
+    }
+
         // Bloquea cualquier trámite si el juicio no tiene patrocinador. Sin consultas extra
     // cuando el juicio ya está cargado (filtra la relación en memoria).
     private function exigirPatrocinador()
@@ -314,7 +334,9 @@ class Juicios extends Component
 
     public function render()
     {
-        $info = Juicio::with('asunto.procedimiento.materia', 'abogados', 'estadoProcesal'); // Carga la relación automáticamente
+        $base = $this->verArchivados ? Juicio::onlyTrashed() : Juicio::query();
+        $info = $base->with('asunto.procedimiento.materia', 'abogados', 'estadoProcesal', 'finanza') // Carga la relación automáticamente
+            ->withCount(['actividades', 'audiencias', 'documentos', 'pagos']); // conteos para Eliminar/Archivar (van en la misma consulta)
         // Visibilidad: admin todo, abogado solo sus juicios asignados
         if (!$this->esAdmin()) {
             $uid = auth()->id();
@@ -1716,12 +1738,79 @@ public function descargarFirmado($actividadId)
 
      public $listeners = [
         'resetUI',
-        'Destroy'
+        'Destroy',
+        'restaurar' => 'restaurarJuicio'
     ];
 
     public function Destroy(Juicio $jucio)
     {
-        dd($jucio);
+        if (auth()->user()->cannot('eliminar_juicio')) return;
+        $id = $jucio->id;
+        $juicio = \App\Models\Juicio::find($id);
+        if (!$juicio) return;
+        $tiene = \App\Models\Actividad::where('juicio_id', $id)->exists()
+            || \App\Models\Audiencia::where('juicio_id', $id)->exists()
+            || \App\Models\Documento::where('juicio_id', $id)->exists()
+            || \App\Models\PagosJuicio::whereHas('finanza', fn($q) => $q->where('juicio_id', $id))->exists()
+            || \App\Models\FinanzasJuicio::where('juicio_id', $id)->where(function($q) {
+                    $q->where('honorarios_totales', '>', 0)->orWhere('gastos_extras', '>', 0);
+                })->exists();
+        $hist = function($tipo, $desc) use ($id) {
+            \App\Models\JuicioHistorialEstado::create([
+                'juicio_id' => $id, 'user_id' => auth()->id(),
+                'estado_procesal_id' => $this->estado_procesal_id,
+                'tipo_movimiento' => $tipo, 'referencia_tipo' => 'Juicio',
+                'referencia_id' => $id, 'descripcion' => $desc,
+            ]);
+        };
+        if (!$tiene) {
+            // Vacío: solo Admin, borrado físico (desvincula pivots y config primero)
+            if (!$this->esAdmin()) return;
+            $juicio->abogados()->detach();
+            $juicio->participantes()->detach();
+            $juicio->funcionarios()->detach();
+            \App\Models\FinanzasJuicio::where('juicio_id', $id)->delete();
+            $hist('juicio_eliminado', 'Se eliminó definitivamente un juicio vacío.');
+            $juicio->forceDelete();
+            $this->noty('Juicio eliminado definitivamente.', 'noty', false);
+            return;
+        }
+        // Con contenido: si hay dueño posible, solo él; si no hay nadie
+        // asignado ni creador válido, solo el Admin (no se deja sin salida).
+        $dueno = $this->duenoDelJuicio($id);
+        if ($dueno !== null) {
+            if ((int) auth()->id() !== (int) $dueno) {
+                $this->noty('Solo el abogado dueño puede archivar este juicio.', 'noty', false, 'error');
+                return;
+            }
+        } elseif (!$this->esAdmin()) {
+            $this->noty('Este juicio no tiene abogado asignado: solo el Admin puede archivarlo.', 'noty', false, 'error');
+            return;
+        }
+        $hist('juicio_archivado', 'Se archivó el juicio. Sus datos se conservan.');
+        $juicio->delete();
+        $this->noty('Juicio archivado. Sus datos se conservan.', 'noty', false);
+    }
+
+    public function restaurarJuicio($id)
+    {
+        if (!$this->esAdmin()) {
+            $this->noty('Solo el Admin puede restaurar.', 'noty', false, 'error');
+            return;
+        }
+        $j = \App\Models\Juicio::onlyTrashed()->find($id);
+        if (!$j) {
+            $this->noty('Juicio archivado no encontrado. Recargue la página.', 'noty', false, 'error');
+            return;
+        }
+        $j->restore();
+        \App\Models\JuicioHistorialEstado::create([
+            'juicio_id' => $id, 'user_id' => auth()->id(),
+            'estado_procesal_id' => $j->estado_procesal_id,
+            'tipo_movimiento' => 'juicio_restaurado', 'referencia_tipo' => 'Juicio',
+            'referencia_id' => $id, 'descripcion' => 'Se restauró un juicio archivado.',
+        ]);
+        $this->noty('Juicio restaurado.', 'noty', false);
     }
 
     

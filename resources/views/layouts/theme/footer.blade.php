@@ -43,6 +43,25 @@
         })
     }
 
+    // funcion para restaurar juicios archivados
+    function restaurar(componentName, rowId){
+        swal({
+            title: '¿ restauras este juicio archivado ?',
+            text: '',
+            type: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Restaurar',
+            confirmButtonColor: '#28a745',
+            cancelButtonText: 'Cerrar',
+            padding: '2em'
+        }).then(function(result){
+            if(result.value){
+                window.livewire.emitTo(componentName, 'restaurar', rowId)
+                swal.close()
+            }
+        })
+    }
+
 
     function abrir(componentName, methodName =  'destroy', rowId, $montoInicial){
         swal({
