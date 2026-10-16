@@ -16,12 +16,12 @@ class Materia extends Model
         if ($id <= 0) {
             return [
                 'nombre' => 'required|unique:materias',
-                'unidad_id' => 'required'
+                'unidad_id' => 'nullable'
             ];
         } else {
             return [
                 'nombre' => "required|unique:materias,nombre,{$id}",
-                'unidad_id' => 'required'
+                'unidad_id' => 'nullable'
             ];
         }
     }
@@ -29,7 +29,6 @@ class Materia extends Model
      public static $messages = [
         'nombre.required' => 'Nombre materia requerido',
         'nombre.unique' => ' Materia ya existe en sistema',
-        'unidad_id.required' => 'Unidad requerida',
     ];
 
 

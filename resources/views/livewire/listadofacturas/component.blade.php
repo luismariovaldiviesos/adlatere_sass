@@ -144,7 +144,6 @@
 
 
         {{-- @include('livewire.$facturas.panel')
-        @include('livewire.sales.keyboard') --}}
 
 
         <script>

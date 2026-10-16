@@ -19,12 +19,6 @@
                 <div class="menu__title"> PRODUCTOS </div>
             </a>
         </li>
-        <li>
-            <a href="{{ url('sales') }}" class="menu">
-                <div class="menu__icon"> <i data-feather="shopping-cart"></i> </div>
-                <div class="menu__title"> VENTAS</div>
-            </a>
-        </li>
         <li class="side-nav__devider my-6"></li>
 
         <li>

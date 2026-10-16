@@ -102,12 +102,14 @@ class Customers extends Component
 
     public function Destroy(Customer $customer)
     {
-        if($customer->orders->count() < 1)
+        $tieneFacturas = $customer->facturas()->count() > 0;
+        $tieneJuicios = \App\Models\Juicio::whereHas('participantes', fn($q) => $q->where('customers.id', $customer->id))->exists();
+        if(!$tieneFacturas && !$tieneJuicios)
         {
             $customer->delete();
             $this->noty("El cliente <b>$customer->businame </b> ha sido elmininado");
         }else{
-            $this->noty("El cliente tiene ventas relacionadas, no es posible eliminarlo");
+            $this->noty("El cliente tiene facturas o juicios relacionados, no es posible eliminarlo");
         }
     }
 

@@ -22,7 +22,6 @@
                                 <tr class="text-theme-1">
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >ID</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >MATERIA</th>
-                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >UNIDAD</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap text-center" >ACCIONES</th>
                                 </tr>
                             </thead>
@@ -38,11 +37,6 @@
                                         <td class="dark:border-dark-5">
                                             <h6 class="mb-1 font-medium">{{ $materia->nombre }}</h6>
                                             {{-- <small class="font-normal">{{ $MATERI->unidades->count() }} unidades en este edificio</small> --}}
-                                        </td>
-
-                                        <td class="dark:border-dark-5">
-                                            <h6 class="mb-1 font-medium">{{ $materia->unidad }}</h6>
-
                                         </td>
 
                                         <td class="dark:border-dark-5 text-center">
@@ -88,7 +82,6 @@
 
     @endif
 
-    {{-- @include('livewire.sales.keyboard') --}}
 
 
     {{-- para el buscador  --}}

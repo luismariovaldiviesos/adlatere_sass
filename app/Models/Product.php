@@ -50,7 +50,7 @@ class Product extends Model
 
 
     //relaciones
-    public function sales()
+    public function detalleFacturas()
     {
        return $this->hasMany(DetalleFactura::class);
     }

@@ -3,7 +3,6 @@
 namespace App\Http\Livewire;
 
 use App\Models\Materia;
-use App\Models\Unidad;
 use Livewire\Component;
 use Livewire\WithPagination;
 
@@ -13,7 +12,7 @@ class Materias extends Component
 
 use WithPagination;
 
-    public $nombre = '', $unidad_id, $unidad,  $selected_id = 0, $materia="";
+    public $nombre = '', $selected_id = 0, $materia="";
     public $action = 'Listado', $componentName = 'Listado de Materias ', $search, $form = false;
     private $pagination = 20;
     protected $paginationTheme = 'tailwind';
@@ -22,18 +21,15 @@ use WithPagination;
 
     public function render()
     {
-        // 1. Iniciamos la consulta base con el Join y el conteo de procedimientos
-        $query = Materia::join('unidads as u', 'u.id', 'materias.unidad_id')
-            ->select('materias.*', 'u.nombre as unidad')
-            ->withCount('procedimientos'); // Relación que debe estar en el modelo Materia
-           // ->orderBy('materias.nombre', 'asc');
+        // 1. Iniciamos la consulta base con el conteo de procedimientos
+        $query = Materia::withCount('procedimientos');
+            // ->orderBy('materias.nombre', 'asc');
 
         // 2. Aplicamos el filtro de búsqueda solo si hay texto
         if (strlen($this->search) > 0) {
             $searchTerm = strtolower(trim($this->search));
             $query->where(function ($q) use ($searchTerm) {
-                $q->whereRaw('LOWER(materias.nombre) LIKE ?', ["%{$searchTerm}%"])
-                ->orWhereRaw('LOWER(u.nombre) LIKE ?', ["%{$searchTerm}%"]);
+                $q->whereRaw('LOWER(materias.nombre) LIKE ?', ["%{$searchTerm}%"]);
             });
         }
 
@@ -42,7 +38,6 @@ use WithPagination;
 
         return view('livewire.materias.component', [
             'materias' => $info,
-            'unidades' => Unidad::orderBy('nombre', 'asc')->get(),
         ])->layout('layouts.theme.app');
     }
 
@@ -86,14 +81,13 @@ use WithPagination;
         // regresar a la página inicial del componente
         $this->resetPage();
         // regresar propiedades a su valor por defecto
-        $this->reset('nombre', 'unidad_id', 'selected_id', 'search', 'action', 'componentName', 'form','materia');
+        $this->reset('nombre', 'selected_id', 'search', 'action', 'componentName', 'form','materia');
     }
 
        public function Edit(Materia $materia)
     {
         $this->selected_id = $materia->id;
         $this->nombre = $materia->nombre;
-        $this->unidad_id =  $materia->unidad_id;
         $this->action = 'Editar';
         $this->form = true;
 
@@ -109,7 +103,7 @@ use WithPagination;
             ['id' => $this->selected_id],
             [
                 'nombre' => $this->nombre,
-                'unidad_id' => $this->unidad_id
+                'unidad_id' => null
             ]
         );
 

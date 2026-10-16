@@ -5,7 +5,6 @@ namespace App\Http\Livewire;
 use App\Models\Arqueo;
 use App\Models\Caja;
 use App\Models\Factura;
-use App\Models\Order;
 use Carbon\Carbon;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Facades\Auth;
@@ -22,6 +21,14 @@ class Arqueos extends Component
     public $action = 'Listado', $componentName='LISTADO DE ARQUEOS DE CAJA', $search, $form = false;
     private $pagination =15;
     protected $paginationTheme='tailwind';
+
+    public function mount()
+    {
+        // Módulo de cajas desactivado salvo que el admin lo active en Configuración
+        if (!\App\Models\Setting::first()?->enable_caja) {
+            return redirect()->route('dashboard');
+        }
+    }
 
 
     public function render()

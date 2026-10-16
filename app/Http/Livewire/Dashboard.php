@@ -4,8 +4,6 @@ namespace App\Http\Livewire;
 
 use App\Models\DetalleFactura;
 use App\Models\Factura;
-use App\Models\Order;
-use App\Models\OrderDetail;
 use App\Models\User;
 use DateTime;
 use Illuminate\Support\Facades\Cache;

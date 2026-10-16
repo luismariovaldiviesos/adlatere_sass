@@ -110,7 +110,6 @@
 
     @endif
 
-    @include('livewire.sales.keyboard')
     @include('livewire.cajas.modal-valor-inicio')
 
     @else

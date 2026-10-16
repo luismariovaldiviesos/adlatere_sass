@@ -52,7 +52,7 @@
 
                                         <td class="dark:border-dark-5">
                                             <h6 class="mb-1 font-medium">{{ $product->name }}</h6>
-                                            {{-- <small class="font-normal">{{ $product->sales->count() }} Ventas</small> --}}
+
                                         </td>
 
                                         <td class="text-center">{{ strtoupper($product->category ) }}</td>
@@ -88,7 +88,7 @@
 
                                         <td class="dark:border-dark-5 text-center">
                                             <div class="d-flex justify-content-center">
-                                                @if ($product->sales->count() < 1)
+                                                @if ($product->detalleFacturas->count() < 1)
                                                     @can('eliminar_producto')
                                                     <button class="btn btn-danger text-white border-0"
                                                     onclick="destroy('products','Destroy', {{ $product->id }})"
@@ -141,7 +141,6 @@
 
 
         @include('livewire.products.panel')
-        @include('livewire.sales.keyboard')
 
 
     {{-- para el buscador  --}}

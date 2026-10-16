@@ -49,7 +49,7 @@
 
                                         <td class="dark:border-dark-5 text-center">
                                             <div class="d-flex justify-content-center">
-                                                @if ($user->sales->count() < 1)
+                                                @if ($user->facturas->count() < 1)
                                                 @can('eliminar_usuarios')
                                                     <button class="btn btn-danger text-white border-0"
                                                     onclick="destroy('users','Destroy', {{ $user->id }})"
@@ -94,7 +94,6 @@
 
     @endif
 
-    @include('livewire.sales.keyboard')
 
 
     {{-- para el buscador  --}}

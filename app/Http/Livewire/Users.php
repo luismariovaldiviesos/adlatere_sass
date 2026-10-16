@@ -247,12 +247,12 @@ class Users extends Component
     {
         $tieneJuicios = \App\Models\Juicio::whereHas('abogados', fn($q) => $q->where('user_id', $user->id))->exists();
         $tieneConsultas = \App\Models\Consulta::where('abogado_id', $user->id)->whereIn('estado_atencion', ['pendiente','atendida'])->exists();
-        if ($user->sales->count() < 1 && $user->especialidades->count() < 1 && !$tieneJuicios && !$tieneConsultas) {     
+        if ($user->facturas->count() < 1 && $user->especialidades->count() < 1 && !$tieneJuicios && !$tieneConsultas) {
             $user->especialidades()->detach();
             $user->delete();
             $this->noty("El usuario <b>$user->name</b> fue eliminado del sistema");
         } else{
-            $this->noty('no es posible eliminar el usuario, tiene ventas, especialidades o casos asignados', 'noty', false, 'error');
+            $this->noty('no es posible eliminar el usuario, tiene facturas, especialidades o casos asignados', 'noty', false, 'error');
         }
     }
 }

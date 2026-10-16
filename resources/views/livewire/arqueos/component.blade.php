@@ -130,7 +130,6 @@
 
 
 
-        @include('livewire.sales.keyboard')
         @include('livewire.arqueos.modal-cierre')
 
     {{-- para el buscador  --}}

@@ -141,7 +141,6 @@
 
     @endif
 
-    {{-- @include('livewire.sales.keyboard') --}}
      {{-- CONTENEDOR PERMANENTE PARA EL MODAL --}}
         {{-- CONTENEDOR PERMANENTE PARA EL MODAL --}}
     <div>

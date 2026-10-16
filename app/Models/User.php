@@ -130,11 +130,10 @@ class User extends Authenticatable
         return $this->morphOne(Image::class, 'model')->withDefault();
     }
 
-    public function sales()
+    public function facturas()
     {
-        return $this->hasMany(Order::class);
+        return $this->hasMany(Factura::class, 'user_id');
     }
-
 
    // accesores y mutators
 

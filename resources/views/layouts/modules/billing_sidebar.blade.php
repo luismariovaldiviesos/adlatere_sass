@@ -53,6 +53,7 @@
         </a>
         <ul class="">
 
+            @if(\App\Models\Setting::first()?->enable_caja)
             @can('menu_cajas')
             <li>
                 <a href="{{ route('cajas') }}" class="side-menu">
@@ -70,6 +71,7 @@
                 </a>
             </li>
             @endcan
+            @endif
         </ul>
     </li>
 

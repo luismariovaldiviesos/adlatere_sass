@@ -55,9 +55,8 @@ class Consultas extends Component
     public function mount()
     {
         $this->materias = Materia::orderBy('nombre', 'asc')->get();
-        // Abogados = usuarios del sistema (todos los activos, incl. Admin:
-        // hoy todos tus usuarios son Admin y el filtro anterior dejaba el combo vacío)
-        $this->abogados = \App\Models\User::where('profile', 'abogado')->where('status', 'ACTIVE')
+        // Abogados = usuarios con perfil Abogado activos
+        $this->abogados = \App\Models\User::where('profile', 'Abogado')->where('status', 'ACTIVE')
             ->orderBy('name', 'asc')->get();
         // Panel propio del abogado: solo sus asignadas, sin alta de consultas
         if (request()->route() && request()->route()->getName() === 'mis-consultas') {
@@ -236,6 +235,10 @@ class Consultas extends Component
     public function addNew()
     {
         if (!$this->puedeAdministrar()) return; // el abogado no crea consultas
+        if (\App\Models\Materia::count() < 1 || \App\Models\Asunto::count() < 1) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Primero carga el archivo datos_cliente (catálogo vacío: materias, asuntos).', 'type' => 'error', 'action' => '']);
+            return;
+        }
         $this->resetForm();
         $this->fecha_pago = now()->toDateString();
         $this->form = true;
@@ -472,6 +475,10 @@ class Consultas extends Component
         $consulta = Consulta::find($id);
         if (!$consulta) return;
         if (!$this->puedeAdministrar() || auth()->user()->cannot('facturar_consulta')) return;
+        if ($this->esAdmin()) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La facturación de consultas la realiza el asistente.', 'type' => 'error', 'action' => '']);
+            return;
+        }
         if ($consulta->estado_pago !== 'pagada' || $consulta->factura_id) return;
         return redirect()->route('facturas', ['consulta_id' => $consulta->id]);
     }
@@ -497,6 +504,10 @@ class Consultas extends Component
         if (!$consulta) return;
         if (!$this->puedeAdministrar()) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'No tiene permiso para facturar. Solo recepción.', 'type' => 'success', 'action' => '']);
+            return;
+        }
+        if ($this->esAdmin()) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La facturación de consultas la realiza el asistente.', 'type' => 'error', 'action' => '']);
             return;
         }
         if (auth()->user()->cannot('facturar_consulta')) return;
@@ -577,6 +588,10 @@ class Consultas extends Component
         if (!$consulta || !$consulta->factura_id) return;
         if (!$this->puedeAdministrar() || auth()->user()->cannot('facturar_consulta')) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'No tiene permiso para emitir facturas.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        if ($this->esAdmin()) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La facturación de consultas la realiza el asistente.', 'type' => 'error', 'action' => '']);
             return;
         }
         $factura = Factura::find($consulta->factura_id);
@@ -683,15 +698,10 @@ class Consultas extends Component
     {
         $consulta = Consulta::with(['customer', 'asunto'])->find($id);
         if (!$consulta) return;
-        if (!$this->esAbogado()) {
-            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo un usuario con perfil de abogado puede convertir en juicio.', 'type' => 'error', 'action' => '']);
+        if (!$this->esAdmin() || auth()->user()->cannot('convertir_consulta')) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el admin puede convertir consultas en juicio.', 'type' => 'error', 'action' => '']);
             return;
         }
-        if (!$this->esAdmin() && (int) $consulta->abogado_id !== (int) auth()->id()) {
-            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el abogado asignado o el admin pueden convertirla en juicio.', 'type' => 'success', 'action' => '']);
-            return;
-        }
-        if (auth()->user()->cannot('convertir_consulta')) return;
         if ($consulta->estado_atencion === 'convertida' || $consulta->juicio_id) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'La consulta ya fue convertida en juicio.', 'type' => 'success', 'action' => '']);
             return;
@@ -701,7 +711,7 @@ class Consultas extends Component
         try {
             $estadoInicial = EstadoProcesal::orderBy('id', 'asc')->first();
             if (!$estadoInicial) {
-                throw new \Exception('No hay estados procesales registrados.');
+                throw new \Exception('No hay estados procesales registrados. Carga Fases y Estados del Excel datos_cliente.');
             }
 
             // Código temporal único (la carátula exige cod_satje único al editar)

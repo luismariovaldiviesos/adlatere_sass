@@ -14,7 +14,7 @@ class AddEnableCajaToSettingsTable extends Migration
     public function up()
     {
         Schema::table('settings', function (Blueprint $table) {
-            $table->boolean('enable_caja')->default(true);
+            $table->boolean('enable_caja')->default(false);
         });
     }
 

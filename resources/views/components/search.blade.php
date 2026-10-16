@@ -6,7 +6,7 @@
 
     <div class="w-full sm:w-auto mt-3 sm:mt-0 sm:ml-auto md:ml:0">
         <div class="relative text-gray-700 dark:text-gray-300">
-            <input wire:model="search" id="search" type="text" class="form-control box placeholder-theme-13 kioskboard w-full sm:w-auto"
+            <input wire:model.debounce.500ms="search" id="search" type="text" class="form-control box placeholder-theme-13 kioskboard w-full sm:w-auto"
             placeholder="Buscar...">
             <i class="w-4 h-4 absolute my-auto inset-y-0 mr-3 rigth-0 fas fa-search"></i>
         </div>

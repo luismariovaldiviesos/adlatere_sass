@@ -96,7 +96,6 @@
         @endcan
 
         {{-- @include('livewire.$facturas.panel')
-        @include('livewire.sales.keyboard') --}}
 
 
     {{-- para el buscador  --}}

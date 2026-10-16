@@ -22,6 +22,14 @@ class Cajas extends Component
     protected $paginationTheme = 'tailwind';
     private $pagination = 100;
 
+    public function mount()
+    {
+        // Módulo de cajas desactivado salvo que el admin lo active en Configuración
+        if (!\App\Models\Setting::first()?->enable_caja) {
+            return redirect()->route('dashboard');
+        }
+    }
+
 
     public function render()
     {

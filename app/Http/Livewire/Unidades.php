@@ -22,7 +22,7 @@ class Unidades extends Component
         $query = Unidad::join('cantones as c', 'c.id', 'unidads.canton_id')
             ->select('unidads.*', 'c.nombre as canton')
             // Validamos si tiene procesos vinculados para el botón eliminar
-            ->withCount('materias') ;
+            ->withCount('juicios') ;
            // ->orderBy('unidads.nombre', 'asc');
 
         if (strlen($this->search) > 0) {

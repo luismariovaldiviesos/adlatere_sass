@@ -14,9 +14,9 @@ class Customer extends Model
 
 
     //relaciones
-    public function  orders()
+    public function facturas()
     {
-        return $this->hasMany(Order::class);
+        return $this->hasMany(Factura::class, 'customer_id');
     }
 
     public static function rules($id){ // stattic para acceder sin tener que instanciar la clase

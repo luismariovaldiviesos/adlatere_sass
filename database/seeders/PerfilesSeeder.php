@@ -15,9 +15,27 @@ class PerfilesSeeder extends Seeder
     public const BLOQUES = [
         'BASE' => ['menu_dashboard', 'ver_dash'],
         'SECCION_FACTURACION' => ['menu_facturacion'],
-        'JUICIOS_ABOGADO' => ['menu_juicios', 'editar_juicio', 'firmar_actividad', 'eliminar_juicio'],
-        'MIS_CONSULTAS' => ['menu_mis_consultas', 'guardar_notas_consulta', 'atender_consulta', 'convertir_consulta'],
+        // Abogado: TODO en juicios (crear, carátula, sujetos, actividades+firma,
+        // audiencias, documentos, finanzas, funcionarios y abogados del juicio).
+        // El código además exige: ver solo asignados, tramitar solo patrocinador,
+        // archivar solo dueño, restaurar/eliminar físico solo Admin.
+        'JUICIOS_ABOGADO' => [
+            'menu_juicios', 'agregar_juicio', 'editar_juicio', 'eliminar_juicio',
+            'ver_pestana_caratula', 'ver_pestana_sujetos', 'ver_pestana_audiencias',
+            'ver_pestana_documentos', 'ver_pestana_finanzas', 'ver_pestana_funcionarios',
+            'ver_pestana_abogados', 'actualizar_caratula',
+            'agregar_sujeto', 'editar_sujeto', 'eliminar_sujeto',
+            'agregar_actividad', 'editar_actividad', 'eliminar_actividad', 'firmar_actividad',
+            'agregar_audiencia', 'editar_audiencia', 'eliminar_audiencia',
+            'registrar_documento', 'ver_documento', 'eliminar_documento',
+            'crear_finanza', 'guarda_abono_finanza', 'facturar_abono_finanza', 'eliminar_abono_finanza',
+            'asignar_funcionario', 'eliminar_funcionario',
+            'asignar_abogado', 'eliminar_abogado',
+        ],
+        // atender: solo Abogado (el código exige además que sea el asignado)
+        'MIS_CONSULTAS' => ['menu_mis_consultas', 'guardar_notas_consulta', 'atender_consulta'],
         'CLIENTES_LECTURA' => ['menu_personas', 'menu_clientes', 'ver_cliente'],
+        // facturar: solo Asistente (convertir/eliminar quedan solo en Admin vía sync total)
         'RECEPCION' => ['menu_facturar', 'menu_consultas', 'ver_facturacion', 'crear_consulta', 'editar_datos_consulta', 'marcar_pagada_consulta', 'facturar_consulta'],
         'CLIENTES_GESTION' => ['menu_personas', 'menu_clientes', 'ver_cliente', 'crear_cliente'],
         'CAJA_DIA' => ['menu_ventas_diarias', 'ver_venta_diaria'],
@@ -53,7 +71,6 @@ class PerfilesSeeder extends Seeder
         }
 
         Role::firstOrCreate(['name' => 'Admin']);
-        Role::firstOrCreate(['name' => 'Employee']);
         $abogado = Role::firstOrCreate(['name' => 'Abogado']);
         $asistente = Role::firstOrCreate(['name' => 'Asistente']);
 

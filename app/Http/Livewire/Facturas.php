@@ -13,7 +13,6 @@ use App\Models\PaymentMethod;
 use App\Models\XmlFactura;
 use Livewire\Component;
 use App\Traits\CartTrait;
-use App\Traits\PrinterTrait;
 use App\Traits\PdfTrait;
 use DB;
 use Illuminate\Support\Facades\Auth;
@@ -37,7 +36,7 @@ class Facturas extends Component
     protected $listeners = ['cancelSale'];
 
      //traits
-     use CartTrait, PrinterTrait, PdfTrait;
+     use CartTrait, PdfTrait;
 
      // propiedades generales
     public  $cash, $searchCustomer, $searchProduct, $customer_id =null,
@@ -76,6 +75,7 @@ class Facturas extends Component
      protected $paginationTheme = "bootstrap";
 
      public $estadoCaja;
+     public $sinEmpresa = false; // true cuando aún no hay datos de empresa configurados
 
      public $monto_externo = null;
      public $pago_juicio_id = null; // ID del pago de juicios que se está facturando
@@ -84,12 +84,16 @@ class Facturas extends Component
 
      // carga al inicio
 
-     public function mount()
+      public function mount()
      {
 
-        $fact  = new Factura();
-        $this->claveAcceso = $fact->claveAcceso();
-        $this->secuencial = $fact->secuencial();
+         if (!\App\Models\Setting::first()) {
+             $this->sinEmpresa = true;
+             return;
+         }
+         $fact  = new Factura();
+         $this->claveAcceso = $fact->claveAcceso();
+         $this->secuencial = $fact->secuencial();
         $this->validaCaja();
         $this->paymentMethods = PaymentMethod::active();
         //$this->recalcularTotales();
@@ -162,11 +166,14 @@ class Facturas extends Component
 
 
 
-    public function render()
-    {
+     public function render()
+     {
 
-
-        $this->fechaFactura =  Carbon::now()->format('d-m-Y');
+         if ($this->sinEmpresa) {
+             return view('livewire.facturas.sin-empresa')
+                 ->layout('layouts.theme.app');
+         }
+         $this->fechaFactura =  Carbon::now()->format('d-m-Y');
 
       // dd($this->secuencial , $this->claveAcceso);
       // dd($this->claveAcceso);
@@ -495,9 +502,13 @@ class Facturas extends Component
 
 
       // guardar venta
-      public function storeSale($print = false)
-      {
-        Log::info('Inicio storeSale en Facturas', ['tenant' => tenant('id'), 'user' => Auth::id()]);
+       public function storeSale($print = false)
+       {
+        if (!\App\Models\Setting::first()) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Para poder facturar debes configurar los datos de la empresa antes.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        Log::info('Inicio storeSale en Facturas', ['tenant' => function_exists('tenant') ? tenant('id') : 'local', 'user' => Auth::id()]);
 
         if ($this->getItemsCart() <= 0) {
             $this->noty('AGREGA PRODUCTOS A LA VENTA', 'noty', 'error');
@@ -505,15 +516,17 @@ class Facturas extends Component
             return;
         }
 
-        // VALIDACIÓN DE LÍMITE POR PLAN
-        $tenant = tenant();
-        $limit = $tenant->getInvoiceLimit();
-        // Nota: getCurrentCycleInvoiceCount() ya filtra solo las facturas AUTORIZADAS (numeroAutorizacion != null).
-        // Por lo tanto, se bloquea la emisión si ya ha alcanzado su cupo de facturas válidas.
-        if ($limit !== null && $tenant->getCurrentCycleInvoiceCount() >= $limit) {
-            $this->noty("Has alcanzado el límite de facturas de tu plan contratado ({$limit}). Realiza un nuevo pago para renovar.", 'noty', 'error');
-            $this->dispatchBrowserEvent('sale-error');
-            return;
+        // VALIDACIÓN DE LÍMITE POR PLAN (solo cuando hay multitenancy; en local se omite)
+        if (function_exists('tenant')) {
+            $tenant = tenant();
+            $limit = $tenant->getInvoiceLimit();
+            // Nota: getCurrentCycleInvoiceCount() ya filtra solo las facturas AUTORIZADAS (numeroAutorizacion != null).
+            // Por lo tanto, se bloquea la emisión si ya ha alcanzado su cupo de facturas válidas.
+            if ($limit !== null && $tenant->getCurrentCycleInvoiceCount() >= $limit) {
+                $this->noty("Has alcanzado el límite de facturas de tu plan contratado ({$limit}). Realiza un nuevo pago para renovar.", 'noty', 'error');
+                $this->dispatchBrowserEvent('sale-error');
+                return;
+            }
         }
 
         DB::beginTransaction();

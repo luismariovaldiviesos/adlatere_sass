@@ -15,6 +15,7 @@ yarn-error.log
 # Ignore tenant sensitive data
 /storage/tenant*/app/certificados
 /storage/tenant*/app/comprobantes
+/storage/tenant*/logs
 
 # Ignore central app sensitive data (if used)
 /storage/app/certificados

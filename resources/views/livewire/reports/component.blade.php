@@ -148,7 +148,6 @@
 
     @include('livewire.reports.detail')
     @include('livewire.reports.modal-users')
-    @include('livewire.sales.keyboard')
 
 
 <script>

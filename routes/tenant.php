@@ -24,7 +24,7 @@ use App\Http\Livewire\NotasCredito;
 use App\Http\Livewire\Permisos;
 use App\Http\Livewire\Products;
 use App\Http\Livewire\Reports;
-use App\Http\Livewire\Sales;
+
 use App\Http\Livewire\Settings;
 use App\Http\Livewire\Users;
 use App\Http\Livewire\Roles;
@@ -85,7 +85,6 @@ Route::middleware([
         Route::get('products', Products::class)->name('products');
         Route::get('customers', Customers::class)->name('customers');
         Route::get('users', Users::class)->name('users');
-        Route::get('sales', Sales::class)->name('sales');
         Route::get('reports', Reports::class)->name('reports');
         Route::get('dash', Dashboard::class)->name('dash');
         Route::get('settings', Settings::class)->name('settings');

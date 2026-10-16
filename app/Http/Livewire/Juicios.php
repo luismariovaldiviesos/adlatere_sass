@@ -377,6 +377,10 @@ class Juicios extends Component
        public function  addNew()
     {
         if (auth()->user()->cannot('agregar_juicio')) return;
+        if (\App\Models\Materia::count() < 1 || \App\Models\Asunto::count() < 1 || \App\Models\EstadoProcesal::count() < 1 || \App\Models\Unidad::count() < 1) {
+            $this->noty('Primero carga el archivo datos_cliente (catálogo vacío: materias, asuntos, estados, unidades).', 'noty', false, 'error');
+            return;
+        }
         $this->resetUI();
         $this->editModeJuicio = false;
         $this->form = true;

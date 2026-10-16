@@ -101,7 +101,6 @@
 
     @endif
 
-    @include('livewire.sales.keyboard')
 
 
 

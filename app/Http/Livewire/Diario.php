@@ -3,9 +3,7 @@
 namespace App\Http\Livewire;
 
 use App\Models\Customer;
-use App\Models\Order;
 use App\Models\Factura;
-use App\Models\OrderDetail;
 use Carbon\Carbon;
 use Livewire\Component;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -50,8 +48,8 @@ class Diario extends Component
         $this->clientes = Customer::all()->count();
         $this->numVentas = $query->count();
         
-        // Ventas Netas (Facturas - NotasCredito)
-        $currentTotal = $query->selectRaw("SUM(CASE WHEN codDoc = '04' THEN -total ELSE total END) as net_total")->value('net_total');
+         // Ventas Netas (Facturas - NotasCredito)
+         $currentTotal = (float) $query->selectRaw("SUM(CASE WHEN codDoc = '04' THEN -total ELSE total END) as net_total")->value('net_total');
         
         $this->totVentas  =  number_format($currentTotal,2);
         

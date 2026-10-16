@@ -88,7 +88,6 @@
 
     @endif
 
-    {{-- @include('livewire.sales.keyboard') --}}
 
 
     {{-- para el buscador  --}}

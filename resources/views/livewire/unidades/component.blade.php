@@ -47,7 +47,7 @@
 
                                         <td class="dark:border-dark-5 text-center">
                                             <div class="d-flex justify-content-center">
-                                                @if ($unidad->materias->count() < 1)
+                                                @if ($unidad->juicios->count() < 1)
                                                     <button class="btn btn-danger text-white border-0"
                                                     onclick="destroy('unidades','Destroy', {{ $unidad->id }})"
                                                     type="button">
@@ -88,7 +88,6 @@
 
     @endif
 
-    {{-- @include('livewire.sales.keyboard') --}}
 
 
     {{-- para el buscador  --}}

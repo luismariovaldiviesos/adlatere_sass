@@ -38,9 +38,9 @@ public function canton()
         return $this->belongsTo(Canton::class);
     }
 
-     public function materias()
+     public function juicios()
     {
-        return $this->hasMany(Materia::class);
+        return $this->hasMany(Juicio::class, 'unidad_id');
     }
 
     public function funcionarios()
