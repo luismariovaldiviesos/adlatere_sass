@@ -9,19 +9,17 @@ class Materia extends Model
 {
     use HasFactory;
 
-     protected $fillable = ['nombre','unidad_id'];
+     protected $fillable = ['nombre'];
 
     public static function rules($id)
     {
         if ($id <= 0) {
             return [
                 'nombre' => 'required|unique:materias',
-                'unidad_id' => 'nullable'
             ];
         } else {
             return [
                 'nombre' => "required|unique:materias,nombre,{$id}",
-                'unidad_id' => 'nullable'
             ];
         }
     }
@@ -32,12 +30,7 @@ class Materia extends Model
     ];
 
 
-    public function unidad()
-    {
-        return $this->belongsTo(Unidad::class);
-    }
-
-     public function procedimientos()
+    public function procedimientos()
     {
         return $this->hasMany(Procedimiento::class);
     }

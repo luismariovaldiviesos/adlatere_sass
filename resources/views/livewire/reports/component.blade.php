@@ -3,7 +3,7 @@
     <div class=" col-span-12">
         <div class="intro-y box">
             <h2 class="text-lg font-medium text-center text-theme-1 py-4">
-                REPORTE DE VENTAS
+                REPORTE DE FACTURACIÓN
             </h2>
 
             <div class="grid grid-cols-12 gap-5 p-5">

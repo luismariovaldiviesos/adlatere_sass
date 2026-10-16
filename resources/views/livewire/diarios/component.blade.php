@@ -217,9 +217,11 @@ License: You must have a valid license purchased only from themeforest(the above
                                                         <div class="text-base font-medium truncate text-theme-1">🔓 Cajas Abiertas</div>
                                                         <div class="text-gray-500 mt-1">Control de Caja</div>
                                                         <div class="text-gray-600 text-justify mt-1">Existen <b>{{ $openBoxesCount }}</b> cajas registradas como 'Abiertas'. Verifica que los cierres se hayan realizado.</div>
+                                                        @if(\App\Models\Setting::first()?->enable_caja)
                                                         <div class="font-medium flex mt-5">
                                                             <a href="{{ route('cajas') }}" class="btn btn-secondary py-1 px-2">Ver Cajas</a>
                                                         </div>
+                                                        @endif
                                                     @else
                                                          <div class="text-base font-medium truncate text-theme-9">✓ Cajas Controladas</div>
                                                         <div class="text-gray-500 mt-1">Cierre</div>

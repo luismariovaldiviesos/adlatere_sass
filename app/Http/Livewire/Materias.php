@@ -103,7 +103,6 @@ use WithPagination;
             ['id' => $this->selected_id],
             [
                 'nombre' => $this->nombre,
-                'unidad_id' => null
             ]
         );
 

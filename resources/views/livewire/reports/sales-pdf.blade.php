@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Reporte de Ventas</title>
+    <title>Reporte de Facturación</title>
     <style>
         body { font-family: sans-serif; font-size: 12px; }
         .header { text-align: center; margin-bottom: 20px; }
@@ -18,7 +18,7 @@
 </head>
 <body>
     <div class="header">
-        <h1>Reporte de Ventas</h1>
+        <h1>Reporte de Facturación</h1>
         <p>Usuario: {{ $user }}</p>
         <p>Fecha: {{ $startDate }} al {{ $endDate }}</p>
     </div>
