@@ -18,10 +18,10 @@
                     <div class="absolute z-50 w-full bg-white border border-gray-200 rounded-md shadow-lg mt-1 overflow-hidden" style="max-height: 250px; overflow-y: auto;">
                         @forelse($funcionarios_list as $func)
                             <div wire:key="func-{{ $func->id }}"
-                                wire:click="selectFuncionario({{ $func->id }}, '{{ addslashes($func->nombre) }}')" 
+                                wire:click="selectFuncionario({{ $func->id }}, '{{ addslashes($func->nombre) }}', '{{ addslashes($func->cargo ?? '') }}')"
                                  class="p-3 hover:bg-blue-100 cursor-pointer border-b last:border-0 transition-colors duration-200">
                                 <span class="font-bold block text-lg">{{ $func->nombre }}</span>
-                                <small class="text-gray-500 block">{{ $func->cargo }} | {{ $func->email ?? 'Sin correo' }}</small>
+                                <small class="text-gray-500 block">Cargo base: {{ $func->cargo }} | {{ $func->email ?? 'Sin correo' }}</small>
                             </div>
                         @empty
                             <div class="p-4 text-center bg-gray-50">

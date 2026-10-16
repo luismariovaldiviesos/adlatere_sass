@@ -150,11 +150,24 @@
                         <td class="text-slate-500">{{ \Carbon\Carbon::parse($act->updated_at)->format('d/m/Y H:i') }}</td>
                         <td class="table-report__action w-56">
                             <div class="flex justify-center items-center gap-2 flex-wrap">
+                                @php $bloqueada = strtolower($act->estado_firma ?? 'no_requerida') === 'firmada'; @endphp
+                                @if($bloqueada)
+                                <span class="flex items-center text-slate-400" title="Firmada digitalmente: no editable">
+                                    <i data-lucide="lock" class="w-4 h-4 mr-1"></i> Bloqueada
+                                </span>
+                                @else
                                 <a class="flex items-center mr-3 text-primary" href="javascript:;" wire:click="editActividad({{ $act->id }})">
                                     <i data-lucide="edit" class="w-4 h-4 mr-1"></i> Editar
                                 </a>
                                 <a class="flex items-center text-danger" href="javascript:;" onclick="confirm('¿Está seguro de eliminar esta actividad?') || event.stopImmediatePropagation()" wire:click="destroyActividad({{ $act->id }})">
                                     <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> Eliminar
+                                </a>
+                                @endif
+                                <a class="flex items-center text-theme-1" href="javascript:;" wire:click="descargarActividadPdf({{ $act->id }})" title="Descargar en PDF">
+                                    <i data-lucide="file-text" class="w-4 h-4 mr-1"></i> PDF
+                                </a>
+                                <a class="flex items-center text-theme-1" href="javascript:;" wire:click="descargarActividadWord({{ $act->id }})" title="Descargar en Word">
+                                    <i data-lucide="file" class="w-4 h-4 mr-1"></i> Word
                                 </a>
                             </div>
                         </td>

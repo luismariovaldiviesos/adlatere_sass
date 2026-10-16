@@ -169,6 +169,26 @@ class Juicios extends Component
         return $this->juicio;
     }
 
+    // Sujetos solo en fase de carátula: sin actuaciones de trámite ni audiencias.
+    // No cuentan la nota/comprobante auto-importados al convertir una consulta
+    // (siguen siendo carátula: aún no hay trámite real).
+    private function juicioEnCaratula($juicioId)
+    {
+        if (\App\Models\Audiencia::where('juicio_id', $juicioId)->exists()) return false;
+        return !\App\Models\Actividad::where('juicio_id', $juicioId)
+            ->where('descripcion', 'not like', 'Nota inicial de la consulta #%')
+            ->exists();
+    }
+
+    private function exigirCaratula()
+    {
+        if (!$this->juicioEnCaratula($this->selected_id)) {
+            $this->noty('Este juicio ya tiene actuaciones registradas: los sujetos procesales quedaron fijados y no se pueden cambiar.', 'noty', false, 'error');
+            return false;
+        }
+        return true;
+    }
+
     //criterio unico es patrocinador (vale para 1 o varios abogados)
     private function esPatrocinador($juicioId, $userId){
         return \App\Models\Juicio::where('id', $juicioId)
@@ -335,7 +355,7 @@ class Juicios extends Component
     public function render()
     {
         $base = $this->verArchivados ? Juicio::onlyTrashed() : Juicio::query();
-        $info = $base->with('asunto.procedimiento.materia', 'abogados', 'estadoProcesal', 'finanza') // Carga la relación automáticamente
+        $info = $base->with('asunto.procedimiento.materia', 'abogados', 'clientes', 'estadoProcesal', 'finanza') // Carga la relación automáticamente
             ->withCount(['actividades', 'audiencias', 'documentos', 'pagos']); // conteos para Eliminar/Archivar (van en la misma consulta)
         // Visibilidad: admin todo, abogado solo sus juicios asignados
         if (!$this->esAdmin()) {
@@ -509,7 +529,8 @@ class Juicios extends Component
     }
 
     public function addParticipante(){
-        if (!$this->usuarioPuedeTramitar()) return;        
+        if (!$this->usuarioPuedeTramitar()) return;
+        if (!$this->exigirCaratula()) return;
         if(!$this->selected_id || $this->selected_id <= 0){
             $this->noty( 'Debe guardar el juicio primero.', 'noty', false);
              $this->tab = 'juicio'; // volver a la pestaña de juicio para guardar primero
@@ -646,6 +667,7 @@ class Juicios extends Component
 
     public function editParticipante($id){
         //dd($id);
+        if (!$this->exigirCaratula()) return;
             $participante = \App\Models\Customer::find($id);
             if (!$participante) { $this->noty('Sujeto no encontrado.', 'noty', false, 'error'); return; }
             $pivotRow = $participante->juicios()->where('juicio_id', $this->selected_id)->first();
@@ -664,6 +686,7 @@ class Juicios extends Component
 
     public function removeParticipante($id){
         if (!$this->usuarioPuedeTramitar()) return;
+        if (!$this->exigirCaratula()) return;
         $juicio = $this->cargarJuicioMaestro();
         if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
         $juicio->participantes()->detach($id);
@@ -682,6 +705,7 @@ class Juicios extends Component
 
 public function editParticipanteEnJuicio(){
     if (!$this->usuarioPuedeTramitar()) return;
+    if (!$this->exigirCaratula()) return;
     $juicio = $this->cargarJuicioMaestro();
     if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
     // Conflicto de intereses: al guardar no pueden quedar clientes en ambos lados (se excluye a sí mismo)
@@ -937,9 +961,13 @@ public function editParticipanteEnJuicio(){
 
    }
 
-   public function editActividad($id) {
+    public function editActividad($id) {
         $actividad = \App\Models\Actividad::where('id', $id)->where('juicio_id', $this->selected_id)->first();
         if (!$actividad) { $this->noty('Actividad no encontrada en este juicio.', 'noty', false, 'error'); return; }
+        if (strtolower($actividad->estado_firma ?? 'no_requerida') === 'firmada') {
+            $this->noty('Actividad firmada digitalmente: no se puede editar para preservar la validez del firmado.', 'noty', false, 'error');
+            return;
+        }
         $this->selected_actividad_id = $id;
         $this->tipo_actividad_id = $actividad->tipo_actividad_id;
         $this->origen = $actividad->origen;
@@ -959,6 +987,10 @@ public function editParticipanteEnJuicio(){
     if (!$this->usuarioPuedeTramitar()) return;
         $act = \App\Models\Actividad::where('id', $id)->where('juicio_id', $this->selected_id)->first();
         if (!$act) { $this->noty('Actividad no encontrada en este juicio.', 'noty', false, 'error'); return; }
+        if (strtolower($act->estado_firma ?? 'no_requerida') === 'firmada') {
+            $this->noty('Actividad firmada digitalmente: no se puede eliminar. El PDF firmado queda como constancia.', 'noty', false, 'error');
+            return;
+        }
         $act->delete();
         if ($this->juicio) $this->juicio->load('actividades.tipoActividad');
         $this->noty('Actividad eliminada', 'noty', false);
@@ -1374,7 +1406,10 @@ public function editParticipanteEnJuicio(){
         return;
     }
         if(strlen($value)>0){
-            $this->funcionarios_list = \App\Models\Funcionario::where('nombre', 'like', "%$value%")
+            $this->funcionarios_list = \App\Models\Funcionario::where(function($q) use ($value) {
+                    $q->where('nombre', 'like', "%$value%")
+                      ->orWhere('cargo', 'like', "%$value%");
+                })
              // 2. Aquí está la magia: Filtramos solo los funcionarios de esta unidad
               ->whereHas('unidades', function($query) {
                 $query->where('unidad_id', $this->unidad_id); // $this->unidad_id viene de la pestaña carátula
@@ -1389,11 +1424,16 @@ public function editParticipanteEnJuicio(){
     }
 
     //se ejecuta cuando al hacer clic en un funcionario de la lista desplegable
-    public function selectFuncionario($id, $name){
+    // Pre-llena el rol con el cargo base cuando coincide con una opción
+    public function selectFuncionario($id, $name, $cargo = null){
         $this->funcionario_id = $id;
         $this->searchFuncionario = $name;
+        $mapa = ['Juez' => 'Juez Ponente', 'Secretario' => 'Secretario', 'Ayudante' => 'Ayudante Judicial', 'Citador' => 'Citador'];
+        if ($cargo && isset($mapa[trim($cargo)])) {
+            $this->rol_en_juicio = $mapa[trim($cargo)];
+        }
          $this->funcionarios_list = [];
-        $this->showFuncionarioDropdown  = false; 
+        $this->showFuncionarioDropdown  = false;
     }
 
     //metodo para asignar un funcionario a un juicio
@@ -1759,6 +1799,63 @@ public function descargarFirmado($actividadId)
         'Content-Type' => 'application/pdf',
     ]);
 }
+
+    // Descargar actividad en PDF (al vuelo, sin almacenar): misma presentación que el firmado
+    public function descargarActividadPdf($actividadId)
+    {
+        $actividad = \App\Models\Actividad::with('tipoActividad')->find($actividadId);
+        if (!$actividad) { $this->noty('Actividad no encontrada.', 'noty', false, 'error'); return; }
+        if (!$this->esAdmin() && !\App\Models\Juicio::where('id', $actividad->juicio_id)->whereHas('abogados', fn($q) => $q->where('user_id', auth()->id()))->exists()) {
+            $this->noty('No tiene permiso para descargar este documento.', 'noty', false, 'error');
+            return;
+        }
+        $pdfBytes = app(\App\Services\ActividadSignatureService::class)->pdfBytes($actividad);
+        $this->registrarDescargaActividad($actividad, 'PDF');
+        return response()->streamDownload(function () use ($pdfBytes) {
+            echo $pdfBytes;
+        }, "actividad_{$actividad->id}.pdf", ['Content-Type' => 'application/pdf']);
+    }
+
+    // Descargar actividad en Word (HTML compatible, sin almacenar)
+    public function descargarActividadWord($actividadId)
+    {
+        $actividad = \App\Models\Actividad::with(['tipoActividad', 'juicio'])->find($actividadId);
+        if (!$actividad) { $this->noty('Actividad no encontrada.', 'noty', false, 'error'); return; }
+        if (!$this->esAdmin() && !\App\Models\Juicio::where('id', $actividad->juicio_id)->whereHas('abogados', fn($q) => $q->where('user_id', auth()->id()))->exists()) {
+            $this->noty('No tiene permiso para descargar este documento.', 'noty', false, 'error');
+            return;
+        }
+        $titulo = 'Actividad: ' . ($actividad->tipoActividad->nombre ?? '') . ' - Juicio ' . ($actividad->juicio->cod_satje ?? '');
+        $documentoWord = "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'>
+                    <head><meta charset='utf-8'><title>{$titulo}</title></head>
+                    <body style='font-family: Arial, sans-serif;'>
+                        <h2>{$titulo}</h2>
+                        <p>Fecha: " . \Carbon\Carbon::parse($actividad->fecha_actividad)->format('d/m/Y H:i') . "</p>
+                        <p>" . ($actividad->descripcion ?? '') . "</p>
+                        {$actividad->contenido}
+                    </body>
+                    </html>";
+        $this->registrarDescargaActividad($actividad, 'Word');
+        return response()->streamDownload(function () use ($documentoWord) {
+            echo $documentoWord;
+        }, "actividad_{$actividad->id}.doc", [
+            'Content-Type' => 'application/msword',
+            'Cache-Control' => 'max-age=0, no-cache, must-revalidate, proxy-revalidate'
+        ]);
+    }
+
+    private function registrarDescargaActividad($actividad, $formato)
+    {
+        \App\Models\JuicioHistorialEstado::create([
+            'juicio_id'          => $actividad->juicio_id,
+            'user_id'            => auth()->id(),
+            'estado_procesal_id' => $actividad->juicio->estado_procesal_id ?? $this->estado_procesal_id,
+            'tipo_movimiento'    => 'documento_descargado',
+            'referencia_tipo'    => 'Actividad',
+            'referencia_id'      => $actividad->id,
+            'descripcion'        => "Se descargó la actividad #{$actividad->id} en formato {$formato}.",
+        ]);
+    }
 
      public $listeners = [
         'resetUI',

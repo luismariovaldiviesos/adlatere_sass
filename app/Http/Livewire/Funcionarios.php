@@ -121,6 +121,14 @@ class Funcionarios extends Component
 
     public function Destroy(Funcionario $funcionario)
     {
+        // No se puede eliminar si está asignado a algún juicio (el cascade
+        // borraría sus asignaciones silenciosamente). Primero debe quitarse
+        // de cada juicio en la pestaña Funcionarios (el historial se conserva).
+        $n = \App\Models\Juicio::whereHas('funcionarios', fn($q) => $q->where('funcionarios.id', $funcionario->id))->count();
+        if ($n > 0) {
+            $this->noty("No se puede eliminar: está asignado a {$n} juicio(s). Quítelo primero de cada juicio.", 'noty', false, 'error');
+            return;
+        }
         $funcionario->delete();
         $this->noty('Se eliminó el Funcionario');
     }

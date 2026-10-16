@@ -93,25 +93,32 @@ class ActividadSignatureService {
         }
     }
 
-        private function generarPdfOriginal(\App\Models\Actividad $actividad): string
+        // Renderiza el PDF de la actividad y devuelve los bytes SIN guardar.
+        // Se usa para descargas al vuelo; firmar() lo guarda vía generarPdfOriginal().
+        public function pdfBytes(\App\Models\Actividad $actividad): string
     {
         $actividad->loadMissing(['juicio.actores', 'juicio.demandados', 'tipoActividad', 'user']);
 
         $html = view('pdf.actividad', ['actividad' => $actividad])->render();
 
-        $pdf = \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)
+        return \Barryvdh\DomPDF\Facade\Pdf::loadHTML($html)
             ->setPaper('A4', 'portrait')
             ->setOptions([
                 'isRemoteEnabled' => true,
                 'defaultFont'     => 'DejaVu Sans',
                 'fontDir'         => storage_path('fonts'),
                 'fontCache'       => storage_path('fonts'),
-            ]);
+            ])->output();
+    }
+
+        private function generarPdfOriginal(\App\Models\Actividad $actividad): string
+    {
+        $pdfBytes = $this->pdfBytes($actividad);
 
         $relativePath = $actividad->created_at->format('Y/m/') . "actividad_{$actividad->id}.pdf";
         
         // GUARDANDO EL PDF EN EL DISCO PUBLIC (SaaS Aislado)
-        \Illuminate\Support\Facades\Storage::disk('public')->put('actividades/originales/' . $relativePath, $pdf->output());
+        \Illuminate\Support\Facades\Storage::disk('public')->put('actividades/originales/' . $relativePath, $pdfBytes);
 
         return $relativePath;
     }

@@ -62,10 +62,10 @@
                                             <h6 class="mb-1 font-medium">{{ $juicio->estadoProcesal->nombre ?? '—' }}</h6>
                                         </td>
                                       <td class="dark:border-dark-5">
-                                            <h6 class="mb-1 font-medium">{{ $juicio->abogados->pluck('name')->implode(', ') ?: '—' }}</h6>
+                                            <h6 class="mb-1 font-medium">{{ $juicio->clientes->pluck('businame')->implode(', ') ?: '—' }}</h6>
                                         </td>
                                         <td class="dark:border-dark-5">
-                                            <h6 class="mb-1 font-medium">{{ $juicio->cliente->nombre ?? '—' }}</h6>
+                                            <h6 class="mb-1 font-medium">{{ $juicio->abogados->pluck('name')->implode(', ') ?: '—' }}</h6>
                                         </td>
 
 
