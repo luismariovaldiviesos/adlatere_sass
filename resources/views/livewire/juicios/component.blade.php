@@ -33,9 +33,8 @@
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >PROCEDIMIENTO</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >ASUNTO</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >ESTADO PROCESAL</th>
-                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >ABOGADO</th>
-                                    
-                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >FECHA INICIO</th>
+                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >CLIENTE</th>
+                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >ABOGADO</th>                                    
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap text-center" >ACCIONES</th>
                                 </tr>
                             </thead>
@@ -66,7 +65,7 @@
                                             <h6 class="mb-1 font-medium">{{ $juicio->abogados->pluck('name')->implode(', ') ?: '—' }}</h6>
                                         </td>
                                         <td class="dark:border-dark-5">
-                                            <h6 class="mb-1 font-medium">{{ $juicio->fecha_inicio ?? '—' }}</h6>
+                                            <h6 class="mb-1 font-medium">{{ $juicio->cliente->nombre ?? '—' }}</h6>
                                         </td>
 
 

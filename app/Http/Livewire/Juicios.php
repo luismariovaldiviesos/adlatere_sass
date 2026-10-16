@@ -350,6 +350,14 @@ class Juicios extends Component
                     $q->where('cod_satje', 'like', "%{$this->search}%")
                       ->orWhereHas('asunto', function($query) { // Permite buscar también por el nombre del asunto
                           $query->where('nombre', 'like', "%{$this->search}%");
+                      })
+                      ->orWhereHas('participantes', function($query) { // Nombre o CI del cliente/sujeto
+                          $query->where('businame', 'like', "%{$this->search}%")
+                                ->orWhere('valueidenti', 'like', "%{$this->search}%");
+                      })
+                      ->orWhereHas('abogados', function($query) { // Nombre o CI del abogado asignado
+                          $query->where('name', 'like', "%{$this->search}%")
+                                ->orWhere('ci', 'like', "%{$this->search}%");
                       });
                 });
         }
