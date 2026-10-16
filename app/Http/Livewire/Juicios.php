@@ -745,7 +745,7 @@ public function editParticipanteEnJuicio(){
    private function reemplazarVariables($textoHtml) {
         // Reutilizar carga maestra en lugar de consultar de nuevo
        $juicio = $this->cargarJuicioMaestro();
-       if($juicio) $juicio->loadMissing(['funcionarios']);
+       if($juicio) $juicio->loadMissing(['funcionarios', 'estadoProcesal.fase']);
        if(!$juicio) return $textoHtml;
         $actores_identificacion = $juicio->actores->pluck('valueidenti')->implode(', ');
         $actores_direccion = $juicio->actores->pluck('address')->implode(' | ');
@@ -803,8 +803,20 @@ public function editParticipanteEnJuicio(){
             'CLIENTE_IDENTIFICACION'    => $clientes->pluck('valueidenti')->implode(', '),
             'CLIENTE_DIRECCION'         => $clientes->pluck('address')->implode(' | '),
             'CLIENTE_CORREO'            => $clientes->pluck('email')->implode(', '),
-            'CLIENTE_TELEFONO'          => $clientes->pluck('phone')->implode(', '),
-           'FECHA_ACTUAL' => \Carbon\Carbon::now()->translatedFormat('d \d\e F \d\e Y'),
+        'CLIENTE_TELEFONO'          => $clientes->pluck('phone')->implode(', '),
+        // Patrocinadores del juicio
+        'ABOGADO' => $juicio->abogados->filter(fn($a) => str_contains(strtolower(trim($a->pivot->rol_en_juicio ?? '')), 'patrocinador'))->pluck('name')->implode(', '),
+        'ABOGADO_IDENTIFICACION' => $juicio->abogados->filter(fn($a) => str_contains(strtolower(trim($a->pivot->rol_en_juicio ?? '')), 'patrocinador'))->pluck('ci')->implode(', '),
+        'ABOGADO_CORREO' => $juicio->abogados->filter(fn($a) => str_contains(strtolower(trim($a->pivot->rol_en_juicio ?? '')), 'patrocinador'))->pluck('email')->implode(', '),
+        // Contraparte: sujetos que NO son clientes del despacho
+        'CONTRAPARTE' => $juicio->actores->merge($juicio->demandados)->filter(fn($p) => empty($p->pivot->es_cliente))->unique('id')->pluck('businame')->implode(', '),
+        'CONTRAPARTE_IDENTIFICACION' => $juicio->actores->merge($juicio->demandados)->filter(fn($p) => empty($p->pivot->es_cliente))->unique('id')->pluck('valueidenti')->implode(', '),
+        // Estado y prioridad
+        'ESTADO_PROCESAL' => $juicio->estadoProcesal->nombre ?? '',
+        'FASE' => $juicio->estadoProcesal->fase->nombre ?? '',
+        'PRIORIDAD' => $juicio->prioridad ?? '',
+        'FECHA_ACTIVIDAD' => !empty($this->fecha_actividad) ? \Carbon\Carbon::parse($this->fecha_actividad)->format('d/m/Y') : '',
+        'FECHA_ACTUAL' => \Carbon\Carbon::now()->translatedFormat('d \d\e F \d\e Y'),
              'JUEZ' => $juez,
             'SECRETARIO' => $secretario,
             'FUNCIONARIOS' => $todosFuncionarios,

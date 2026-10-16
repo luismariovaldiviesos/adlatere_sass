@@ -37,6 +37,18 @@
                     </div>
                     @error('contenido') <x-alert msg="{{ $message }}" /> @enderror
                 </div>
+
+                <div class="col-span-12 mt-3">
+                    <details class="bg-white border rounded p-3 text-sm">
+                        <summary class="cursor-pointer font-bold text-theme-1">Variables disponibles (clic para ver) — se reemplazan solas al cargar la plantilla en el juicio</summary>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2 text-slate-700">
+                            <div><b>Juicio:</b><br>[COD_SATJE] [FECHA_INICIO] [MATERIA] [PROCEDIMIENTO] [ASUNTO] [UNIDAD_JUDICIAL] [CIUDAD] [PROVINCIA] [ESTADO_PROCESAL] [FASE] [PRIORIDAD] [FECHA_ACTUAL] [FECHA_ACTIVIDAD]</div>
+                            <div><b>Actor:</b><br>[ACTORES] [ACTORES_IDENTIFICACION] [ACTORES_DIRECCION] [ACTORES_CORREO] [ACTORES_TELEFONO]<br><b>Demandado:</b><br>[DEMANDADOS] [DEMANDADOS_IDENTIFICACION] [DEMANDADOS_DIRECCION] [DEMANDADOS_CORREO] [DEMANDADOS_TELEFONO]<br><b>Contraparte (no cliente):</b><br>[CONTRAPARTE] [CONTRAPARTE_IDENTIFICACION]</div>
+                            <div><b>Cliente del despacho:</b><br>[CLIENTE] [CLIENTE_IDENTIFICACION] [CLIENTE_DIRECCION] [CLIENTE_CORREO] [CLIENTE_TELEFONO]<br><b>Abogado patrocinador:</b><br>[ABOGADO] [ABOGADO_IDENTIFICACION] [ABOGADO_CORREO]<br><b>Funcionarios:</b><br>[JUEZ] [SECRETARIO] [FUNCIONARIOS]</div>
+                        </div>
+                        <p class="mt-2 text-xs text-slate-500">También con llaves: {VARIABLE}. Mayúsculas o minúsculas.</p>
+                    </details>
+                </div>
             </div>
 
             <div class="mt-5 flex justify-end gap-2">
