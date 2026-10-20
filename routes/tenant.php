@@ -46,6 +46,7 @@ use App\Http\Livewire\PrioridadAlertas;
 use App\Http\Livewire\Calendario;
 use App\http\Livewire\TiposActividades;
 use App\Http\Livewire\PlantillasTiposActividad;
+use App\Http\Livewire\FinanzasJuicios;
 
 /*
 |--------------------------------------------------------------------------
@@ -117,6 +118,7 @@ Route::middleware([
         Route::get('especialidades', Especialidades::class)->name('especialidades');
         Route::get('funcionarios', Funcionarios::class)->name('funcionarios');
         Route::get('juicios', Juicios::class)->name('juicios');
+        Route::get('finanzas-juicios', FinanzasJuicios::class)->name('finanzas-juicios');
         Route::get('consultas', Consultas::class)->name('consultas');
         Route::get('mis-consultas', Consultas::class)->name('mis-consultas');
         Route::get('tareas', Tareas::class)->name('tareas');
@@ -125,6 +127,7 @@ Route::middleware([
         Route::get('estado-financiero', EstadoFinanciero::class)->name('estado-financiero');
         Route::get('tipoactividad', TiposActividades::class)->name('tipoactividad');
         Route::get('plantillas-tipos-actividad', PlantillasTiposActividad::class)->name('plantillas-tipos-actividad');
+        Route::get('finanzas-juicios', FinanzasJuicios::class)->name('finanzas-juicios');
 
     });
 

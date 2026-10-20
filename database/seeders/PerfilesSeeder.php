@@ -22,13 +22,12 @@ class PerfilesSeeder extends Seeder
         'JUICIOS_ABOGADO' => [
             'menu_juicios', 'agregar_juicio', 'editar_juicio', 'eliminar_juicio',
             'ver_pestana_caratula', 'ver_pestana_sujetos', 'ver_pestana_audiencias',
-            'ver_pestana_documentos', 'ver_pestana_finanzas', 'ver_pestana_funcionarios',
+            'ver_pestana_documentos', 'ver_pestana_funcionarios',
             'ver_pestana_abogados', 'actualizar_caratula',
             'agregar_sujeto', 'editar_sujeto', 'eliminar_sujeto',
             'agregar_actividad', 'editar_actividad', 'eliminar_actividad', 'firmar_actividad',
             'agregar_audiencia', 'editar_audiencia', 'eliminar_audiencia',
             'registrar_documento', 'ver_documento', 'eliminar_documento',
-            'crear_finanza', 'guarda_abono_finanza', 'facturar_abono_finanza', 'eliminar_abono_finanza',
             'asignar_funcionario', 'eliminar_funcionario',
             'asignar_abogado', 'eliminar_abogado',
         ],
@@ -36,7 +35,12 @@ class PerfilesSeeder extends Seeder
         'MIS_CONSULTAS' => ['menu_mis_consultas', 'guardar_notas_consulta', 'atender_consulta'],
         'CLIENTES_LECTURA' => ['menu_personas', 'menu_clientes', 'ver_cliente'],
         // facturar: solo Asistente (convertir/eliminar quedan solo en Admin vía sync total)
-        'RECEPCION' => ['menu_facturar', 'menu_consultas', 'ver_facturacion', 'crear_consulta', 'editar_datos_consulta', 'marcar_pagada_consulta', 'facturar_consulta'],
+        'RECEPCION' => [
+            'menu_facturar', 'menu_consultas', 'ver_facturacion', 'crear_consulta', 
+            'editar_datos_consulta', 'marcar_pagada_consulta', 'facturar_consulta',
+            'menu_finanzas_juicios', 'crear_finanza', 'guarda_abono_finanza', 
+            'facturar_abono_finanza', 'eliminar_abono_finanza'
+        ],
         'CLIENTES_GESTION' => ['menu_personas', 'menu_clientes', 'ver_cliente', 'crear_cliente'],
         'CAJA_DIA' => ['menu_ventas_diarias', 'ver_venta_diaria'],
         'TAREAS_GESTION' => ['menu_tareas', 'crear_tarea', 'eliminar_tarea'],
@@ -65,8 +69,8 @@ class PerfilesSeeder extends Seeder
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Permisos del módulo Tareas (se crean aquí para no depender del orden de seeders)
-        foreach (['menu_tareas', 'crear_tarea', 'completar_tarea', 'convertir_tarea', 'eliminar_tarea'] as $p) {
+        // Permisos del módulo Tareas y Finanzas Juicios
+        foreach (['menu_tareas', 'crear_tarea', 'completar_tarea', 'convertir_tarea', 'eliminar_tarea', 'menu_finanzas_juicios'] as $p) {
             Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
         }
 

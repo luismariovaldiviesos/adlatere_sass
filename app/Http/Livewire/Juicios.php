@@ -86,12 +86,6 @@ class Juicios extends Component
     public $search_doc = ''; // Buscador de documentos
 
 
-    //variables para finanzas
-    public $fin_honorarios = 0, $fin_gastos = 0, $fin_notas_acuerdo;
-    public $pago_customer_id, $pago_monto, $pago_fecha, $pago_metodo = 'Transferencia';
-    public    $pago_referencia, $pago_notas, $pago_comprobante;
-
-
     //propiedades de funcionarios
     public $searchFuncionario = '';
     public $funcionarios_list = [];
@@ -633,15 +627,7 @@ class Juicios extends Component
             return;
         }
         $juicio = $this->juicio;
-        $finanza  =  \App\Models\FinanzasJuicio::firstOrCreate(['juicio_id' => $juicio->id], 
-                    ['honorarios_totales' => 0, 'gastos_extras' => 0]);
-        $this->fin_honorarios = $finanza->honorarios_totales;
-       $this->fin_gastos = $finanza->gastos_extras;
-        $this->fin_notas_acuerdo = $finanza->notas_acuerdo;
-        // Pagador por defecto: primer cliente del despacho marcado
-        $cliPago = $juicio->participantes()->wherePivot('es_cliente', true)->first();
-        $this->pago_customer_id = $cliPago ? $cliPago->id : null;
-        $this->selected_id = $juicio->id;
+                $this->selected_id = $juicio->id;
         $this->cod_satje = $juicio->cod_satje;
         $this->asunto_id = $juicio->asunto_id;
         $this->estado_procesal_id = $juicio->estado_procesal_id;
@@ -1255,147 +1241,6 @@ public function editParticipanteEnJuicio(){
     }
 
 
-    public function saveFinanzas(){
-        if (!$this->usuarioPuedeTramitar()) return;
-        $this->validate([
-        'fin_honorarios' => 'required|numeric|min:0',
-        'fin_gastos'     => 'required|numeric|min:0',
-        ]);
-
-     $finanzas =   \App\Models\FinanzasJuicio::updateOrCreate(
-            ['juicio_id' => $this->selected_id],
-            [
-                'honorarios_totales' => $this->fin_honorarios, 
-                'gastos_extras'      => $this->fin_gastos, 
-                'notas_acuerdo'      => $this->fin_notas_acuerdo
-            ]
-        );
-
-      \App\Models\JuicioHistorialEstado::create([
-        'juicio_id'          => $this->selected_id,
-        'user_id'            => auth()->id(),
-        'estado_procesal_id' => $this->estado_procesal_id,
-        'tipo_movimiento'    => 'finanzas_actualizadas',
-        'referencia_tipo'    => 'FinanzasJuicio',
-        'referencia_id'      => $finanzas->id,
-        'descripcion'        => 'Se actualizaron los honorarios y gastos del caso.',
-    ]);
-
-    $this->noty('Costos del juicio actualizados.', 'noty', false);
-    if ($this->juicio) $this->juicio->load('finanza.pagos.cliente');
-
-    }
-
-    public function savePago(){
-        if (!$this->usuarioPuedeTramitar()) return;
-        // Sin cliente del despacho marcado no hay a quién cobrarle
-        $juicioPago = $this->juicio && $this->juicio->id == $this->selected_id ? $this->juicio : $this->cargarJuicioMaestro($this->selected_id, true);
-        if (!$juicioPago || !$juicioPago->participantes()->wherePivot('es_cliente', true)->exists()) {
-            $this->noty('Marque primero al cliente del despacho en la pestaña Sujetos.', 'noty', false, 'error');
-            return;
-        }
-        $this->validate([
-        'pago_customer_id' => 'required',
-        'pago_monto'       => 'required|numeric|min:0.01',
-        'pago_fecha'       => 'required|date',
-        'pago_metodo'      => 'required|string',
-    ]);
-
-    $finanza  = \App\Models\FinanzasJuicio::where('juicio_id', $this->selected_id)->first();
-    if(!$finanza ) {
-       $this->noty('Primero debe configurar los honorarios del caso.', 'noty', false, 'error');
-        return;
-    }
-
-    $ruta_comprobante = null;
-    $extension = null;
-    $pesoKb = null;
-     // Subir archivo al Gestor Documental silenciósamente
-    if ($this->pago_comprobante) {
-        $extension = $this->pago_comprobante->getClientOriginalExtension();
-        $pesoKb = filesize($this->pago_comprobante->getRealPath()) / 1024;
-        $ruta_comprobante = $this->pago_comprobante->store('documentos_juicios', 'public');
-    }
-
-       $pago = \App\Models\PagosJuicio::create([
-        'finanzas_juicios_id'    => $finanza->id,
-        'customer_id'            => $this->pago_customer_id,
-        'user_id'                => auth()->id(),
-        'monto'                  => $this->pago_monto,
-        'fecha_pago'             => $this->pago_fecha,
-        'metodo_pago'            => $this->pago_metodo,
-        'referencia_transaccion' => $this->pago_referencia,
-        'comprobante_ruta'       => $ruta_comprobante,
-        'notas'                  => $this->pago_notas,
-        'estado'                 => 'Aprobado',
-    ]);
-
-    // si hubo compraboante registramos también en documentos para que quede en el gestor documental del juicio
-    if($ruta_comprobante){
-        \App\Models\Documento::create([
-            'juicio_id'    => $this->selected_id,
-            'origen_tipo'  => 'Finanzas',
-            'origen_id'    => $pago->id, // Vinculado al pago
-            'nombre'       => 'Comprobante de Pago: $ ' . $this->pago_monto . ' (' . $this->pago_metodo . ')',
-            'ruta_archivo' => $ruta_comprobante,
-            'tipo_archivo' => strtolower($extension),
-            'tamaño_archivo' => round($pesoKb, 2),
-        ]);
-    }
-
-     \App\Models\JuicioHistorialEstado::create([
-        'juicio_id'          => $this->selected_id,
-        'user_id'            => auth()->id(),
-        'estado_procesal_id' => $this->estado_procesal_id,
-        'tipo_movimiento'    => 'pago_registrado',
-        'referencia_tipo'    => 'PagosJuicio',
-        'referencia_id'      => $pago->id,
-        'descripcion'        => 'Se registró un abono por $ ' . number_format($this->pago_monto, 2),
-    ]);
-        $this->noty('Abono registrado con éxito.', 'noty', false);
-      // Limpiar formulario
-    $this->reset(['pago_customer_id', 'pago_monto', 'pago_fecha', 'pago_referencia', 'pago_notas', 'pago_comprobante']);
-    $this->pago_metodo = 'Transferencia';
-    if ($this->juicio) $this->juicio->load('finanza.pagos.cliente', 'documentos');
-
-    }
-
-    public function destroyPago($id)
-    {
-        if (!$this->usuarioPuedeTramitar()) return;
-        $pago = \App\Models\PagosJuicio::where('id', $id)->whereHas('finanza', function($q) {
-            $q->where('juicio_id', $this->selected_id);
-        })->first();
-        if (!$pago) { $this->noty('Abono no encontrado en este juicio.', 'noty', false, 'error'); return; }
-
-        // Si ya tiene factura AUTORIZADA, primero nota de crédito (no se anula directo)
-        if ($pago->factura_id) {
-            $fac = \App\Models\Factura::find($pago->factura_id);
-            if ($fac && $fac->numeroAutorizacion) {
-                $this->noty('El abono tiene factura autorizada: emita nota de crédito antes de anularlo.', 'noty', false, 'error');
-                return;
-            }
-        }
-        // Anular en vez de borrar: conserva comprobante, documento e historial (el saldo excluye anulados)
-        $montoAnulado = $pago->monto;
-        $pago->estado = 'Anulado';
-        $pago->save();
-       \App\Models\JuicioHistorialEstado::create([
-            'juicio_id'          => $this->selected_id,
-            'user_id'            => auth()->id(),
-            'estado_procesal_id' => $this->estado_procesal_id,
-            'tipo_movimiento'    => 'pago_anulado',
-            'referencia_tipo'    => 'PagosJuicio',
-            'referencia_id'      => $id,
-            'descripcion'        => 'Se anuló un abono por $ ' . number_format($montoAnulado, 2),
-        ]);
-        $this->noty('Abono anulado.', 'noty', false);
-        if ($this->juicio) $this->juicio->load('finanza.pagos.cliente', 'documentos');
-    }   
-
-
-
-    //se ejecuta al teclear el buscador de funcionarios 
     public function updatedSearchFuncionario($value){
 
     $this->funcionario_id = null; //reseteamos el id del funcionario seleccionado
@@ -1863,12 +1708,10 @@ public function descargarFirmado($actividadId)
         'restaurar' => 'restaurarJuicio'
     ];
 
-    public function Destroy(Juicio $jucio)
+    public function Destroy(Juicio $juicio)
     {
         if (auth()->user()->cannot('eliminar_juicio')) return;
-        $id = $jucio->id;
-        $juicio = \App\Models\Juicio::find($id);
-        if (!$juicio) return;
+        $id = $juicio->id;
         $tiene = \App\Models\Actividad::where('juicio_id', $id)->exists()
             || \App\Models\Audiencia::where('juicio_id', $id)->exists()
             || \App\Models\Documento::where('juicio_id', $id)->exists()
@@ -1936,4 +1779,5 @@ public function descargarFirmado($actividadId)
 
     
 }
+
 
