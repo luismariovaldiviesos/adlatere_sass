@@ -51,6 +51,7 @@
     </li>
     @endcan
 
+    @if(\App\Models\Setting::isCajaEnabled())
     <li>
         <a href="javascript:;" class="side-menu">
             <div class="side-menu__icon"> <i data-feather="shopping-cart"></i> </div>
@@ -61,7 +62,6 @@
         </a>
         <ul class="">
 
-            @if(\App\Models\Setting::first()?->enable_caja)
             @can('menu_cajas')
             <li>
                 <a href="{{ route('cajas') }}" class="side-menu">
@@ -79,9 +79,9 @@
                 </a>
             </li>
             @endcan
-            @endif
         </ul>
     </li>
+    @endif
 
     <li>
         <a href="javascript:;" class="side-menu">
