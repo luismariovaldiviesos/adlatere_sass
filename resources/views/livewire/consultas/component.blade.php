@@ -60,7 +60,7 @@
                         </select>
                     </div>
                     @endif
-                    @if(auth()->user()->profile === 'Admin' && !$esPanelAbogado)
+                    @if(auth()->user()->profile === 'Abogado')
                     <div class="flex items-center gap-2 pb-2">
                         <input type="checkbox" wire:model="soloMias" id="soloMias" class="form-check-input">
                         <label for="soloMias" class="text-xs">Solo mis asignadas</label>
@@ -162,13 +162,13 @@
                                                 @endif
                                                 @endcan
                                                 @can('facturar_consulta')
-                                                @if($puedeAdministrar && $con->estado_pago === 'pagada' && !$con->factura_id)
+                                                @if(auth()->user()->profile === 'Asistente' && $con->estado_pago === 'pagada' && !$con->factura_id)
                                                 <button class="btn btn-info text-blue border-0"
                                                     wire:click.prevent="irAFacturar({{ $con->id }})" title="Facturar en carrito (puede cambiar de cliente)">
                                                     <i class="fas fa-file-invoice-dollar"></i>
                                                 </button>
                                                 @endif
-                                                @if($puedeAdministrar && $con->estado_pago === 'en_facturacion' && $con->factura_id)
+                                                @if(auth()->user()->profile === 'Asistente' && $con->estado_pago === 'en_facturacion' && $con->factura_id)
                                                 <button class="btn btn-success text-white border-0"
                                                     wire:click.prevent="emitirFacturaConsulta({{ $con->id }})" title="Emitir borrador al SRI">
                                                     <i class="fas fa-paper-plane"></i>
@@ -176,7 +176,7 @@
                                                 @endif
                                                 @endcan
                                                 @can('marcar_pagada_consulta')
-                                                @if($puedeAdministrar && $con->estado_pago === 'pendiente')
+                                                @if(auth()->user()->profile === 'Asistente' && $con->estado_pago === 'pendiente')
                                                 <button class="btn btn-outline-success border-0"
                                                     wire:click.prevent="marcarPagada({{ $con->id }})" title="Marcar pagada">
                                                     <i class="fas fa-dollar-sign"></i>
@@ -184,7 +184,7 @@
                                                 @endif
                                                 @endcan
                                                 @can('convertir_consulta')
-                                                @if($con->estado_atencion !== 'convertida')
+                                                @if(auth()->user()->profile === 'Admin' && $con->estado_atencion === 'atendida')
                                                 <button class="btn btn-success text-blue border-0"
                                                     wire:click.prevent="convertirAJuicio({{ $con->id }})" title="Convertir en juicio">
                                                     <i class="fas fa-gavel"></i>

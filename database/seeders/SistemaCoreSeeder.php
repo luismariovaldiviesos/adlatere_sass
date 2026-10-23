@@ -66,6 +66,7 @@ class SistemaCoreSeeder extends Seeder
         'menu_plantillas_tipos_actividades','crear_plantilla_tipo_actividad','editar_plantilla_tipo_actividad',
         'eliminar_plantilla_tipo_actividad','previsualizar_plantilla_tipo_actividad',
         'menu_sitios',
+        'menu_provincias','menu_cantones','menu_unidades',
     ];
 
     public const PROVINCIAS = [

@@ -144,17 +144,13 @@
                     <div id="editor-consulta-hoja">{!! $notas ?? '' !!}</div>
                 </div>
             </div>
-            <button type="button" class="btn btn-outline-secondary mt-2"
-                onclick="if(typeof loadConsultaQuillEditor==='function') loadConsultaQuillEditor();">
-                <i class="fas fa-pen"></i> Activar editor
-            </button>
         </div>
         @endif
     </div>
 
     <div class="text-right mt-5">
         <button wire:click.prevent="CloseModal" class="btn btn-outline-secondary mr-1">Cancelar</button>
-        @if($puedeAdministrar)
+        @if($puedeAdministrar && $selected_id == 0)
         <button wire:click.prevent="Store" class="btn btn-primary">Guardar datos</button>
         @endif
         @if($puedeVerNotas)

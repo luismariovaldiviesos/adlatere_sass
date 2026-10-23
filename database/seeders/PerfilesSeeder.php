@@ -35,22 +35,48 @@ class PerfilesSeeder extends Seeder
         'MIS_CONSULTAS' => ['menu_mis_consultas', 'guardar_notas_consulta', 'atender_consulta'],
         'CLIENTES_LECTURA' => ['menu_personas', 'menu_clientes', 'ver_cliente'],
         // facturar: solo Asistente (convertir/eliminar quedan solo en Admin vía sync total)
+        // Asistente puede crear juicios (agregar_juicio) pero no editar/eliminar (solo Abogado/Admin)
         'RECEPCION' => [
             'menu_facturar', 'menu_consultas', 'ver_facturacion', 'crear_consulta', 
             'editar_datos_consulta', 'marcar_pagada_consulta', 'facturar_consulta',
             'menu_finanzas_juicios', 'crear_finanza', 'guarda_abono_finanza', 
-            'facturar_abono_finanza', 'eliminar_abono_finanza'
+            'facturar_abono_finanza', 'eliminar_abono_finanza',
+            'menu_juicios', 'agregar_juicio', 'menu_reprocesar', 
+            'menu_facturas_emitidas', 'menu_faturas_anuladas', 'menu_notas_credito',
+            'menu_cajas', 'menu_arqueos',
+            'menu_catalogo', 'menu_configuracion',
+            'menu_empresa', 'menu_roles', 'menu_asginar_permisos'
         ],
         'CLIENTES_GESTION' => ['menu_personas', 'menu_clientes', 'ver_cliente', 'crear_cliente'],
         'CAJA_DIA' => ['menu_ventas_diarias', 'ver_venta_diaria'],
         'TAREAS_GESTION' => ['menu_tareas', 'crear_tarea', 'eliminar_tarea'],
         'TAREAS_EJECUCION' => ['menu_tareas', 'completar_tarea', 'convertir_tarea'],
+        'CATALOGO_COMPLETO' => [
+            'menu_categorias', 'ver_categoria', 'crear_categoria', 'editar_categoria', 'eliminar_categoria',
+            'menu_productos', 'ver_producto', 'crear_producto', 'editar_producto', 'eliminar_producto',
+            'menu_descuentos', 'ver_descuentos', 'crear_descuento', 'editar_descuento', 'eliminar_descuentos',
+            'menu_impuestos', 'ver_impuestos', 'crear_impuestos', 'editar_impuestos', 'eliminar_impuestos',
+        ],
+        'USUARIOS_SISTEMA' => ['menu_usuarios'],
+        'GESTION_PROCESAL' => [
+            'menu_materias', 'crear_materia', 'editar_materia', 'eliminar_materia',
+            'menu_procedimientos', 'crear_procedimiento', 'editar_procedimiento', 'eliminar_procedimiento',
+            'menu_asuntos', 'crear_asunto', 'editar_asunto', 'eliminar_asunto',
+            'menu_fases_procesales', 'crear_fase_procesal', 'editar_fase_procesal', 'eliminar_fase_procesal',
+            'menu_estados_procesales', 'crear_estado_procesal', 'editar_estado_procesal', 'eliminar_estado_procesal',
+            'menu_especialidades', 'crear_especialidad', 'editar_especialidad', 'eliminar_especialidad',
+            'menu_tipos_actividades', 'crear_tipo_actividad', 'editar_tipo_actividad', 'eliminar_tipo_actividad',
+            'menu_plantillas_tipos_actividades', 'crear_plantilla_tipo_actividad', 'editar_plantilla_tipo_actividad',
+            'eliminar_plantilla_tipo_actividad', 'previsualizar_plantilla_tipo_actividad',
+            'menu_prioridad_alertas', 'crear_prioridad_alerta', 'editar_prioridad_alerta', 'eliminar_prioridad_alerta'
+        ],
+        'SITIOS' => ['menu_provincias', 'menu_cantones', 'menu_unidades'],
     ];
 
     // Perfil => bloques que recibe
     public const PERFIL_BLOQUES = [
         'Abogado' => ['BASE', 'SECCION_FACTURACION', 'JUICIOS_ABOGADO', 'MIS_CONSULTAS', 'CLIENTES_LECTURA', 'TAREAS_EJECUCION'],
-        'Asistente' => ['BASE', 'SECCION_FACTURACION', 'RECEPCION', 'CLIENTES_GESTION', 'CAJA_DIA', 'TAREAS_GESTION'],
+        'Asistente' => ['BASE', 'SECCION_FACTURACION', 'RECEPCION', 'CLIENTES_GESTION', 'CAJA_DIA', 'TAREAS_GESTION', 'CATALOGO_COMPLETO', 'USUARIOS_SISTEMA', 'GESTION_PROCESAL', 'SITIOS'],
     ];
 
     public static function permisosDe(array $bloques): array

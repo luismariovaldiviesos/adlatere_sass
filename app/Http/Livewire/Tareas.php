@@ -6,6 +6,7 @@ use Livewire\Component;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
 use App\Models\Tarea;
+use App\Models\TareaHistorial;
 use App\Models\Juicio;
 use App\Models\Actividad;
 use App\Models\TipoActividad;
@@ -30,11 +31,20 @@ class Tareas extends Component
     public $contenido, $adjunto, $adjuntos = [];
 
     // Filtros (admin y recepción ven todas por defecto; el abogado siempre las suyas)
-    public $filtroEstado = 'abiertas'; // abiertas|todas|pendiente|en_proceso|completada|convertida|cancelada|vencidas
+    public $filtroEstado = 'todas'; // abiertas|todas|pendiente|en_proceso|completada|convertida|cancelada|vencidas
     public $soloMias = false;
 
     // Conversión a actividad
     public $convertir_id = null, $conv_tipo_actividad_id;
+
+    // Ver detalles
+    public $verDetalle_id = null;
+    public $tareaDetalle = null;
+    public $verActividad_id = null;
+    public $actividadDetalle = null;
+
+    // Cambiar fecha de vencimiento (solo Admin/Asistente)
+    public $fecha_id = null, $fecha_edit = null, $abrirFecha = false;
 
     public function mount()
     {
@@ -53,6 +63,26 @@ class Tareas extends Component
         return false;
     }
 
+    private function esAsistente()
+    {
+        $u = auth()->user();
+        if (!$u) return false;
+        if (isset($u->profile) && $u->profile === 'Asistente') return true;
+        if (method_exists($u, 'hasRole') && $u->hasRole('Asistente')) return true;
+        return false;
+    }
+
+    private function puedeEliminar()
+    {
+        return $this->esAdmin() || $this->esAsistente();
+    }
+
+    // Fecha de vencimiento: solo Admin y Asistente, y solo en tareas no finalizadas
+    private function puedeEditarFecha()
+    {
+        return $this->esAdmin() || $this->esAsistente();
+    }
+
     // Datos y asignación: admin o recepción. El resto solo ejecuta lo suyo.
     private function puedeGestionar()
     {
@@ -65,6 +95,22 @@ class Tareas extends Component
     {
         if (!$this->selected_id) return false;
         return (int) $this->asignado_a === (int) auth()->id();
+    }
+
+    // Estados finales: la tarea ya no admite cambios de contenido ni adjuntos
+    private function esFinal($estado)
+    {
+        return in_array($estado, ['completada', 'convertida', 'cancelada'], true);
+    }
+
+    private function tieneAvance(Tarea $t)
+    {
+        return trim(strip_tags($t->contenido ?? '')) !== '' || $t->adjuntos()->exists();
+    }
+
+    private function registrarHistorial($tareaId, $tipo, $descripcion, $datosAnteriores = null, $datosNuevos = null)
+    {
+        TareaHistorial::registrar($tareaId, $tipo, $descripcion, $datosAnteriores, $datosNuevos);
     }
 
     public function updatedSearchJuicio($value)
@@ -136,6 +182,8 @@ class Tareas extends Component
             'puedeGestionar' => $this->puedeGestionar(),
             'puedeVerPrivado' => $this->puedeVerPrivado(),
             'puedeEntrar' => auth()->user()->can('menu_tareas'),
+            'puedeEliminar' => $this->puedeEliminar(),
+            'puedeEditarFecha' => $this->puedeEditarFecha(),
         ])->layout('layouts.theme.app');
     }
 
@@ -175,6 +223,7 @@ class Tareas extends Component
             'titulo', 'descripcion', 'contenido', 'tipo', 'juicio_id', 'searchJuicio', 'juicios',
             'juicio_nombre', 'showJuicioDropdown', 'asignado_a', 'fecha_limite',
             'selected_id', 'convertir_id', 'conv_tipo_actividad_id', 'adjunto', 'adjuntos',
+            'fecha_id', 'fecha_edit', 'abrirFecha',
         ]);
         $this->tipo = 'externa';
         $this->action = 'Listado';
@@ -205,6 +254,16 @@ class Tareas extends Component
             return;
         }
 
+        $esNueva = !$this->selected_id;
+
+        if (!$esNueva) {
+            $actual = Tarea::find($this->selected_id);
+            if (!$actual || $actual->estado !== 'en_proceso') {
+                $this->dispatchBrowserEvent('noty', ['msg' => 'Solo se puede editar una tarea iniciada (en proceso).', 'type' => 'error', 'action' => '']);
+                return;
+            }
+        }
+
         $datos = [
             'titulo' => $this->titulo,
             'descripcion' => $this->descripcion,
@@ -219,7 +278,15 @@ class Tareas extends Component
             $datos['contenido'] = $this->contenido;
         }
 
-        Tarea::updateOrCreate(['id' => $this->selected_id], $datos);
+        if ($esNueva) {
+            $tarea = Tarea::create($datos);
+            $this->registrarHistorial($tarea->id, 'creada', 'Tarea creada', null, $datos);
+        } else {
+            $tarea = Tarea::find($this->selected_id);
+            $anteriores = $tarea->toArray();
+            $tarea->update($datos);
+            $this->registrarHistorial($tarea->id, 'editada', 'Tarea editada', $anteriores, $tarea->fresh()->toArray());
+        }
 
         $msg = $this->selected_id > 0 ? 'Tarea actualizada' : 'Tarea asignada';
         $this->resetForm();
@@ -233,6 +300,12 @@ class Tareas extends Component
         if (!$t) return;
         // Solo el asignado abre la tarea (admin y asistente solo miran la tabla)
         if ((int) $t->asignado_a !== (int) auth()->id()) return;
+
+        // Solo se puede editar si la tarea fue iniciada
+        if ($t->estado !== 'en_proceso') {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Debe pulsar "Iniciar" antes de editar la tarea.', 'type' => 'error', 'action' => '']);
+            return;
+        }
 
         $this->selected_id = $t->id;
         $this->titulo = $t->titulo;
@@ -264,7 +337,7 @@ class Tareas extends Component
         $permitidas = [
             'pendiente' => ['en_proceso', 'cancelada'],
             'en_proceso' => ['completada', 'pendiente', 'cancelada'],
-            'completada' => ['en_proceso'],
+            'completada' => [],
             'convertida' => [],
             'cancelada' => ['pendiente'],
         ];
@@ -274,9 +347,17 @@ class Tareas extends Component
         }
         if (in_array($nuevo, ['completada', 'en_proceso', 'pendiente', 'cancelada']) && auth()->user()->cannot('completar_tarea') && !$this->puedeGestionar()) return;
 
+        // No se puede completar sin redacción/nota ni adjunto
+        if ($nuevo === 'completada' && !$this->tieneAvance($t)) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Para completar la tarea debe escribir una nota/redacción o subir un archivo.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+
+        $anterior = $t->estado;
         $t->estado = $nuevo;
         $t->fecha_completada = $nuevo === 'completada' ? now() : null;
         $t->save();
+        $this->registrarHistorial($t->id, 'estado_cambiado', "Estado cambiado de {$anterior} a {$nuevo}", ['estado' => $anterior], ['estado' => $nuevo]);
         $this->dispatchBrowserEvent('noty', ['msg' => 'Tarea: ' . $nuevo . '.', 'type' => 'success', 'action' => '']);
     }
 
@@ -300,6 +381,100 @@ class Tareas extends Component
     {
         $this->convertir_id = null;
         $this->conv_tipo_actividad_id = null;
+    }
+
+    // Ver detalles de tarea (todos los perfiles)
+    public function verDetalles($id)
+    {
+        $this->verDetalle_id = $id;
+        $this->tareaDetalle = \App\Models\Tarea::with([
+            'asignado:id,name',
+            'juicio:id,cod_satje',
+            'adjuntos',
+            'historiales.usuario:id,name'
+        ])->find($id);
+    }
+
+    public function cerrarDetalles()
+    {
+        $this->verDetalle_id = null;
+        $this->tareaDetalle = null;
+    }
+
+    // Ver detalles de actividad (todos los perfiles)
+    public function verDetallesActividad($id)
+    {
+        $this->verActividad_id = $id;
+        $this->actividadDetalle = \App\Models\Actividad::with([
+            'tipoActividad',
+            'juicio:id,cod_satje',
+            'tarea:id,titulo',
+            'user:id,name',
+            'adjuntos'
+        ])->find($id);
+    }
+
+    public function cerrarDetallesActividad()
+    {
+        $this->verActividad_id = null;
+        $this->actividadDetalle = null;
+    }
+
+    // Cambiar fecha de vencimiento (Admin/Asistente, tareas no finalizadas)
+    public function abrirFechaVencimiento($id)
+    {
+        if (!$this->puedeEditarFecha()) return;
+        $t = Tarea::find($id);
+        if (!$t) return;
+        if (!in_array($t->estado, ['pendiente', 'en_proceso'], true)) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo se puede cambiar la fecha en tareas pendientes o en proceso.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        $this->fecha_id = $t->id;
+        $this->fecha_edit = $t->fecha_limite ? $t->fecha_limite->format('Y-m-d') : null;
+        $this->abrirFecha = true;
+    }
+
+    public function cerrarFechaVencimiento()
+    {
+        $this->fecha_id = null;
+        $this->fecha_edit = null;
+        $this->abrirFecha = false;
+        $this->resetValidation('fecha_edit');
+    }
+
+    public function guardarFechaVencimiento()
+    {
+        if (!$this->puedeEditarFecha()) return;
+        $t = Tarea::find($this->fecha_id);
+        if (!$t) {
+            $this->cerrarFechaVencimiento();
+            return;
+        }
+        if (!in_array($t->estado, ['pendiente', 'en_proceso'], true)) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo se puede cambiar la fecha en tareas pendientes o en proceso.', 'type' => 'error', 'action' => '']);
+            $this->cerrarFechaVencimiento();
+            return;
+        }
+
+        $this->validate(['fecha_edit' => 'nullable|date'], ['fecha_edit.date' => 'Ingrese una fecha válida.']);
+
+        $anterior = $t->fecha_limite ? $t->fecha_limite->format('Y-m-d') : null;
+        $t->fecha_limite = $this->fecha_edit ?: null;
+        $t->save();
+        $nueva = $t->fecha_limite ? $t->fecha_limite->format('Y-m-d') : null;
+
+        $this->registrarHistorial(
+            $t->id,
+            'fecha_cambiada',
+            'Fecha de vencimiento cambiada de ' . ($anterior ? \Carbon\Carbon::parse($anterior)->format('d/m/Y') : 'sin fecha')
+                . ' a ' . ($nueva ? $t->fecha_limite->format('d/m/Y') : 'sin fecha'),
+            ['fecha_limite' => $anterior],
+            ['fecha_limite' => $nueva]
+        );
+
+        $this->cerrarFechaVencimiento();
+        $this->dispatchBrowserEvent('noty', ['msg' => 'Fecha de vencimiento actualizada.', 'type' => 'success', 'action' => '']);
     }
 
     // Paso 2 convertir: crea la actividad en el juicio (una sola vez)
@@ -333,6 +508,7 @@ class Tareas extends Component
             $t->actividad_id = $act->id;
             $t->estado = 'convertida';
             $t->save();
+            $this->registrarHistorial($t->id, 'convertida', 'Tarea convertida en actividad del juicio', ['estado' => 'completada'], ['estado' => 'convertida', 'actividad_id' => $act->id]);
 
             \App\Models\JuicioHistorialEstado::create([
                 'juicio_id' => $t->juicio_id,
@@ -363,15 +539,24 @@ class Tareas extends Component
             $this->dispatchBrowserEvent('noty', ['msg' => 'No se puede eliminar: ya generó una actividad.', 'type' => 'error', 'action' => '']);
             return;
         }
-        // Con avances (redacción, adjuntos o estado movido) solo la elimina el asignado;
-        // sin avances la puede eliminar cualquiera con acceso al módulo.
-        $avance = trim(strip_tags($t->contenido ?? '')) !== ''
+
+        // No se puede eliminar si tiene acciones (contenido, adjuntos, estado cambiado)
+        $tieneAcciones = trim(strip_tags($t->contenido ?? '')) !== ''
             || $t->adjuntos()->exists()
-            || !in_array($t->estado, ['pendiente']);
-        if ($avance && (int) $t->asignado_a !== (int) auth()->id()) {
-            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el asignado puede eliminar una tarea con avances.', 'type' => 'error', 'action' => '']);
+            || $t->historiales()->whereIn('tipo', ['estado_cambiado', 'contenido_guardado', 'adjunto_subido', 'adjunto_eliminado', 'convertida'])->exists();
+
+        if ($tieneAcciones) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'No se puede eliminar: la tarea tiene acciones registradas (redacción, adjuntos o cambios de estado).', 'type' => 'error', 'action' => '']);
             return;
         }
+
+        // Solo Admin y Asistente pueden eliminar
+        if (!$this->puedeEliminar()) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el administrador o el asistente pueden eliminar tareas.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+
+        $this->registrarHistorial($t->id, 'eliminada', 'Tarea eliminada', $t->toArray(), null);
         $t->delete();
         $this->dispatchBrowserEvent('noty', ['msg' => 'Tarea eliminada.', 'type' => 'success', 'action' => '']);
     }
@@ -381,6 +566,10 @@ class Tareas extends Component
     {
         $t = Tarea::find($this->selected_id);
         if (!$t) return;
+        if ($this->esFinal($t->estado)) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La tarea ya está finalizada; no admite más cambios.', 'type' => 'error', 'action' => '']);
+            return;
+        }
         if ((int) $t->asignado_a !== (int) auth()->id()) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el asignado puede guardar la redacción.', 'type' => 'error', 'action' => '']);
             return;
@@ -390,8 +579,10 @@ class Tareas extends Component
             return;
         }
         $this->validate(['contenido' => 'nullable|string']);
+        $anterior = $t->contenido;
         $t->contenido = $this->contenido;
         $t->save();
+        $this->registrarHistorial($t->id, 'contenido_guardado', 'Redacción guardada', ['contenido' => $anterior], ['contenido' => $this->contenido]);
         $this->dispatchBrowserEvent('set-tarea-editor-content', ['content' => $this->contenido ?? '']);
         $this->dispatchBrowserEvent('noty', ['msg' => 'Redacción guardada.', 'type' => 'success', 'action' => '']);
     }
@@ -401,6 +592,10 @@ class Tareas extends Component
     {
         $t = Tarea::find($this->selected_id);
         if (!$t) return;
+        if ($this->esFinal($t->estado)) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La tarea ya está finalizada; no admite más adjuntos.', 'type' => 'error', 'action' => '']);
+            return;
+        }
         if ((int) $t->asignado_a !== (int) auth()->id()) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el asignado puede subir adjuntos.', 'type' => 'error', 'action' => '']);
             return;
@@ -415,7 +610,7 @@ class Tareas extends Component
             'adjunto.max' => 'Máximo 10 MB.',
         ]);
         $ruta = $this->adjunto->store('tarea_adjuntos', 'public');
-        \App\Models\TareaAdjunto::create([
+        $adj = \App\Models\TareaAdjunto::create([
             'tarea_id' => $t->id,
             'user_id' => auth()->id(),
             'nombre' => $this->adjunto->getClientOriginalName(),
@@ -423,6 +618,7 @@ class Tareas extends Component
             'tipo_archivo' => strtolower($this->adjunto->getClientOriginalExtension()),
             'tamaño_archivo' => round(filesize($this->adjunto->getRealPath()) / 1024, 2),
         ]);
+        $this->registrarHistorial($t->id, 'adjunto_subido', 'Adjunto subido: ' . $adj->nombre, null, $adj->toArray());
         $this->adjunto = null;
         $this->adjuntos = $t->adjuntos()->orderBy('id', 'desc')->get()->toArray();
         $this->dispatchBrowserEvent('noty', ['msg' => 'Adjunto subido.', 'type' => 'success', 'action' => '']);
@@ -435,11 +631,17 @@ class Tareas extends Component
         if (!$adj || (int) $adj->tarea_id !== (int) $this->selected_id) return;
         $t = Tarea::find($this->selected_id);
         if (!$t) return;
+        if ($this->esFinal($t->estado)) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La tarea ya está finalizada; no admite cambios.', 'type' => 'error', 'action' => '']);
+            return;
+        }
         if ((int) $t->asignado_a !== (int) auth()->id()) return;
         if (\Storage::disk('public')->exists($adj->ruta_archivo)) {
             \Storage::disk('public')->delete($adj->ruta_archivo);
         }
+        $nombreAdjunto = $adj->nombre;
         $adj->delete();
+        $this->registrarHistorial($t->id, 'adjunto_eliminado', 'Adjunto eliminado: ' . $nombreAdjunto, $adj->toArray(), null);
         $this->adjuntos = $t->adjuntos()->orderBy('id', 'desc')->get()->toArray();
         $this->dispatchBrowserEvent('noty', ['msg' => 'Adjunto eliminado.', 'type' => 'success', 'action' => '']);
     }

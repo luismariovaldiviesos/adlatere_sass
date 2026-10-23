@@ -56,7 +56,7 @@
         @endcan
 
         <ul class="">
-            @can('menu_empresa')
+            @can('menu_materias')
             <li>
                 <a href="{{ route('materias') }}" class="side-menu">
                     <div class="side-menu__icon"> <i data-feather="globe"></i> </div>
@@ -65,7 +65,7 @@
             </li>
             @endcan
 
-            @can('menu_roles')
+            @can('menu_procedimientos')
             <li>
                 <a href="{{ route('procedimientos') }}" class="side-menu">
                     <div class="side-menu__icon"> <i data-feather="shield"></i> </div>
@@ -74,7 +74,7 @@
             </li>
             @endcan
 
-            @can('menu_asginar_permisos')
+            @can('menu_asuntos')
             <li>
                 <a href="{{ route('asuntos') }}" class="side-menu">
                     <div class="side-menu__icon"> <i data-feather="lock"></i> </div>
@@ -82,7 +82,7 @@
                 </a>
             </li>
             @endcan
-            @can('menu_asginar_permisos')
+            @can('menu_fases_procesales')
             <li>
                 <a href="{{ route('fases-procesales') }}" class="side-menu">
                     <div class="side-menu__icon"> <i data-feather="lock"></i> </div>
@@ -90,7 +90,7 @@
                 </a>
             </li>
             @endcan
-            @can('menu_asginar_permisos')
+            @can('menu_estados_procesales')
             <li>
                 <a href="{{ route('estados-procesales') }}" class="side-menu">
                     <div class="side-menu__icon"> <i data-feather="lock"></i> </div>
@@ -98,7 +98,7 @@
                 </a>
             </li>
             @endcan
-            @can('menu_asginar_permisos')
+            @can('menu_especialidades')
             <li>
                 <a href="{{ route('especialidades') }}" class="side-menu">
                     <div class="side-menu__icon"> <i data-feather="lock"></i> </div>
@@ -106,7 +106,7 @@
                 </a>
             </li>
             @endcan
-            @can('menu_asginar_permisos')
+            @can('menu_tipos_actividades')
             <li>
                 <a href="{{ route('tipoactividad') }}" class="side-menu">
                     <div class="side-menu__icon"> <i data-feather="lock"></i> </div>
@@ -114,7 +114,7 @@
                 </a>
             </li>
             @endcan
-            @can('menu_asginar_permisos')
+            @can('menu_plantillas_tipos_actividades')
             <li>
                 <a href="{{ route('plantillas-tipos-actividad') }}" class="side-menu">
                     <div class="side-menu__icon"> <i data-feather="lock"></i> </div>
@@ -122,7 +122,7 @@
                 </a>
             </li>
             @endcan
-            @can('menu_asginar_permisos')
+            @can('menu_prioridad_alertas')
             <li>
                 <a href="{{ route('prioridad-alertas') }}" class="side-menu">
                     <div class="side-menu__icon"> <i data-feather="bell"></i> </div>

@@ -14,7 +14,7 @@
         @endcan
 
         <ul class="">
-            @can('menu_empresa')
+            @can('menu_provincias')
             <li>
                 <a href="{{ route('provincias') }}" class="side-menu">
                     <div class="side-menu__icon"> <i data-feather="globe"></i> </div>
@@ -23,7 +23,7 @@
             </li>
             @endcan
 
-            @can('menu_roles')
+            @can('menu_cantones')
             <li>
                 <a href="{{ route('cantones') }}" class="side-menu">
                     <div class="side-menu__icon"> <i data-feather="shield"></i> </div>
@@ -32,7 +32,7 @@
             </li>
             @endcan
 
-            @can('menu_asginar_permisos')
+            @can('menu_unidades')
             <li>
                 <a href="{{ route('unidades') }}" class="side-menu">
                     <div class="side-menu__icon"> <i data-feather="lock"></i> </div>

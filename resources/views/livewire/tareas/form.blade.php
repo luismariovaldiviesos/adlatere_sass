@@ -83,6 +83,7 @@
         <h3 class="text-base font-bold mb-3">Hoja de trabajo (privada)</h3>
         <label class="form-label">Redacción</label>
         <div wire:ignore class="document-editor" x-data="{}"
+            x-init="setTimeout(() => { if (typeof iniciarEditorTarea === 'function') iniciarEditorTarea(); }, 200)"
             x-on:set-tarea-editor-content.window="window.tareaPendingContent = $event.detail.content || ''; try { if(window.tareaEditorInstance && window.tareaEditorInstance.root.isConnected){ window.tareaEditorInstance.root.innerHTML = window.tareaPendingContent; window.tareaPendingContent = null; } } catch(e){}">
             <div id="toolbar-tarea-container"></div>
             <div class="editable-container">
@@ -90,15 +91,10 @@
             </div>
         </div>
         <div class="flex flex-wrap gap-2 mt-2">
-            <button type="button" class="btn btn-outline-secondary"
-                onclick="if(typeof loadTareaQuillEditor==='function') loadTareaQuillEditor();">
-                <i class="fas fa-pen"></i> Activar editor
-            </button>
             <button type="button" wire:click.prevent="guardarContenido" class="btn btn-success text-white">
                 <i class="fas fa-save"></i> Guardar redacción
             </button>
         </div>
-
         <div class="mt-5">
             <label class="form-label">Adjuntos</label>
             <div class="flex flex-wrap gap-2 items-end">
@@ -125,60 +121,9 @@
 </div>
 
 <script>
-    function loadTareaQuillEditor() {
-        if (typeof Quill !== 'undefined') { startTareaWordEditor(); return; }
-        if (!document.querySelector('#quill-css')) {
-            let link = document.createElement('link');
-            link.id = 'quill-css'; link.rel = 'stylesheet';
-            link.href = 'https://cdn.quilljs.com/1.3.6/quill.snow.css';
-            document.head.appendChild(link);
-        }
-        let script = document.querySelector('#quill-script');
-        if (!script) {
-            script = document.createElement('script');
-            script.id = 'quill-script';
-            script.src = 'https://cdn.quilljs.com/1.3.6/quill.js';
-            document.head.appendChild(script);
-        }
-        script.addEventListener('load', () => { startTareaWordEditor(); });
+    if (typeof iniciarEditorTarea === 'function') {
+        setTimeout(iniciarEditorTarea, 200);
     }
-    function startTareaWordEditor() {
-        const editorDom = document.querySelector('#editor-tarea-hoja');
-        if (!editorDom) return;
-        if (window.tareaEditorInstance) {
-            try {
-                if (!window.tareaEditorInstance.root.isConnected) { window.tareaEditorInstance = null; }
-            } catch(e) { window.tareaEditorInstance = null; }
-        }
-        if (!editorDom.classList.contains('ql-container')) {
-            var quill = new Quill('#editor-tarea-hoja', {
-                theme: 'snow',
-                placeholder: 'Redacte aquí el trabajo de la tarea...',
-                modules: { toolbar: [
-                    [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                    ['bold', 'italic', 'underline', 'strike'],
-                    [{ 'align': [] }],
-                    [{ 'list': 'ordered'}, { 'list': 'bullet' }],
-                    [{ 'indent': '-1'}, { 'indent': '+1' }],
-                    ['clean']
-                ]}
-            });
-            const toolbarContainer = document.querySelector('#toolbar-tarea-container');
-            const quillToolbar = document.querySelector('#toolbar-tarea-container ~ .editable-container .ql-toolbar, .editable-container .ql-toolbar');
-            if (toolbarContainer && quillToolbar) {
-                toolbarContainer.appendChild(quillToolbar);
-            }
-            window.tareaEditorInstance = quill;
-            quill.on('text-change', function() { @this.set('contenido', quill.root.innerHTML); });
-        }
-        if (window.tareaPendingContent !== undefined && window.tareaPendingContent !== null && window.tareaEditorInstance) {
-            try {
-                window.tareaEditorInstance.root.innerHTML = window.tareaPendingContent;
-                window.tareaPendingContent = null;
-            } catch(e) {}
-        }
-    }
-    setTimeout(() => { loadTareaQuillEditor(); }, 100);
 </script>
 
 <style>

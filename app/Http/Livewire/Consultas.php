@@ -46,7 +46,7 @@ class Consultas extends Component
 
     // Filtros del panel (abogado ve sus asignadas)
     public $filtroAtencion = 'todos'; // todos|pendiente|atendida|convertida
-    public $filtroPago = 'todos';     // todos|pendiente|pagada|facturada|no_factura
+    public $filtroPago = 'todos';     // todos|pendiente|pagada|en_facturacion|facturada|no_factura
     public $soloMias = true;
     public $esPanelAbogado = false; // true cuando se entra por "Mis consultas"
 
@@ -90,9 +90,12 @@ class Consultas extends Component
     }
 
     // Editor visible solo para el abogado asignado (y admin). Nunca para recepción.
+        // Editor visible solo para el abogado asignado (NO admin). Nunca para recepci??n.
+    // Solo en edici??n (no al crear).
     private function puedeVerNotas()
     {
-        if ($this->esAdmin()) return true;
+        if (!$this->selected_id) return false;
+        if ($this->esAdmin()) return false;
         return $this->abogado_id && (int) $this->abogado_id === (int) auth()->id();
     }
 
@@ -173,7 +176,9 @@ class Consultas extends Component
         $veTodas = $this->esAdmin() || auth()->user()->can('menu_consultas');
         $q = Consulta::with(['customer', 'asunto.procedimiento.materia', 'abogado', 'juicio']);
 
-        if (!$veTodas || ($this->esAdmin() && $this->soloMias)) {
+        // Solo filtrar por abogado si NO es admin y no ve todas, O si es abogado con soloMias
+        // Admin nunca filtra por sus propias consultas (no tiene asignadas)
+        if (!$veTodas || ($this->esAbogado() && $this->soloMias)) {
             $q->where('abogado_id', auth()->id());
         }
 
@@ -199,7 +204,8 @@ class Consultas extends Component
         $info = $q->orderBy('id', 'desc')->paginate($this->pagination);
 
         $base = Consulta::query();
-        if (!$veTodas || ($this->esAdmin() && $this->soloMias)) {
+        // Solo filtrar por abogado si NO es admin y no ve todas, O si es abogado con soloMias
+        if (!$veTodas || ($this->esAbogado() && $this->soloMias)) {
             $base->where('abogado_id', auth()->id());
         }
         if ($this->filtroAtencion !== 'todos') {

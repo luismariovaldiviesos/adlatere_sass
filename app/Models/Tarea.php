@@ -24,6 +24,7 @@ class Tarea extends Model
     public function creador() { return $this->belongsTo(User::class, 'creado_por'); }
     public function actividad() { return $this->belongsTo(Actividad::class); }
     public function adjuntos() { return $this->hasMany(TareaAdjunto::class)->orderBy('id', 'desc'); }
+    public function historiales() { return $this->hasMany(TareaHistorial::class)->orderBy('id', 'desc'); }
 
     public function getEstaVencidaAttribute()
     {
