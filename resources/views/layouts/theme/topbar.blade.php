@@ -32,7 +32,9 @@
 
     <!-- END: Search -->
     <!-- BEGIN: Notifications -->
-
+    <div class="intro-x mr-3" style="overflow: visible; position: relative; z-index: 50;">
+        @livewire('notificaciones')
+    </div>
     <!-- END: Notifications -->
 
 

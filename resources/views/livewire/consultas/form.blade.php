@@ -4,6 +4,12 @@
         <button wire:click.prevent="CloseModal" class="btn btn-outline-secondary">Volver</button>
     </div>
 
+    @if($soloLectura)
+    <div class="alert alert-info py-2 px-3 text-sm mb-4">
+        La consulta ya fue atendida. Solo puede consultar el detalle; no se puede modificar.
+    </div>
+    @endif
+
     <div class="grid grid-cols-12 gap-4 gap-y-3">
     @if($puedeAdministrar)
         {{-- BLOQUE RECEPCIÓN: datos + cobro (el abogado no ve ni toca esto) --}}
@@ -126,6 +132,7 @@
     @endif
 
         @if($puedeVerNotas)
+        @if(!$soloLectura)
         <div class="col-span-12 sm:col-span-4">
             <label class="form-label">Estado atención</label>
             <select wire:model.defer="estado_atencion" class="form-select">
@@ -133,11 +140,12 @@
                 <option value="atendida">Atendida</option>
             </select>
         </div>
+        @endif
 
         {{-- HOJA DE TRABAJO: solo el abogado asignado (y admin) --}}
         <div class="col-span-12">
             <label class="form-label">Notas de la consulta (hoja de trabajo)</label>
-            <div wire:ignore class="document-editor" x-data="{}"
+            <div wire:ignore class="document-editor" x-data="{}" @if($soloLectura) style="pointer-events:none; opacity:.85;" @endif
                 x-on:set-consulta-editor-content.window="window.consultaPendingContent = $event.detail.content || ''; try { if(window.consultaEditorInstance && window.consultaEditorInstance.root.isConnected){ window.consultaEditorInstance.root.innerHTML = window.consultaPendingContent; window.consultaPendingContent = null; } } catch(e){}">
                 <div id="toolbar-consulta-container"></div>
                 <div class="editable-container">
@@ -149,11 +157,11 @@
     </div>
 
     <div class="text-right mt-5">
-        <button wire:click.prevent="CloseModal" class="btn btn-outline-secondary mr-1">Cancelar</button>
-        @if($puedeAdministrar && $selected_id == 0)
+        <button wire:click.prevent="CloseModal" class="btn btn-outline-secondary mr-1">{{ $soloLectura ? 'Cerrar' : 'Cancelar' }}</button>
+        @if($puedeAdministrar && !$soloLectura)
         <button wire:click.prevent="Store" class="btn btn-primary">Guardar datos</button>
         @endif
-        @if($puedeVerNotas)
+        @if($puedeVerNotas && !$soloLectura)
         <button wire:click.prevent="guardarNotas" class="btn btn-success text-white">Guardar notas</button>
         @endif
     </div>

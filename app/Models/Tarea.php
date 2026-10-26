@@ -29,7 +29,7 @@ class Tarea extends Model
     public function getEstaVencidaAttribute()
     {
         return $this->fecha_limite
-            && $this->fecha_limite->isPast()
+            && $this->fecha_limite->isBefore(today())
             && !in_array($this->estado, ['completada', 'convertida', 'cancelada']);
     }
 

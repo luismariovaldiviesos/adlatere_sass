@@ -26,6 +26,7 @@ class Consultas extends Component
     use WithPagination, WithFileUploads;
 
     public $action = 'Listado', $componentName = 'Consultas', $search = '', $form = false, $selected_id = 0;
+    public $soloLectura = false;
     private $pagination = 10;
     protected $paginationTheme = 'tailwind';
 
@@ -74,10 +75,11 @@ class Consultas extends Component
         return false;
     }
 
-    // Solo admin o el abogado asignado (o consulta sin asignar) pueden operarla
+    // Admin, recepción o el abogado asignado (o consulta sin asignar) pueden operarla
     private function puedeOperar(Consulta $consulta)
     {
         if ($this->esAdmin()) return true;
+        if (auth()->user()->can('menu_consultas')) return true;
         if (!$consulta->abogado_id) return true;
         return (int) $consulta->abogado_id === (int) auth()->id();
     }
@@ -92,10 +94,28 @@ class Consultas extends Component
     // Editor visible solo para el abogado asignado (y admin). Nunca para recepción.
         // Editor visible solo para el abogado asignado (NO admin). Nunca para recepci??n.
     // Solo en edici??n (no al crear).
+    private function esAsistente()
+    {
+        $u = auth()->user();
+        if (!$u) return false;
+        if (isset($u->profile) && $u->profile === 'Asistente') return true;
+        if (method_exists($u, 'hasRole') && $u->hasRole('Asistente')) return true;
+        return false;
+    }
+
+    private function esAbogadoAsignado(Consulta $consulta)
+    {
+        return !$this->esAdmin()
+            && $this->esAbogado()
+            && $consulta->abogado_id
+            && (int) $consulta->abogado_id === (int) auth()->id();
+    }
+
     private function puedeVerNotas()
     {
         if (!$this->selected_id) return false;
         if ($this->esAdmin()) return false;
+        if (!$this->esAbogado()) return false;
         return $this->abogado_id && (int) $this->abogado_id === (int) auth()->id();
     }
 
@@ -174,11 +194,12 @@ class Consultas extends Component
         // Recepción (admin o menu_consultas) ve TODAS. Solo el abogado
         // puro (sin menu_consultas) queda acotado a sus asignadas.
         $veTodas = $this->esAdmin() || auth()->user()->can('menu_consultas');
+        $esAbogado = $this->esAbogado() && !$this->esAdmin();
         $q = Consulta::with(['customer', 'asunto.procedimiento.materia', 'abogado', 'juicio']);
 
         // Solo filtrar por abogado si NO es admin y no ve todas, O si es abogado con soloMias
         // Admin nunca filtra por sus propias consultas (no tiene asignadas)
-        if (!$veTodas || ($this->esAbogado() && $this->soloMias)) {
+        if (!$veTodas || ($esAbogado && $this->soloMias)) {
             $q->where('abogado_id', auth()->id());
         }
 
@@ -205,7 +226,7 @@ class Consultas extends Component
 
         $base = Consulta::query();
         // Solo filtrar por abogado si NO es admin y no ve todas, O si es abogado con soloMias
-        if (!$veTodas || ($this->esAbogado() && $this->soloMias)) {
+        if (!$veTodas || ($esAbogado && $this->soloMias)) {
             $base->where('abogado_id', auth()->id());
         }
         if ($this->filtroAtencion !== 'todos') {
@@ -227,6 +248,9 @@ class Consultas extends Component
             'consultas' => $info,
             'puedeAdministrar' => $this->puedeAdministrar(),
             'puedeVerNotas' => $this->puedeVerNotas(),
+            'esAdmin' => $this->esAdmin(),
+            'esAsistente' => $this->esAsistente(),
+            'esAbogado' => $esAbogado,
             'puedeEntrar' => $puedeEntrar,
             'totales' => $totales,
         ])->layout('layouts.theme.app');
@@ -274,7 +298,7 @@ class Consultas extends Component
             'estado_pago', 'estado_atencion', 'selected_id',
             'materia_id', 'procedimiento_id', 'searchCustomer',
             'cliente_nombre', 'customers', 'showDropdown',
-            'fecha_pago', 'metodo_pago', 'comprobante', 'comprobante_actual', 'facturar_ahora',
+            'fecha_pago', 'metodo_pago', 'comprobante', 'comprobante_actual', 'facturar_ahora', 'soloLectura',
         ]);
         $this->costo = 0;
         $this->estado_pago = 'pendiente';
@@ -293,6 +317,19 @@ class Consultas extends Component
         if (!$this->selected_id && auth()->user()->cannot('crear_consulta')) return;
         if ($this->selected_id && auth()->user()->cannot('editar_datos_consulta')) return;
         $anterior = $this->selected_id ? Consulta::find($this->selected_id) : null;
+        $esAbogadoAsignado = $anterior && $this->esAbogadoAsignado($anterior);
+
+        if ($esAbogadoAsignado) {
+            if (in_array($anterior->estado_atencion, ['atendida', 'convertida'], true)) {
+                $this->dispatchBrowserEvent('noty', ['msg' => 'La consulta ya fue atendida; solo puede consultar el detalle.', 'type' => 'error', 'action' => '']);
+                return;
+            }
+            $this->validate(['notas' => 'nullable|string']);
+            if ($this->estado_atencion === 'atendida' && !Consulta::notasTienenTexto($this->notas)) {
+                $this->dispatchBrowserEvent('noty', ['msg' => 'Para marcar la consulta como atendida debe escribir notas.', 'type' => 'error', 'action' => '']);
+                return;
+            }
+        }
 
         $this->validate(array_merge(Consulta::rules(), [
             'comprobante' => 'nullable|file|mimes:pdf,jpg,jpeg,png|max:5120',
@@ -310,22 +347,28 @@ class Consultas extends Component
             $ruta = $this->comprobante->store('documentos_juicios', 'public');
         }
 
-        $consulta = Consulta::updateOrCreate(['id' => $this->selected_id], [
+        $datos = [
             'customer_id' => $this->customer_id,
             'asunto_id'   => $this->asunto_id,
             'abogado_id'  => $this->abogado_id ?: null,
             'costo'       => $this->estado_pago === 'no_factura' ? 0 : $this->costo,
-            'notas'       => $this->notas,
             'estado_pago' => $this->estado_pago,
             'fecha_pago'  => $this->estado_pago === 'pagada' ? ($this->fecha_pago ?: now()->toDateString()) : null,
             'metodo_pago' => $this->estado_pago === 'pagada' ? $this->metodo_pago : ($this->estado_pago === 'no_factura' ? 'No se cobra' : null),
             'comprobante_ruta' => $ruta ?: ($anterior->comprobante_ruta ?? null),
-        ]);
+        ];
+        if ($esAbogadoAsignado) {
+            $datos['notas'] = $this->notas;
+        }
+        $consulta = Consulta::updateOrCreate(['id' => $this->selected_id], $datos);
 
-        // Al editar también se persiste el estado de atención (si lo cambió aquí).
+        // Al editar, solo el abogado asignado puede persistir el estado de atención.
         // Nunca se puede marcar 'convertida' desde este formulario.
-        if ($this->selected_id && in_array($this->estado_atencion, ['pendiente', 'atendida'])) {
+        if ($esAbogadoAsignado && in_array($this->estado_atencion, ['pendiente', 'atendida'])) {
             $consulta->estado_atencion = $this->estado_atencion;
+            if ($this->estado_atencion === 'atendida' && !$consulta->fecha_atencion) {
+                $consulta->fecha_atencion = now();
+            }
             $consulta->save();
         }
 
@@ -369,25 +412,42 @@ class Consultas extends Component
             $this->dispatchBrowserEvent('noty', ['msg' => 'La consulta ya no existe. Recargue la página.', 'type' => 'error', 'action' => '']);
             return;
         }
-        if (!$this->esAbogado()) {
+        if ($this->esAdmin() || !$this->esAbogado()) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'Solo un usuario con perfil de abogado puede guardar notas.', 'type' => 'error', 'action' => '']);
             return;
         }
-        if (!$this->esAdmin() && (int) $consulta->abogado_id !== (int) auth()->id()) {
-            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el abogado asignado puede guardar notas.', 'type' => 'error', 'action' => '']);
+        if (!$consulta->abogado_id || (int) $consulta->abogado_id !== (int) auth()->id()) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el abogado asignado puede guardar notas y marcar la atención.', 'type' => 'error', 'action' => '']);
             return;
         }
         if (auth()->user()->cannot('guardar_notas_consulta')) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'Su perfil no tiene permiso para guardar notas.', 'type' => 'error', 'action' => '']);
             return;
         }
+        if (in_array($consulta->estado_atencion, ['atendida', 'convertida'], true)) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La consulta ya fue atendida; solo puede consultar el detalle.', 'type' => 'error', 'action' => '']);
+            return;
+        }
         $this->validate(['notas' => 'nullable|string']);
+        if ($this->estado_atencion === 'atendida' && !Consulta::notasTienenTexto($this->notas)) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Para marcar la consulta como atendida debe escribir notas.', 'type' => 'error', 'action' => '']);
+            return;
+        }
         $consulta->notas = $this->notas;
         if (in_array($this->estado_atencion, ['pendiente', 'atendida'])) {
             $consulta->estado_atencion = $this->estado_atencion;
+            if ($this->estado_atencion === 'atendida' && !$consulta->fecha_atencion) {
+                $consulta->fecha_atencion = now();
+            }
         }
         $consulta->save();
         $this->dispatchBrowserEvent('set-consulta-editor-content', ['content' => $this->notas ?? '']);
+        if ($consulta->estado_atencion === 'atendida') {
+            $this->soloLectura = true;
+            $this->action = 'Detalle';
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Consulta atendida. Ahora solo puede consultar el detalle.', 'type' => 'success', 'action' => '']);
+            return;
+        }
         $this->dispatchBrowserEvent('noty', ['msg' => 'Notas y estado de atención guardados.', 'type' => 'success', 'action' => '']);
     }
 
@@ -400,6 +460,10 @@ class Consultas extends Component
             return;
         }
 
+        $esAbogadoAsignado = $this->esAbogadoAsignado($consulta);
+        $soloLectura = $esAbogadoAsignado
+            && in_array($consulta->estado_atencion, ['atendida', 'convertida'], true);
+
         $this->selected_id = $consulta->id;
         $this->customer_id = $consulta->customer_id;
         $this->cliente_nombre = $consulta->customer->businame ?? '';
@@ -407,7 +471,7 @@ class Consultas extends Component
         $this->asunto_id = $consulta->asunto_id;
         $this->abogado_id = $consulta->abogado_id;
         $this->costo = $consulta->costo;
-        $this->notas = $consulta->notas;
+        $this->notas = $esAbogadoAsignado ? $consulta->notas : null;
         $this->estado_pago = $consulta->estado_pago;
         $this->estado_atencion = $consulta->estado_atencion;
         $this->fecha_pago = $consulta->fecha_pago ? $consulta->fecha_pago->format('Y-m-d') : null;
@@ -424,9 +488,12 @@ class Consultas extends Component
             $this->asuntos = Asunto::where('procedimiento_id', $this->procedimiento_id)->orderBy('nombre', 'asc')->get();
         }
 
-        $this->action = 'Editar';
+        $this->soloLectura = $soloLectura;
+        $this->action = $soloLectura ? 'Detalle' : 'Editar';
         $this->form = true;
-        $this->dispatchBrowserEvent('set-consulta-editor-content', ['content' => $this->notas ?? '']);
+        if ($esAbogadoAsignado) {
+            $this->dispatchBrowserEvent('set-consulta-editor-content', ['content' => $this->notas ?? '']);
+        }
     }
 
     // Abogado atiende la consulta
@@ -434,25 +501,21 @@ class Consultas extends Component
     {
         $consulta = Consulta::find($id);
         if (!$consulta) return;
-        if (!$this->puedeOperar($consulta)) {
-            $this->dispatchBrowserEvent('noty', ['msg' => 'No tiene permiso para atender esta consulta.', 'type' => 'success', 'action' => '']);
-            return;
-        }
-        if (!$this->esAbogado()) {
-            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo un usuario con perfil de abogado puede atender consultas.', 'type' => 'error', 'action' => '']);
+        if ($this->esAdmin() || !$this->esAbogado() || !$consulta->abogado_id || (int) $consulta->abogado_id !== (int) auth()->id()) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el abogado asignado a esta consulta puede marcarla como atendida.', 'type' => 'error', 'action' => '']);
             return;
         }
         if (auth()->user()->cannot('atender_consulta')) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'Su perfil no tiene permiso para atender consultas.', 'type' => 'error', 'action' => '']);
             return;
         }
-        if ($consulta->estado_atencion === 'convertida') {
-            $this->dispatchBrowserEvent('noty', ['msg' => 'La consulta ya fue convertida en juicio.', 'type' => 'success', 'action' => '']);
+        if ($consulta->estado_atencion !== 'pendiente') {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La consulta ya fue atendida; solo puede consultar el detalle.', 'type' => 'error', 'action' => '']);
             return;
         }
-        // Si no tenía abogado, se autoasigna quien atiende
-        if (!$consulta->abogado_id) {
-            $consulta->abogado_id = auth()->id();
+        if (!Consulta::notasTienenTexto($consulta->notas)) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Para marcar la consulta como atendida debe escribir notas.', 'type' => 'error', 'action' => '']);
+            return;
         }
         $consulta->estado_atencion = 'atendida';
         $consulta->fecha_atencion = now();

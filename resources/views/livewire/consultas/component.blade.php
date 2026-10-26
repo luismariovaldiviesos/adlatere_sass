@@ -60,7 +60,7 @@
                         </select>
                     </div>
                     @endif
-                    @if(auth()->user()->profile === 'Abogado')
+                    @if($esAbogado)
                     <div class="flex items-center gap-2 pb-2">
                         <input type="checkbox" wire:model="soloMias" id="soloMias" class="form-check-input">
                         <label for="soloMias" class="text-xs">Solo mis asignadas</label>
@@ -147,28 +147,43 @@
                                         @endif
                                         <td class="text-center">
                                             <div class="flex justify-center gap-1 flex-wrap">
+                                                @php
+                                                    $verSoloDetalle = $esAbogado
+                                                        && (int) $con->abogado_id === (int) auth()->id()
+                                                        && in_array($con->estado_atencion, ['atendida', 'convertida'], true);
+                                                @endphp
                                                 @if(auth()->user()->can('editar_datos_consulta') || auth()->user()->can('guardar_notas_consulta'))
-                                                <button class="btn btn-warning text-blue border-0"
-                                                    wire:click.prevent="Edit({{ $con->id }})" title="Editar / Atender">
-                                                    <i class="fas fa-edit"></i>
+                                                <button class="btn {{ $verSoloDetalle ? 'btn-secondary' : 'btn-warning text-blue' }} border-0"
+                                                    wire:click.prevent="Edit({{ $con->id }})"
+                                                    title="{{ $verSoloDetalle ? 'Ver detalle' : 'Editar / Atender' }}">
+                                                    <i class="fas {{ $verSoloDetalle ? 'fa-eye' : 'fa-edit' }}"></i>
                                                 </button>
                                                 @endif
                                                 @can('atender_consulta')
-                                                @if($con->estado_atencion === 'pendiente')
+                                                @if($con->estado_atencion === 'pendiente'
+                                                    && (int) $con->abogado_id === (int) auth()->id()
+                                                    && $esAbogado)
+                                                @if($con->tiene_notas)
                                                 <button class="btn btn-primary text-blue border-0"
                                                     wire:click.prevent="atender({{ $con->id }})" title="Marcar atendida">
                                                     <i class="fas fa-check"></i>
                                                 </button>
+                                                @else
+                                                <button class="btn btn-secondary text-blue border-0" disabled
+                                                    title="Escriba notas antes de marcar la consulta como atendida">
+                                                    <i class="fas fa-check"></i>
+                                                </button>
+                                                @endif
                                                 @endif
                                                 @endcan
                                                 @can('facturar_consulta')
-                                                @if(auth()->user()->profile === 'Asistente' && $con->estado_pago === 'pagada' && !$con->factura_id)
+                                                @if($esAsistente && $con->estado_pago === 'pagada' && !$con->factura_id)
                                                 <button class="btn btn-info text-blue border-0"
                                                     wire:click.prevent="irAFacturar({{ $con->id }})" title="Facturar en carrito (puede cambiar de cliente)">
                                                     <i class="fas fa-file-invoice-dollar"></i>
                                                 </button>
                                                 @endif
-                                                @if(auth()->user()->profile === 'Asistente' && $con->estado_pago === 'en_facturacion' && $con->factura_id)
+                                                @if($esAsistente && $con->estado_pago === 'en_facturacion' && $con->factura_id)
                                                 <button class="btn btn-success text-white border-0"
                                                     wire:click.prevent="emitirFacturaConsulta({{ $con->id }})" title="Emitir borrador al SRI">
                                                     <i class="fas fa-paper-plane"></i>
@@ -176,7 +191,7 @@
                                                 @endif
                                                 @endcan
                                                 @can('marcar_pagada_consulta')
-                                                @if(auth()->user()->profile === 'Asistente' && $con->estado_pago === 'pendiente')
+                                                @if($esAsistente && $con->estado_pago === 'pendiente')
                                                 <button class="btn btn-outline-success border-0"
                                                     wire:click.prevent="marcarPagada({{ $con->id }})" title="Marcar pagada">
                                                     <i class="fas fa-dollar-sign"></i>
@@ -184,7 +199,7 @@
                                                 @endif
                                                 @endcan
                                                 @can('convertir_consulta')
-                                                @if(auth()->user()->profile === 'Admin' && $con->estado_atencion === 'atendida')
+                                                @if($esAdmin && $con->estado_atencion === 'atendida')
                                                 <button class="btn btn-success text-blue border-0"
                                                     wire:click.prevent="convertirAJuicio({{ $con->id }})" title="Convertir en juicio">
                                                     <i class="fas fa-gavel"></i>

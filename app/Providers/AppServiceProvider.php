@@ -29,6 +29,11 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot()
     {
+        // Observers de notificaciones internas
+        \App\Models\Tarea::observe(\App\Observers\TareaObserver::class);
+        \App\Models\Consulta::observe(\App\Observers\ConsultaObserver::class);
+        \App\Models\Audiencia::observe(\App\Observers\AudienciaObserver::class);
+
         // GLOBAL FIX FOR LIVEWIRE & ASSETS (Local & Ngrok)
         // Always force the asset/app URL to match the current request root.
         

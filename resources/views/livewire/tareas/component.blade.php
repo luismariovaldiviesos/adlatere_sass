@@ -148,7 +148,7 @@
                                                     </button>
                                                     @endif
                                                     @if($esAsignado)
-                                                    @if($t->estado === 'en_proceso')
+                                                    @if($t->estado === 'en_proceso' && !$t->esta_vencida)
                                                     <button class="btn btn-warning text-white border-0"
                                                         wire:click.prevent="Edit({{ $t->id }})" title="Ver / Editar">
                                                         <i class="fas fa-edit"></i>
@@ -160,7 +160,12 @@
                                                         <i class="fas fa-play"></i>
                                                     </button>
                                                     @endif
-                                                    @if($t->estado === 'en_proceso' && (trim(strip_tags($t->contenido ?? '')) !== '' || ($t->adjuntos_count ?? 0) > 0))
+                                                    @if($t->estado === 'en_proceso' && $t->esta_vencida)
+                                                    <button class="btn btn-secondary text-white border-0" disabled
+                                                        title="Tarea vencida: no se puede editar ni completar. Solicite ampliar la fecha límite.">
+                                                        <i class="fas fa-lock"></i>
+                                                    </button>
+                                                    @elseif($t->estado === 'en_proceso' && (trim(strip_tags($t->contenido ?? '')) !== '' || ($t->adjuntos_count ?? 0) > 0))
                                                     <button class="btn btn-success text-white border-0"
                                                         wire:click.prevent="cambiarEstado({{ $t->id }}, 'completada')" title="Marcar completada">
                                                         <i class="fas fa-check"></i>
@@ -446,7 +451,7 @@
                     <div class="px-6 pb-6">
                         <p class="text-sm text-gray-600 mb-3">Tarea #{{ $fecha_id }}. Puede dejar la fecha vacía para quitar el vencimiento.</p>
                         <label class="form-label">Nueva fecha límite</label>
-                        <input type="date" wire:model.defer="fecha_edit" class="form-control">
+                        <input type="date" wire:model.defer="fecha_edit" class="form-control" min="{{ now()->toDateString() }}">
                         @error('fecha_edit') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
                         <div class="text-right mt-5">
                             <button type="button" wire:click="cerrarFechaVencimiento" class="btn btn-outline-secondary mr-1">Cancelar</button>

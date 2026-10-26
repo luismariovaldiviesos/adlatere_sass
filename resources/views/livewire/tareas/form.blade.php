@@ -58,7 +58,8 @@
 
         <div class="col-span-12 sm:col-span-6">
             <label class="form-label">Fecha límite</label>
-            <input type="date" wire:model.defer="fecha_limite" class="form-control">
+            <input type="date" wire:model.defer="fecha_limite" class="form-control" min="{{ now()->toDateString() }}">
+            @error('fecha_limite') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
         </div>
     </div>
 
@@ -81,8 +82,13 @@
     @if($puedeVerPrivado)
     <div class="mt-6 border-t pt-5">
         <h3 class="text-base font-bold mb-3">Hoja de trabajo (privada)</h3>
+        @if($tareaVencida)
+        <div class="alert alert-danger py-2 px-3 text-sm mb-3">
+            La tarea está vencida. No puede editar ni completar; solicite a Admin/Asistente ampliar la fecha límite.
+        </div>
+        @endif
         <label class="form-label">Redacción</label>
-        <div wire:ignore class="document-editor" x-data="{}"
+        <div wire:ignore class="document-editor" x-data="{}" @if($tareaVencida) style="pointer-events:none; opacity:.65;" @endif
             x-init="setTimeout(() => { if (typeof iniciarEditorTarea === 'function') iniciarEditorTarea(); }, 200)"
             x-on:set-tarea-editor-content.window="window.tareaPendingContent = $event.detail.content || ''; try { if(window.tareaEditorInstance && window.tareaEditorInstance.root.isConnected){ window.tareaEditorInstance.root.innerHTML = window.tareaPendingContent; window.tareaPendingContent = null; } } catch(e){}">
             <div id="toolbar-tarea-container"></div>
@@ -91,15 +97,15 @@
             </div>
         </div>
         <div class="flex flex-wrap gap-2 mt-2">
-            <button type="button" wire:click.prevent="guardarContenido" class="btn btn-success text-white">
+            <button type="button" wire:click.prevent="guardarContenido" class="btn btn-success text-white" @if($tareaVencida) disabled @endif>
                 <i class="fas fa-save"></i> Guardar redacción
             </button>
         </div>
         <div class="mt-5">
             <label class="form-label">Adjuntos</label>
             <div class="flex flex-wrap gap-2 items-end">
-                <input type="file" wire:model="adjunto" class="form-control" style="max-width:320px;">
-                <button type="button" wire:click.prevent="subirAdjunto" class="btn btn-primary">Subir</button>
+                <input type="file" wire:model="adjunto" class="form-control" style="max-width:320px;" @if($tareaVencida) disabled @endif>
+                <button type="button" wire:click.prevent="subirAdjunto" class="btn btn-primary" @if($tareaVencida) disabled @endif>Subir</button>
             </div>
             @error('adjunto') <span class="text-red-600 text-xs">{{ $message }}</span> @enderror
             <div wire:loading wire:target="adjunto" class="text-primary text-sm mt-1">Subiendo...</div>
@@ -109,7 +115,7 @@
                     <i class="fas fa-paperclip text-gray-400"></i>
                     <span class="font-medium">{{ $adj['nombre'] }}</span>
                     <a href="{{ route('tenant.media', ['path' => $adj['ruta_archivo']]) }}" target="_blank" class="btn btn-outline-primary btn-sm ml-auto">Ver</a>
-                    <button type="button" wire:click.prevent="quitarAdjunto({{ $adj['id'] }})" class="btn btn-outline-danger btn-sm">Quitar</button>
+                    <button type="button" wire:click.prevent="quitarAdjunto({{ $adj['id'] }})" class="btn btn-outline-danger btn-sm" @if($tareaVencida) disabled @endif>Quitar</button>
                 </li>
                 @empty
                 <li class="text-sm text-gray-400 italic">Sin adjuntos.</li>

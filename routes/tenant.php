@@ -42,6 +42,7 @@ use App\Http\Livewire\Funcionarios;
 use App\Http\Livewire\Juicios;
 use App\Http\Livewire\Consultas;
 use App\Http\Livewire\Tareas;
+use App\Http\Livewire\BandejaNotificaciones;
 use App\Http\Livewire\PrioridadAlertas;
 use App\Http\Livewire\Calendario;
 use App\http\Livewire\TiposActividades;
@@ -122,6 +123,7 @@ Route::middleware([
         Route::get('consultas', Consultas::class)->name('consultas');
         Route::get('mis-consultas', Consultas::class)->name('mis-consultas');
         Route::get('tareas', Tareas::class)->name('tareas');
+        Route::get('notificaciones', BandejaNotificaciones::class)->name('notificaciones');
         Route::get('prioridad-alertas', PrioridadAlertas::class)->name('prioridad-alertas');
         Route::get('calendario', Calendario::class)->name('calendario');
         Route::get('estado-financiero', EstadoFinanciero::class)->name('estado-financiero');

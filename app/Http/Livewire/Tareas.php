@@ -97,6 +97,13 @@ class Tareas extends Component
         return (int) $this->asignado_a === (int) auth()->id();
     }
 
+    private function tareaSeleccionadaVencida()
+    {
+        if (!$this->selected_id) return false;
+        $t = Tarea::find($this->selected_id);
+        return $t ? (bool) $t->esta_vencida : false;
+    }
+
     // Estados finales: la tarea ya no admite cambios de contenido ni adjuntos
     private function esFinal($estado)
     {
@@ -181,6 +188,7 @@ class Tareas extends Component
             'tareas' => $info,
             'puedeGestionar' => $this->puedeGestionar(),
             'puedeVerPrivado' => $this->puedeVerPrivado(),
+            'tareaVencida' => $this->tareaSeleccionadaVencida(),
             'puedeEntrar' => auth()->user()->can('menu_tareas'),
             'puedeEliminar' => $this->puedeEliminar(),
             'puedeEditarFecha' => $this->puedeEditarFecha(),
@@ -240,11 +248,12 @@ class Tareas extends Component
             'tipo' => 'required|in:externa,juicio',
             'juicio_id' => 'required_if:tipo,juicio|nullable|exists:juicios,id',
             'asignado_a' => 'required|exists:users,id',
-            'fecha_limite' => 'nullable|date',
+            'fecha_limite' => 'nullable|date|after_or_equal:today',
         ], [
             'titulo.required' => 'Indique el título de la tarea.',
             'juicio_id.required_if' => 'Seleccione el juicio vinculado.',
             'asignado_a.required' => 'Seleccione a quién se asigna.',
+            'fecha_limite.after_or_equal' => 'La fecha límite no puede ser anterior a hoy.',
         ]);
 
         // El asignado debe ser abogado o pasante
@@ -260,6 +269,14 @@ class Tareas extends Component
             $actual = Tarea::find($this->selected_id);
             if (!$actual || $actual->estado !== 'en_proceso') {
                 $this->dispatchBrowserEvent('noty', ['msg' => 'Solo se puede editar una tarea iniciada (en proceso).', 'type' => 'error', 'action' => '']);
+                return;
+            }
+            if ((int) $actual->asignado_a !== (int) auth()->id()) {
+                $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el asignado puede editar la tarea. Para ampliar la fecha límite use la opción correspondiente.', 'type' => 'error', 'action' => '']);
+                return;
+            }
+            if ($actual->esta_vencida) {
+                $this->dispatchBrowserEvent('noty', ['msg' => 'La tarea está vencida; no se puede editar. Solicite a Admin/Asistente ampliar la fecha límite.', 'type' => 'error', 'action' => '']);
                 return;
             }
         }
@@ -301,6 +318,11 @@ class Tareas extends Component
         // Solo el asignado abre la tarea (admin y asistente solo miran la tabla)
         if ((int) $t->asignado_a !== (int) auth()->id()) return;
 
+        if ($t->esta_vencida) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La tarea está vencida; no se puede editar. Solicite a Admin/Asistente ampliar la fecha límite.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+
         // Solo se puede editar si la tarea fue iniciada
         if ($t->estado !== 'en_proceso') {
             $this->dispatchBrowserEvent('noty', ['msg' => 'Debe pulsar "Iniciar" antes de editar la tarea.', 'type' => 'error', 'action' => '']);
@@ -331,6 +353,10 @@ class Tareas extends Component
         // Solo el asignado avanza estados
         if ((int) $t->asignado_a !== (int) auth()->id()) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el asignado puede cambiar el estado.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        if ($nuevo === 'completada' && $t->esta_vencida) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La tarea está vencida; no se puede completar. Solicite a Admin/Asistente ampliar la fecha límite.', 'type' => 'error', 'action' => '']);
             return;
         }
 
@@ -457,7 +483,10 @@ class Tareas extends Component
             return;
         }
 
-        $this->validate(['fecha_edit' => 'nullable|date'], ['fecha_edit.date' => 'Ingrese una fecha válida.']);
+        $this->validate(['fecha_edit' => 'nullable|date|after_or_equal:today'], [
+            'fecha_edit.date' => 'Ingrese una fecha válida.',
+            'fecha_edit.after_or_equal' => 'La fecha de vencimiento no puede ser anterior a hoy.',
+        ]);
 
         $anterior = $t->fecha_limite ? $t->fecha_limite->format('Y-m-d') : null;
         $t->fecha_limite = $this->fecha_edit ?: null;
@@ -578,6 +607,10 @@ class Tareas extends Component
             $this->dispatchBrowserEvent('noty', ['msg' => 'Sin permiso para guardar la redacción.', 'type' => 'error', 'action' => '']);
             return;
         }
+        if ($t->esta_vencida) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La tarea está vencida; no se puede editar. Solicite a Admin/Asistente ampliar la fecha límite.', 'type' => 'error', 'action' => '']);
+            return;
+        }
         $this->validate(['contenido' => 'nullable|string']);
         $anterior = $t->contenido;
         $t->contenido = $this->contenido;
@@ -602,6 +635,10 @@ class Tareas extends Component
         }
         if (auth()->user()->cannot('completar_tarea')) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'Sin permiso para subir adjuntos.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        if ($t->esta_vencida) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La tarea está vencida; no se puede editar. Solicite a Admin/Asistente ampliar la fecha límite.', 'type' => 'error', 'action' => '']);
             return;
         }
         $this->validate(['adjunto' => 'required|file|mimes:pdf,doc,docx,jpg,jpeg,png|max:10240'], [
@@ -636,6 +673,10 @@ class Tareas extends Component
             return;
         }
         if ((int) $t->asignado_a !== (int) auth()->id()) return;
+        if ($t->esta_vencida) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La tarea está vencida; no se puede editar. Solicite a Admin/Asistente ampliar la fecha límite.', 'type' => 'error', 'action' => '']);
+            return;
+        }
         if (\Storage::disk('public')->exists($adj->ruta_archivo)) {
             \Storage::disk('public')->delete($adj->ruta_archivo);
         }

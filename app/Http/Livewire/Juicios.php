@@ -467,6 +467,16 @@ class Juicios extends Component
             $idAb = $this->abogado_id ?: (!$this->esAdmin() ? auth()->id() : null);
             if ($idAb && !$juicio->abogados()->where('user_id', $idAb)->exists()) {
                 $juicio->abogados()->attach($idAb, ['rol_en_juicio' => 'Abogado Patrocinador']);
+                \App\Services\Notificador::enviar(\App\Services\Notificador::sinActor([$idAb]), \App\Services\Notificador::payload(
+                    'Caso asignado',
+                    'Se te asignó el caso ' . ($juicio->cod_satje ?: '#' . $juicio->id) . '.',
+                    '/juicios',
+                    'juicio',
+                    'fas fa-gavel',
+                    'info',
+                    'juicio',
+                    $juicio->id
+                ), "juicio:{$juicio->id}:asignado:{$idAb}");
                 \App\Models\JuicioHistorialEstado::create([
                     'juicio_id'          => $juicio->id,
                     'user_id'            => auth()->id(),
@@ -1455,6 +1465,16 @@ public function descargarPdf(Audiencia $audiencia)
         }
 
         $juicio->abogados()->attach($this->abogado_id, ['rol_en_juicio' => 'Abogado Patrocinador']);
+        \App\Services\Notificador::enviar(\App\Services\Notificador::sinActor([$this->abogado_id]), \App\Services\Notificador::payload(
+            'Caso asignado',
+            'Se te asignó el caso ' . ($juicio->cod_satje ?: '#' . $juicio->id) . '.',
+            '/juicios',
+            'juicio',
+            'fas fa-gavel',
+            'info',
+            'juicio',
+            $juicio->id
+        ), "juicio:{$juicio->id}:asignado:{$this->abogado_id}");
         $this->noty('Abogado asignado con éxito.', 'noty', false);
         
         \App\Models\JuicioHistorialEstado::create([

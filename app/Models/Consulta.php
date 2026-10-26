@@ -49,6 +49,19 @@ class Consulta extends Model
         'fecha_pago.date'      => 'Fecha de pago no válida.',
     ];
 
+    public static function notasTienenTexto($html)
+    {
+        $texto = html_entity_decode(strip_tags($html ?? ''), ENT_QUOTES | ENT_HTML5, 'UTF-8');
+        $texto = str_replace("\xC2\xA0", ' ', $texto);
+
+        return trim($texto) !== '';
+    }
+
+    public function getTieneNotasAttribute()
+    {
+        return static::notasTienenTexto($this->notas);
+    }
+
     public function customer() { return $this->belongsTo(Customer::class); }
     public function asunto() { return $this->belongsTo(Asunto::class); }
     public function abogado() { return $this->belongsTo(User::class, 'abogado_id'); }
