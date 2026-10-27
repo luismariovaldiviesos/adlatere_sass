@@ -70,7 +70,7 @@ class BandejaNotificaciones extends Component
 
         if ($this->filtro === 'no_leidas') {
             $q->whereNull('read_at');
-        } elseif (in_array($this->filtro, ['tarea', 'consulta', 'audiencia', 'juicio', 'firma'], true)) {
+        } elseif (in_array($this->filtro, ['tarea', 'consulta', 'audiencia', 'juicio', 'firma', 'factura', 'cobro'], true)) {
             $q->where('data->categoria', $this->filtro);
         }
 

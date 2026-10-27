@@ -16,6 +16,8 @@
                 <option value="audiencia">Audiencias</option>
                 <option value="juicio">Casos</option>
                 <option value="firma">Firmas</option>
+                <option value="factura">Facturas</option>
+                <option value="cobro">Cobros</option>
             </select>
         </div>
 

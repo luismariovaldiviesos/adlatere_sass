@@ -5,7 +5,10 @@ namespace App\Console\Commands;
 use App\Models\Actividad;
 use App\Models\Audiencia;
 use App\Models\Consulta;
+use App\Models\PagosJuicio;
 use App\Models\Tarea;
+use App\Models\User;
+use App\Models\XmlFile;
 use App\Services\ActividadFirmaNotifier;
 use App\Services\Notificador;
 use Illuminate\Console\Command;
@@ -21,12 +24,215 @@ class NotificacionesRecordatorios extends Command
     {
         $this->recordatoriosTareas();
         $this->recordatoriosAudiencias();
+        $this->recordatoriosAudienciasProgramadas();
         $this->recordatoriosConsultas();
         $this->recordatoriosActividadesFirma();
+        $this->recordatoriosPendientesAbogados();
+        $this->recordatoriosPendientesAdmin();
+        $this->recordatoriosAudienciasVencidas();
+        $this->recordatoriosFirmasAdmin();
+        $this->recordatoriosFacturacion();
+        $this->recordatoriosCobros();
 
         $this->info('Recordatorios procesados: ' . now()->format('d/m/Y H:i'));
 
         return 0;
+    }
+
+    private function recordatoriosPendientesAbogados(): void
+    {
+        $fecha = now()->format('Y-m-d');
+
+        $tareas = Tarea::query()
+            ->whereIn('estado', ['pendiente', 'en_proceso'])
+            ->whereNotNull('asignado_a')
+            ->selectRaw('asignado_a, COUNT(*) as total')
+            ->groupBy('asignado_a')
+            ->pluck('total', 'asignado_a');
+
+        foreach ($tareas as $uid => $total) {
+            Notificador::enviar([(int) $uid], Notificador::payload(
+                'Tareas pendientes',
+                "Tienes {$total} tarea(s) pendiente(s).",
+                '/tareas',
+                'tarea',
+                'fas fa-tasks',
+                'info',
+                'recordatorio'
+            ), "rem:abogado:tareas_pendientes:{$fecha}");
+        }
+
+        $consultas = Consulta::query()
+            ->where('estado_atencion', 'pendiente')
+            ->whereNotNull('abogado_id')
+            ->selectRaw('abogado_id, COUNT(*) as total')
+            ->groupBy('abogado_id')
+            ->pluck('total', 'abogado_id');
+
+        foreach ($consultas as $uid => $total) {
+            Notificador::enviar([(int) $uid], Notificador::payload(
+                'Consultas pendientes',
+                "Tienes {$total} consulta(s) pendiente(s) de atención.",
+                Notificador::urlConsultasPara((int) $uid),
+                'consulta',
+                'fas fa-comments',
+                'info',
+                'recordatorio'
+            ), "rem:abogado:consultas_pendientes:{$fecha}");
+        }
+    }
+
+    private function recordatoriosPendientesAdmin(): void
+    {
+        $fecha = now()->format('Y-m-d');
+
+        $tareas = Tarea::query()
+            ->whereIn('estado', ['pendiente', 'en_proceso'])
+            ->whereNotNull('asignado_a')
+            ->selectRaw('asignado_a, COUNT(*) as total')
+            ->groupBy('asignado_a')
+            ->pluck('total', 'asignado_a');
+
+        if ($tareas->isNotEmpty()) {
+            $nombres = User::whereIn('id', $tareas->keys())->pluck('name', 'id');
+            $detalle = $tareas->map(fn ($total, $id) => ($nombres[$id] ?? ('Abogado #' . $id)) . ': ' . $total)->take(8)->implode('; ');
+
+            Notificador::enviar(Notificador::admins(), Notificador::payload(
+                'Tareas pendientes por abogado',
+                'Pendientes: ' . $detalle,
+                '/tareas',
+                'tarea',
+                'fas fa-tasks',
+                'warning',
+                'recordatorio'
+            ), "rem:admin:tareas_pendientes:{$fecha}");
+        }
+
+        $consultas = Consulta::query()
+            ->where('estado_atencion', 'pendiente')
+            ->whereNotNull('abogado_id')
+            ->selectRaw('abogado_id, COUNT(*) as total')
+            ->groupBy('abogado_id')
+            ->pluck('total', 'abogado_id');
+
+        if ($consultas->isNotEmpty()) {
+            $nombres = User::whereIn('id', $consultas->keys())->pluck('name', 'id');
+            $detalle = $consultas->map(fn ($total, $id) => ($nombres[$id] ?? ('Abogado #' . $id)) . ': ' . $total)->take(8)->implode('; ');
+
+            Notificador::enviar(Notificador::admins(), Notificador::payload(
+                'Consultas pendientes por abogado',
+                'Pendientes: ' . $detalle,
+                '/consultas',
+                'consulta',
+                'fas fa-comments',
+                'warning',
+                'recordatorio'
+            ), "rem:admin:consultas_pendientes:{$fecha}");
+        }
+    }
+
+    private function recordatoriosAudienciasVencidas(): void
+    {
+        $items = Audiencia::query()
+            ->where('estado', 'Programada')
+            ->where('fecha_hora', '<', now())
+            ->get(['id', 'juicio_id']);
+
+        $this->digestAudiencias(
+            $items,
+            'Audiencias vencidas sin actualizar',
+            'rem:audiencias:vencidas:' . now()->format('Y-m-d'),
+            'fas fa-calendar-times',
+            'danger'
+        );
+    }
+
+    private function recordatoriosFirmasAdmin(): void
+    {
+        $actividades = Actividad::with('juicio')
+            ->where('estado_firma', 'pendiente')
+            ->whereHas('tipoActividad', fn ($q) => $q->where('es_firmable', true))
+            ->get();
+
+        if ($actividades->isEmpty()) {
+            return;
+        }
+
+        $porJuicio = $actividades
+            ->groupBy(fn ($a) => $a->juicio->cod_satje ?? ('#' . $a->juicio_id))
+            ->map->count();
+
+        $detalle = $porJuicio
+            ->map(fn ($total, $juicio) => $juicio . ': ' . $total)
+            ->take(8)
+            ->implode('; ');
+
+        Notificador::enviar(Notificador::admins(), Notificador::payload(
+            'Actividades pendientes de firma',
+            'Pendientes por juicio: ' . $detalle,
+            '/juicios',
+            'firma',
+            'fas fa-file-signature',
+            'warning',
+            'recordatorio'
+        ), 'rem:admin:firmas:' . now()->format('Y-m-d'));
+    }
+
+    private function recordatoriosFacturacion(): void
+    {
+        $xmlPendientes = XmlFile::query()
+            ->where('estado', '!=', 'autorizado')
+            ->whereHas('factura', fn ($q) => $q->whereNull('deleted_at'))
+            ->count();
+
+        if ($xmlPendientes > 0) {
+            Notificador::enviar(array_merge(Notificador::asistentes(), Notificador::admins()), Notificador::payload(
+                'Facturas pendientes de reprocesar',
+                "Hay {$xmlPendientes} factura(s) pendiente(s) de autorización o reproceso.",
+                '/reprocesar',
+                'factura',
+                'fas fa-receipt',
+                'warning',
+                'recordatorio'
+            ), 'rem:facturas:reprocesar:' . now()->format('Y-m-d'));
+        }
+    }
+
+    private function recordatoriosCobros(): void
+    {
+        $pagos = PagosJuicio::query()
+            ->where('estado', 'Aprobado')
+            ->whereNull('factura_id')
+            ->count();
+
+        if ($pagos > 0) {
+            Notificador::enviar(array_merge(Notificador::asistentes(), Notificador::admins()), Notificador::payload(
+                'Cobros pendientes de facturar',
+                "Hay {$pagos} abono(s) aprobado(s) sin factura.",
+                '/finanzas-juicios',
+                'cobro',
+                'fas fa-money-bill-wave',
+                'info',
+                'recordatorio'
+            ), 'rem:cobros:pagos_sin_factura:' . now()->format('Y-m-d'));
+        }
+
+        $consultas = Consulta::query()
+            ->where('estado_pago', 'pagada')
+            ->whereNull('factura_id')
+            ->count();
+
+        if ($consultas > 0) {
+            Notificador::enviar(array_merge(Notificador::asistentes(), Notificador::admins()), Notificador::payload(
+                'Consultas pagadas sin facturar',
+                "Hay {$consultas} consulta(s) pagada(s) sin factura.",
+                '/consultas',
+                'cobro',
+                'fas fa-money-bill-wave',
+                'warning',
+                'recordatorio'
+            ), 'rem:cobros:consultas_sin_factura:' . now()->format('Y-m-d'));
+        }
     }
 
     private function recordatoriosActividadesFirma(): void
@@ -124,6 +330,41 @@ class NotificacionesRecordatorios extends Command
         }
     }
 
+    private function recordatoriosAudienciasProgramadas(): void
+    {
+        $items = Audiencia::query()
+            ->where('estado', 'Programada')
+            ->where('fecha_hora', '>=', now())
+            ->get(['id', 'juicio_id', 'tipo_audiencia', 'fecha_hora']);
+
+        foreach ($items as $audiencia) {
+            $abogados = DB::table('juicio_user')
+                ->where('juicio_id', $audiencia->juicio_id)
+                ->pluck('user_id')
+                ->map(fn ($id) => (int) $id)
+                ->all();
+
+            if (empty($abogados)) {
+                continue;
+            }
+
+            $fecha = $audiencia->fecha_hora
+                ? \Carbon\Carbon::parse($audiencia->fecha_hora)->format('d/m/Y H:i')
+                : 'sin fecha';
+
+            Notificador::enviar($abogados, Notificador::payload(
+                'Audiencia programada',
+                "Audiencia {$audiencia->tipo_audiencia} para el {$fecha}.",
+                '/calendario',
+                'audiencia',
+                'fas fa-calendar-check',
+                'info',
+                'audiencia',
+                $audiencia->id
+            ), "audiencia:{$audiencia->id}:creada");
+        }
+    }
+
     private function recordatoriosAudiencias(): void
     {
         $base = Audiencia::query()->where('estado', 'Programada');
@@ -177,6 +418,10 @@ class NotificacionesRecordatorios extends Command
         }
 
         foreach (Notificador::asistentes() as $uid) {
+            $conteo[$uid] = $items->count();
+        }
+
+        foreach (Notificador::admins() as $uid) {
             $conteo[$uid] = $items->count();
         }
 

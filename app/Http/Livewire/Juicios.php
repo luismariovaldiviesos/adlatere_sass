@@ -492,6 +492,23 @@ class Juicios extends Component
                     'juicio',
                     $juicio->id
                 ), "juicio:{$juicio->id}:asignado:{$idAb}");
+
+                $nombreAbogado = \App\Models\User::find($idAb)->name ?? 'un abogado';
+                \App\Services\Notificador::enviar(
+                    \App\Services\Notificador::sinActor(\App\Services\Notificador::admins()),
+                    \App\Services\Notificador::payload(
+                        'Caso asignado a abogado',
+                        'Se asignó el caso ' . ($juicio->cod_satje ?: '#' . $juicio->id) . " a {$nombreAbogado}.",
+                        '/juicios',
+                        'juicio',
+                        'fas fa-gavel',
+                        'info',
+                        'juicio',
+                        $juicio->id
+                    ),
+                    "juicio:{$juicio->id}:asignado_admin:{$idAb}"
+                );
+
                 \App\Models\JuicioHistorialEstado::create([
                     'juicio_id'          => $juicio->id,
                     'user_id'            => auth()->id(),
@@ -1490,6 +1507,23 @@ public function descargarPdf(Audiencia $audiencia)
             'juicio',
             $juicio->id
         ), "juicio:{$juicio->id}:asignado:{$this->abogado_id}");
+
+        $nombreAbogado = \App\Models\User::find($this->abogado_id)->name ?? 'un abogado';
+        \App\Services\Notificador::enviar(
+            \App\Services\Notificador::sinActor(\App\Services\Notificador::admins()),
+            \App\Services\Notificador::payload(
+                'Caso asignado a abogado',
+                'Se asignó el caso ' . ($juicio->cod_satje ?: '#' . $juicio->id) . " a {$nombreAbogado}.",
+                '/juicios',
+                'juicio',
+                'fas fa-gavel',
+                'info',
+                'juicio',
+                $juicio->id
+            ),
+            "juicio:{$juicio->id}:asignado_admin:{$this->abogado_id}"
+        );
+
         $this->noty('Abogado asignado con éxito.', 'noty', false);
         
         \App\Models\JuicioHistorialEstado::create([

@@ -24,13 +24,26 @@ class AudienciaObserver
             : 'sin fecha';
     }
 
-    public function created(Audiencia $a): void
+    private function destinatariosAgenda(Audiencia $a): array
     {
-        $destinatarios = Notificador::sinActor(array_merge(
-            $this->abogadosDelJuicio((int) $a->juicio_id),
+        $abogados = $this->abogadosDelJuicio((int) $a->juicio_id);
+        $actor = auth()->user();
+
+        if ($actor && ($actor->profile ?? null) === 'Abogado') {
+            $abogados[] = (int) $actor->id;
+        }
+
+        $otros = Notificador::sinActor(array_merge(
             Notificador::asistentes(),
             Notificador::admins()
         ));
+
+        return array_values(array_unique(array_merge($abogados, $otros)));
+    }
+
+    public function created(Audiencia $a): void
+    {
+        $destinatarios = $this->destinatariosAgenda($a);
 
         Notificador::enviar($destinatarios, Notificador::payload(
             'Nueva audiencia programada',
@@ -47,12 +60,8 @@ class AudienciaObserver
     public function updated(Audiencia $a): void
     {
         if ($a->wasChanged('fecha_hora') || ($a->wasChanged('estado') && $a->estado === 'Programada')) {
-            $destinatarios = array_merge(
-                $this->abogadosDelJuicio((int) $a->juicio_id),
-                Notificador::asistentes(),
-                Notificador::admins()
-            );
-            Notificador::enviar(Notificador::sinActor($destinatarios), Notificador::payload(
+            $destinatarios = $this->destinatariosAgenda($a);
+            Notificador::enviar($destinatarios, Notificador::payload(
                 'Audiencia reprogramada',
                 "Audiencia {$a->tipo_audiencia} para el {$this->fecha($a)}.",
                 '/calendario',

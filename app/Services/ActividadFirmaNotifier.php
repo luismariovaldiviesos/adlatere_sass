@@ -52,6 +52,6 @@ class ActividadFirmaNotifier
             ->map(fn ($id) => (int) $id)
             ->all();
 
-        return Notificador::sinActor(array_merge($patrocinadores, Notificador::admins()));
+        return Notificador::sinActor($patrocinadores);
     }
 }
