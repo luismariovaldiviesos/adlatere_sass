@@ -170,6 +170,54 @@
                 @enderror
             </div>
 
+            <div class="col-span-12 border-t pt-4 mt-2">
+                <h3 class="font-medium text-base mb-3">Firma electrónica de actividades</h3>
+                <div class="grid grid-cols-12 gap-4">
+                    <div class="col-span-12 md:col-span-4">
+                        <label class="form-label">Política de firma</label>
+                        <select wire:model="firma_actividades_modo" class="form-control">
+                            <option value="manual">Manual: el abogado elige el certificado</option>
+                            <option value="predeterminado">Predeterminado: despacho, pero puede cambiarlo</option>
+                            <option value="automatico">Automático: siempre certificado del despacho</option>
+                        </select>
+                        @error('firma_actividades_modo')
+                            <x-alert msg="{{ $message }}" />
+                        @enderror
+                    </div>
+
+                    <div class="col-span-12 md:col-span-8 flex items-center">
+                        <label class="flex items-center gap-2 text-sm">
+                            <input type="checkbox" wire:model="firma_actividades_mismo_certificado" class="form-check-input">
+                            Usar el mismo certificado de facturación para firmar actividades
+                        </label>
+                    </div>
+
+                    @if(!$firma_actividades_mismo_certificado)
+                        <div class="col-span-12 md:col-span-4">
+                            <label class="form-label">Certificado para actividades (.p12/.pfx)</label>
+                            <input type="file" wire:model="firma_actividades_cert_file" accept=".p12,.pfx" class="form-control">
+                            <div wire:loading wire:target="firma_actividades_cert_file" class="text-theme-9 text-sm">Subiendo archivo...</div>
+                            @if(is_string($firma_actividades_cert_file) && $firma_actividades_cert_file)
+                                <div class="text-xs text-gray-500 mt-1">Archivo actual: {{ $firma_actividades_cert_file }}</div>
+                            @endif
+                            @error('firma_actividades_cert_file')
+                                <x-alert msg="{{ $message }}" />
+                            @enderror
+                        </div>
+                        <div class="col-span-12 md:col-span-4">
+                            <label class="form-label">Contraseña del certificado para actividades</label>
+                            <input type="password" wire:model="firma_actividades_cert_password" class="form-control" autocomplete="new-password">
+                            @error('firma_actividades_cert_password')
+                                <x-alert msg="{{ $message }}" />
+                            @enderror
+                        </div>
+                    @endif
+                </div>
+                <p class="text-xs text-gray-500 mt-2">
+                    La contraseña del certificado se solicitará en cada firma de actividad. No se usará automáticamente.
+                </p>
+            </div>
+
             <div class="col-span-4">
                 <label  class="form-label">Imágen (Logo Tickets)</label>
                 <input wire:model="logo" accept="image/x-png,image/jpeg,image/jpg" class="form-control" type="file">

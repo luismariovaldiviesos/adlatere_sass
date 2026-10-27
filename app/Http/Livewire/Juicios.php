@@ -112,6 +112,10 @@ class Juicios extends Component
     public $showFirmarModal = false;
     public $actividadAFirmar = null;
     public $firmaPasswordConfirm = '';
+    public $firmaOrigen = 'personal';
+    public $firmaModo = 'manual';
+    public $firmaOpciones = [];
+    public $firmaArchivoPersonal;
 
     public function mount()
     {
@@ -122,6 +126,17 @@ class Juicios extends Component
         
         if($this->selected_id > 0) {
             $this->cargarJuicioMaestro($this->selected_id, true);
+        }
+
+        $juicioId = (int) request()->query('juicio', 0);
+        if ($juicioId > 0) {
+            $juicio = Juicio::find($juicioId);
+            if ($juicio) {
+                $this->Edit($juicio);
+                if ($this->juicio) {
+                    $this->tab = 'actividades';
+                }
+            }
         }
     }
 
@@ -1567,68 +1582,90 @@ public function descargarPdf(Audiencia $audiencia)
         $this->juicioRoadmap = null;
     }
 
+   public function updatedFirmaArchivoPersonal(): void
+{
+    if ($this->firmaArchivoPersonal) {
+        $this->validateOnly('firmaArchivoPersonal', [
+            'firmaArchivoPersonal' => 'file|mimes:p12,pfx|max:2048',
+        ], [
+            'firmaArchivoPersonal.mimes' => 'El archivo debe ser .p12 o .pfx.',
+            'firmaArchivoPersonal.max' => 'El archivo no debe superar 2 MB.',
+        ]);
+    }
+}
+
    // Abrir modal para firmar actividad
 public function abrirModalFirmar($actividadId)
 {
-     \Log::info('ABRIR MODAL FIRMAR', ['actividadId' => $actividadId, 'user' => auth()->id()]);
-   
-    $actividad = \App\Models\Actividad::with('tipoActividad')->find($actividadId);
-    
+    $actividad = \App\Models\Actividad::with(['tipoActividad', 'juicio.abogados'])->find($actividadId);
+
     if (!$actividad) {
         $this->noty('Actividad no encontrada', 'noty', false, 'error');
         return;
     }
-    if (!$actividad->tipoActividad->es_firmable) {
-        $this->noty('Este tipo de actividad no es firmable', 'noty', false, 'error');
-        return;
-    }
-    if ($actividad->estado_firma === 'firmada') {
-        $this->noty('La actividad ya está firmada', 'noty', false, 'warning');
-        return;
-    }
-    // Validar que sea abogado patrocinador
-    if (!$actividad->juicio->abogados()->where('user_id', auth()->id())->whereRaw("TRIM(LOWER(rol_en_juicio)) LIKE ?", ['%abogado%patrocinador%'])->exists())
-        {
-        $this->noty('Solo el abogado patrocinador puede firmar', 'noty', false, 'error');
-        return;
-    }
-    // Solo un usuario con perfil de abogado puede firmar (aunque esté vinculado)
-    if (!$this->esAbogado()) {
-        $this->noty('Solo un usuario con perfil de abogado puede firmar.', 'noty', false, 'error');
-        return;
-    }
-    // Validar certificado
-    if (empty(auth()->user()->firma_path) || empty(auth()->user()->firma_password)) {
-        $this->noty('Configure su certificado digital en Perfil', 'noty', false, 'error');
+
+    $service = app(\App\Services\ActividadSignatureService::class);
+    $opciones = $service->opcionesFirma($actividad, auth()->user());
+
+    if (!$opciones['puede_firmar']) {
+        $this->noty($opciones['mensaje'] ?: 'No puede firmar esta actividad.', 'noty', false, 'error');
         return;
     }
 
     $this->actividadAFirmar = $actividad;
-   $this->showFirmarModal = true;
+    $this->firmaOpciones = $opciones;
+    $this->firmaModo = $opciones['modo'];
+    $this->firmaOrigen = $opciones['predeterminado']
+        ?: ($opciones['personal']['disponible'] ? 'personal' : 'despacho');
+    $this->showFirmarModal = true;
     $this->firmaPasswordConfirm = '';
-    // FORZAR RE-RENDER Y EVENTO AL NAVEGADOR
+    $this->firmaArchivoPersonal = null;
     $this->dispatchBrowserEvent('modal-firmar-abrir', ['actividadId' => $actividadId]);
 }
 
 // Confirmar firma con contraseña del certificado
 public function confirmarFirma()
 {
-    if (auth()->user()->cannot('firmar_actividad')) return;
-    $this->validate(['firmaPasswordConfirm' => 'required'], [
-        'firmaPasswordConfirm.required' => 'Ingrese la contraseña de su certificado',
+    $this->validate([
+        'firmaOrigen' => 'required|in:personal,despacho',
+        'firmaPasswordConfirm' => 'required|string',
+        'firmaArchivoPersonal' => 'nullable|file|mimes:p12,pfx|max:2048',
+    ], [
+        'firmaOrigen.required' => 'Seleccione el certificado con el que firmará.',
+        'firmaPasswordConfirm.required' => 'Ingrese la contraseña del certificado seleccionado.',
+        'firmaArchivoPersonal.mimes' => 'El archivo debe ser .p12 o .pfx.',
+        'firmaArchivoPersonal.max' => 'El archivo no debe superar 2 MB.',
     ]);
+
+    $personalPath = null;
+    if ($this->firmaOrigen === 'personal') {
+        $savedPath = auth()->user()->firma_path;
+        $hasSaved = $savedPath && \Illuminate\Support\Facades\Storage::disk('local')->exists($savedPath);
+
+        if (!$this->firmaArchivoPersonal && !$hasSaved) {
+            $this->addError('firmaArchivoPersonal', 'Seleccione su archivo de certificado personal.');
+            return;
+        }
+
+        if ($this->firmaArchivoPersonal) {
+            $personalPath = $this->firmaArchivoPersonal->getRealPath();
+        }
+    }
 
     try {
         $service = app(\App\Services\ActividadSignatureService::class);
-        $service->firmar($this->actividadAFirmar, auth()->user());
-        
+        $service->firmar($this->actividadAFirmar, auth()->user(), $this->firmaOrigen, $this->firmaPasswordConfirm, $personalPath);
+
         $this->showFirmarModal = false;
         $this->firmaPasswordConfirm = '';
+        $this->firmaOpciones = [];
+        $this->firmaArchivoPersonal = null;
+        $this->actividadAFirmar = null;
         $this->noty('Actividad firmada correctamente', 'noty', false, 'success');
-        
+
         // Refrescar solo actividades y abogados (lo único que pudo cambiar)
         if ($this->juicio) $this->juicio->load('actividades.tipoActividad', 'abogados');
-        
+
     } catch (\Exception $e) {
         \Log::error('Error firmando actividad: ' . $e->getMessage());
         $this->addError('firmaPasswordConfirm', $e->getMessage());
@@ -1640,6 +1677,8 @@ public function cancelarFirma()
 {
     $this->showFirmarModal = false;
     $this->firmaPasswordConfirm = '';
+    $this->firmaOpciones = [];
+    $this->firmaArchivoPersonal = null;
     $this->actividadAFirmar = null;
 }
 
@@ -1660,7 +1699,7 @@ public function descargarFirmado($actividadId)
     }
     return response()->streamDownload(function () use ($actividad) {
         echo \Storage::disk('actividades/firmados')->get($actividad->pdf_firmado_path);
-    }, "actividad_{$actividad->id}_firmado.pdf", [
+    }, $actividad->nombrePdf(), [
         'Content-Type' => 'application/pdf',
     ]);
 }
@@ -1678,7 +1717,7 @@ public function descargarFirmado($actividadId)
         $this->registrarDescargaActividad($actividad, 'PDF');
         return response()->streamDownload(function () use ($pdfBytes) {
             echo $pdfBytes;
-        }, "actividad_{$actividad->id}.pdf", ['Content-Type' => 'application/pdf']);
+        }, $actividad->nombrePdf(), ['Content-Type' => 'application/pdf']);
     }
 
     // Descargar actividad en Word (HTML compatible, sin almacenar)

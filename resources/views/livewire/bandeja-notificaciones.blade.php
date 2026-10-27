@@ -15,6 +15,7 @@
                 <option value="consulta">Consultas</option>
                 <option value="audiencia">Audiencias</option>
                 <option value="juicio">Casos</option>
+                <option value="firma">Firmas</option>
             </select>
         </div>
 

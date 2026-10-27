@@ -33,6 +33,7 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\Tarea::observe(\App\Observers\TareaObserver::class);
         \App\Models\Consulta::observe(\App\Observers\ConsultaObserver::class);
         \App\Models\Audiencia::observe(\App\Observers\AudienciaObserver::class);
+        \App\Models\Actividad::observe(\App\Observers\ActividadObserver::class);
 
         // GLOBAL FIX FOR LIVEWIRE & ASSETS (Local & Ngrok)
         // Always force the asset/app URL to match the current request root.

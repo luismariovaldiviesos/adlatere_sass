@@ -16,6 +16,11 @@ class Settings extends Component
 
     public $logo, $leyend, $printer, $selected_id, $logoPreview, $annulment_days, $enable_caja, $secuencial_factura;
     public $rimpe_type, $agente_retencion; // [NEW]
+    public $cert_file, $cert_password;
+    public $firma_actividades_modo = 'manual';
+    public $firma_actividades_mismo_certificado = true;
+    public $firma_actividades_cert_file;
+    public $firma_actividades_cert_password;
 
     public function mount()
     {
@@ -50,6 +55,12 @@ class Settings extends Component
             $this->secuencial_factura = $info->secuencial_factura;
             $this->rimpe_type = $info->rimpe_type; // [NEW]
             $this->agente_retencion = $info->agente_retencion; // [NEW]
+            $this->firma_actividades_modo = $info->firma_actividades_modo ?: 'manual';
+            $this->firma_actividades_mismo_certificado = $info->firma_actividades_mismo_certificado === null
+                ? true
+                : (bool) $info->firma_actividades_mismo_certificado;
+            $this->firma_actividades_cert_file = $info->firma_actividades_cert_file;
+            $this->firma_actividades_cert_password = null;
         }
     }
 
@@ -57,6 +68,18 @@ class Settings extends Component
     {
         return view('livewire.settings.component')
         ->layout('layouts.theme.app');
+    }
+
+    public function updatedFirmaActividadesCertFile(): void
+    {
+        if ($this->firma_actividades_cert_file && !is_string($this->firma_actividades_cert_file)) {
+            $this->validateOnly('firma_actividades_cert_file', [
+                'firma_actividades_cert_file' => 'file|mimes:p12,pfx|max:2048',
+            ], [
+                'firma_actividades_cert_file.mimes' => 'El archivo debe ser .p12 o .pfx.',
+                'firma_actividades_cert_file.max' => 'El archivo no debe superar 2 MB.',
+            ]);
+        }
     }
 
     public function updatedCertFile() {
@@ -101,7 +124,11 @@ class Settings extends Component
             'obligadoContabilidad' => 'required|max:2',
             'cert_file' => 'nullable', // Add basic rule to allow file processing
             'rimpe_type' => 'required', // [NEW]
-            'agente_retencion' => 'nullable|max:20' // [NEW]
+            'agente_retencion' => 'nullable|max:20', // [NEW]
+            'firma_actividades_modo' => 'required|in:manual,predeterminado,automatico',
+            'firma_actividades_mismo_certificado' => 'boolean',
+            'firma_actividades_cert_file' => 'nullable',
+            'firma_actividades_cert_password' => 'nullable|string',
 
         ];
 
@@ -127,6 +154,8 @@ class Settings extends Component
             'contribuyenteEspecial.max' => 'El codigo contribuyente especial debe tener máximo 13 caracteres',
             'obligadoContabilidad.required' => 'Campo requerido',
             'obligadoContabilidad.max' => 'El campo debe tener máximo 2 caracteres',
+            'firma_actividades_modo.required' => 'Seleccione la política de firma de actividades.',
+            'firma_actividades_modo.in' => 'La política de firma seleccionada no es válida.',
 
 
         ];
@@ -135,6 +164,26 @@ class Settings extends Component
    
         // Obtener configuración existente
         $config = Setting::first();
+
+        $nuevoCertificadoActividades = $this->firma_actividades_cert_file
+            && !is_string($this->firma_actividades_cert_file);
+        $archivoActividadesActual = $config->firma_actividades_cert_file ?? null;
+        $passwordActividadesActual = $config->firma_actividades_cert_password ?? null;
+
+        if (!$this->firma_actividades_mismo_certificado) {
+            if (!$nuevoCertificadoActividades && !$archivoActividadesActual) {
+                $this->addError('firma_actividades_cert_file', 'Seleccione el certificado para firmar actividades.');
+            }
+            if ($nuevoCertificadoActividades && empty($this->firma_actividades_cert_password)) {
+                $this->addError('firma_actividades_cert_password', 'Ingrese la contraseña del nuevo certificado.');
+            } elseif (empty($this->firma_actividades_cert_password) && !$passwordActividadesActual) {
+                $this->addError('firma_actividades_cert_password', 'Ingrese la contraseña del certificado para firmar actividades.');
+            }
+
+            if ($this->getErrorBag()->isNotEmpty()) {
+                return;
+            }
+        }
         
         // Manejo de Certificado
         $certFileName = null;
@@ -152,6 +201,18 @@ class Settings extends Component
                  $certFileName = $this->cert_file;
             }
         }
+
+        $firmaCertFileName = $archivoActividadesActual;
+        if ($nuevoCertificadoActividades) {
+            $firmaCertFileName = 'firma_actividades_' . $this->firma_actividades_cert_file->getClientOriginalName();
+            $this->firma_actividades_cert_file->storeAs('', $firmaCertFileName, 'certificados');
+        } elseif (is_string($this->firma_actividades_cert_file)) {
+            $firmaCertFileName = $this->firma_actividades_cert_file;
+        }
+
+        $firmaCertPassword = !empty($this->firma_actividades_cert_password)
+            ? $this->firma_actividades_cert_password
+            : $passwordActividadesActual;
 
         $data = [
             'razonSocial' => $this->razonSocial,
@@ -175,7 +236,11 @@ class Settings extends Component
             'enable_caja' => $this->enable_caja ? 1 : 0,
             'secuencial_factura' => $this->secuencial_factura,
             'rimpe_type' => $this->rimpe_type, // [NEW]
-            'agente_retencion' => $this->agente_retencion // [NEW]
+            'agente_retencion' => $this->agente_retencion, // [NEW]
+            'firma_actividades_modo' => $this->firma_actividades_modo,
+            'firma_actividades_mismo_certificado' => $this->firma_actividades_mismo_certificado ? 1 : 0,
+            'firma_actividades_cert_file' => $firmaCertFileName,
+            'firma_actividades_cert_password' => $firmaCertPassword,
         ];
 
         if ($config) {
@@ -185,6 +250,9 @@ class Settings extends Component
             $config = Setting::create($data);
             $this->selected_id = $config->id; 
         }
+
+        $this->cert_file = $certFileName;
+        $this->firma_actividades_cert_file = $firmaCertFileName;
 
         // Manejo de Logo
         if ($this->logo != null && !is_string($this->logo)) { // Ensure it is an upload

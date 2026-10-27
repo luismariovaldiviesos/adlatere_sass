@@ -3,23 +3,40 @@
 <head>
 <meta charset="utf-8">
 <style>
-@page { margin: 2cm; }
-body { font-family: 'DejaVu Sans', sans-serif; font-size: 11pt; line-height: 1.5; color: #111; }
-.header { text-align: center; border-bottom: 2px solid #333; padding-bottom: 10px; margin-bottom: 20px; }
-.header h2 { margin: 0; font-size: 18pt; }
-.header small { color: #666; }
+@page { margin: 2cm 2cm 2.2cm 2cm; }
+body { font-family: 'DejaVu Sans', sans-serif; font-size: 10.5pt; line-height: 1.5; color: #111; }
+.header { text-align: center; margin-bottom: 18px; }
+.company-logo { width: 120px; max-height: 60px; }
+.company-name { font-size: 13pt; font-weight: bold; color: #1e3a8a; }
+.activity-type { margin: 10px 0 0; font-size: 16pt; font-weight: bold; text-transform: uppercase; letter-spacing: .4px; }
 .meta { background: #f8f9fa; border: 1px solid #dee2e6; border-radius: 4px; padding: 15px; margin-bottom: 20px; }
 .meta table { width: 100%; border-collapse: collapse; }
 .meta td { padding: 4px 8px; vertical-align: top; }
 .meta .label { font-weight: bold; width: 180px; color: #333; }
-.contenido { border: 1px solid #ccc; border-radius: 4px; padding: 20px; min-height: 200px; }
-.footer { margin-top: 30px; padding-top: 15px; border-top: 1px solid #999; font-size: 9pt; color: #666; }
+.contenido { min-height: 200px; }
+.footer { position: fixed; bottom: 0; left: 0; right: 0; font-size: 7pt; color: #666; text-align: center; }
 </style>
 </head>
 <body>
+@php
+    $empresa = $empresa ?? \App\Models\Setting::first();
+    $logoPath = ($empresa && $empresa->logo) ? public_path($empresa->logo) : null;
+    $logoData = null;
+
+    if ($logoPath && is_file($logoPath)) {
+        $mime = function_exists('mime_content_type') ? (@mime_content_type($logoPath) ?: 'image/png') : 'image/png';
+        $logoData = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($logoPath));
+    }
+
+    $nombreDespacho = $empresa->nombreComercial ?? $empresa->razonSocial ?? null;
+@endphp
 <div class="header">
-    <h2>ACTUACIÓN PROCESAL</h2>
-    <small>{{ $actividad->tipoActividad->nombre ?? 'Actividad' }}</small>
+    @if($logoData)
+        <img src="{{ $logoData }}" class="company-logo" alt="Logo">
+    @else
+        <div class="company-name">{{ $nombreDespacho ?: 'Sin logo' }}</div>
+    @endif
+    <h1 class="activity-type">{{ $actividad->tipoActividad->nombre ?? 'Actividad' }}</h1>
 </div>
 <div class="meta">
 <table>
@@ -36,9 +53,7 @@ body { font-family: 'DejaVu Sans', sans-serif; font-size: 11pt; line-height: 1.5
 {!! $actividad->contenido !!}
 </div>
 <div class="footer">
-<p><strong>Firmado digitalmente por:</strong> {{ $actividad->user->name ?? '—' }}</p>
-<p>CI: {{ $actividad->user->ci ?? '—' }} | Fecha: {{ now()->format('d/m/Y H:i') }}</p>
-<p>Este documento cuenta con firma electrónica avanzada según normativa vigente.</p>
+Elaborado por: {{ $actividad->user->name ?? '—' }} CI: {{ $actividad->user->ci ?? '—' }} | Fecha de elaboración: {{ now()->format('d/m/Y H:i') }}
 </div>
 </body>
 </html>

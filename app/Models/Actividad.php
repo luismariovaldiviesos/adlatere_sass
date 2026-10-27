@@ -18,7 +18,8 @@ class Actividad extends Model
         'fecha_actividad',
         'descripcion',
         'contenido',
-        'archivo', 'estado_firma', 'firmado_por_user_id', 'firmado_en', 
+        'archivo', 'estado_firma', 'firma_origen', 'firma_titular',
+        'firmado_por_user_id', 'firmado_en',
         'pdf_original_path', 'pdf_firmado_path', 'firma_hash', 'firma_metadatos'
         
     ];
@@ -90,9 +91,30 @@ class Actividad extends Model
         return $query->where('estado_firma', 'pendiente');
    }
 
-   public function scopeFirmadas($query) {
+    public function scopeFirmadas($query) {
         return $query->where('estado_firma', 'firmada');
-   }
+    }
+
+    public function nombrePdf(): string
+    {
+        $this->loadMissing(['juicio.clientes', 'juicio.actores', 'juicio.demandados', 'tipoActividad']);
+
+        $base = $this->juicio->cod_satje ?? null;
+
+        if (!$base && $this->juicio) {
+            $cliente = $this->juicio->clientes->first()
+                ?: $this->juicio->actores->first()
+                ?: $this->juicio->demandados->first();
+            $base = $cliente->businame ?? null;
+        }
+
+        $base = $base ?: ($this->tipoActividad->nombre ?? 'actividad');
+        $fecha = $this->firmado_en
+            ? \Carbon\Carbon::parse($this->firmado_en)
+            : ($this->created_at ?: now());
+
+        return \Illuminate\Support\Str::slug($base . '_' . $fecha->format('Y-m-d')) . '.pdf';
+    }
 
    public function juicio(){
         return $this->belongsTo(Juicio::class, 'juicio_id');

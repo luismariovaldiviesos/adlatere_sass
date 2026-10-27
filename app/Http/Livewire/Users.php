@@ -29,7 +29,8 @@ class Users extends Component
 
     public $firma_archivo;
     public $firma_password;
-    public $tieneFirma = false;        // ← NUEVO: para mostrar estado en edición
+    public $tieneFirma = false;
+    public $puedeFirmarDespacho = false;
 
         public $requiereReemplazo = false, $reemplazo_id, $casosAfectados = [];
 
@@ -85,7 +86,7 @@ class Users extends Component
         $this->resetPage();
         $this->reset('name','ci','phone', 'status','selected_id','temppass','search','componentName', 
         'email','password','profile','form','especialidadesSeleccionadas','searchEspecialidad', 
-        'firma_archivo', 'firma_password', 'tieneFirma', // ← AGREGADO tieneFirma
+        'firma_archivo', 'firma_password', 'tieneFirma', 'puedeFirmarDespacho',
         'requiereReemplazo', 'reemplazo_id', 'casosAfectados' );  
         $this->profile = 'cajero';
         $this->status = 'ACTIVE';
@@ -104,8 +105,8 @@ class Users extends Component
         $this->temppass = $user->password;
         $this->especialidadesSeleccionadas = $user->especialidades->pluck('id')->toArray();
         
-        // ← NUEVO: Cargar estado de firma actual
         $this->tieneFirma = !empty($user->firma_path);
+        $this->puedeFirmarDespacho = (bool) $user->puede_firmar_despacho;
         
         $this->form = true;
         $this->action = 'Editar';
@@ -170,6 +171,7 @@ class Users extends Component
                 'profile' =>  $this->profile,
                 'status' => $this->status,
                 'password' => strlen($this->password) > 0 ? bcrypt($this->password) : $this->temppass,
+                'puede_firmar_despacho' => ($this->profile === 'Abogado' && $this->puedeFirmarDespacho) ? 1 : 0,
                 // Los campos de firma se guardan abajo condicionalmente
             ]
         );

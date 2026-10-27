@@ -42,6 +42,7 @@ class User extends Authenticatable
         'password',
         'firma_path',       // ← AGREGAR
         'firma_password',   // ← AGREGAR
+        'puede_firmar_despacho',
 
     ];
 
@@ -63,6 +64,7 @@ class User extends Authenticatable
      */
     protected $casts = [
         'email_verified_at' => 'datetime',
+        'puede_firmar_despacho' => 'boolean',
     ];
 
 

@@ -129,6 +129,16 @@
         <x-alert msg="{{ $message }}" />
     @enderror
 </div>
+
+@if($profile === 'Abogado')
+<div>
+    <label class="flex items-center gap-2 text-sm">
+        <input type="checkbox" wire:model="puedeFirmarDespacho" class="form-check-input">
+        Puede firmar actividades con el certificado del despacho
+    </label>
+    <small class="text-muted">Configuración individual. Requiere que el certificado institucional esté configurado en Empresa.</small>
+</div>
+@endif
                 </div>
 
              <div class="mt-4">

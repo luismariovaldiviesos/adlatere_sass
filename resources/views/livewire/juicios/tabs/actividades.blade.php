@@ -105,6 +105,8 @@
     @php
         $hayJuicio = isset($juicio) && $juicio;
         $userId = auth()->id();
+        $esAdmin = auth()->user()->profile === 'Admin'
+            || (method_exists(auth()->user(), 'hasRole') && auth()->user()->hasRole('Admin'));
         $esAbogado = $hayJuicio ? $juicio->abogados->contains(function($a) use ($userId) {
             return (int) $a->id === (int) $userId
                 && str_contains(strtolower(trim($a->pivot->rol_en_juicio ?? '')), 'abogado')
@@ -176,7 +178,9 @@
                                 $esFirmable = $act->tipoActividad->es_firmable ?? false;
                                 $estadoFirma = strtolower($act->estado_firma ?? 'no_requerida');
                                 $yaFirmada = $estadoFirma === 'firmada';
-                                $puedeFirmar = $esFirmable && !$yaFirmada && $esAbogadoPatro;
+                                $puedeFirmar = $esFirmable && !$yaFirmada
+                                    && ($esAdmin || $esAbogadoPatro)
+                                    && (auth()->user()->can('firmar_actividad') || $esAdmin || auth()->user()->puede_firmar_despacho);
                             @endphp
 
                             @if($yaFirmada)
@@ -185,17 +189,15 @@
                                         <i class="fas fa-check-circle mr-1"></i> Firmada
                                     </span>
                                     @if($act->pdf_firmado_path)
-                                       <a href="{{ route('tenant.media', ['path' => 'actividades/firmados/' . $act->pdf_firmado_path]) }}" target="_blank" class="btn btn-sm btn-primary text-white shadow-md" title="Ver Documento Firmado">
+                                       <a href="{{ route('actividades.pdf.firmado', $act) }}" target="_blank" class="btn btn-sm btn-primary text-white shadow-md" title="Ver Documento Firmado">
                                             <i class="fas fa-file-pdf mr-1"></i> Ver PDF
                                         </a>
                                     @endif
                                 </div>
                             @elseif($puedeFirmar)
-                                @can('firmar_actividad')
                                 <button wire:click="abrirModalFirmar({{ $act->id }})" class="btn btn-sm btn-warning" title="Firmar digitalmente">
                                     <i data-lucide="signature" class="w-4 h-4 mr-1"></i> Firmar
                                 </button>
-                                @endcan
                             @elseif($esFirmable)
                                 <span class="badge badge-warning badge-outline text-xs" title="Solo abogado patrocinador puede firmar">
                                     <i data-lucide="lock" class="w-3 h-3 mr-1"></i> Solo abogado
@@ -217,31 +219,6 @@
         </div>
     @endif
 </div>
-
-{{-- MODAL FIRMAR (FUERA DE TODO, por debajo del histórico) --}}
-@if($showFirmarModal)
-<div class="fixed top-0 left-0 w-full h-full flex items-center justify-center" style="z-index: 90; background: rgba(0,0,0,0.6);">
-    <div class="bg-white rounded-lg p-6 relative shadow-2xl overflow-y-auto" style="width: 90%; max-width: 500px;">
-        <h3 class="font-bold text-xl mb-4 text-gray-800 border-b pb-2">Firmar Actividad Digitalmente</h3>
-        <p class="text-sm text-gray-600 mb-4">
-            <strong>{{ $actividadAFirmar->tipoActividad->nombre }}</strong><br>
-            {{ $actividadAFirmar->descripcion }}<br>
-            <small>Fecha: {{ $actividadAFirmar->fecha_actividad->format('d/m/Y H:i') }}</small>
-        </p>
-        <div class="mt-4">
-            <label class="font-bold text-gray-700 block mb-2">Confirmar contraseña del certificado</label>
-            <input type="password" wire:model="firmaPasswordConfirm" class="form-control w-full h-10" autocomplete="new-password">
-            @error('firmaPasswordConfirm') <p class="text-red-500 text-xs mt-1">{{ $message }}</p> @enderror
-        </div>
-        <div class="mt-6 flex justify-end">
-            <button wire:click="$set('showFirmarModal', false)" class="btn btn-outline-secondary mr-2 px-4 py-2">Cancelar</button>
-            <button wire:click="confirmarFirma" class="btn btn-primary px-4 py-2">
-                <i class="fas fa-signature mr-2"></i> Firmar y Guardar
-            </button>
-        </div>
-    </div>
-</div>
-@endif
 
 {{-- Scripts para manejar el editor Quill --}}
 <script>

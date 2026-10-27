@@ -2,9 +2,11 @@
 
 namespace App\Console\Commands;
 
+use App\Models\Actividad;
 use App\Models\Audiencia;
 use App\Models\Consulta;
 use App\Models\Tarea;
+use App\Services\ActividadFirmaNotifier;
 use App\Services\Notificador;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -20,10 +22,24 @@ class NotificacionesRecordatorios extends Command
         $this->recordatoriosTareas();
         $this->recordatoriosAudiencias();
         $this->recordatoriosConsultas();
+        $this->recordatoriosActividadesFirma();
 
         $this->info('Recordatorios procesados: ' . now()->format('d/m/Y H:i'));
 
         return 0;
+    }
+
+    private function recordatoriosActividadesFirma(): void
+    {
+        Actividad::with(['tipoActividad', 'juicio'])
+            ->where('estado_firma', 'pendiente')
+            ->whereHas('tipoActividad', fn ($q) => $q->where('es_firmable', true))
+            ->orderBy('id')
+            ->chunkById(100, function ($actividades) {
+                foreach ($actividades as $actividad) {
+                    ActividadFirmaNotifier::notificarPendiente($actividad);
+                }
+            });
     }
 
     private function recordatoriosTareas(): void

@@ -80,6 +80,15 @@ class Notificador
         }
     }
 
+    public static function eliminarPorDedupe(string $dedupeKey): void
+    {
+        try {
+            DB::table('notifications')->where('dedupe_key', $dedupeKey)->delete();
+        } catch (\Throwable $e) {
+            \Log::warning('No se pudo eliminar la notificación: ' . $e->getMessage());
+        }
+    }
+
     public static function enviarAAdmins(array $data, ?string $dedupeKey = null): void
     {
         self::enviar(self::admins(), $data, $dedupeKey);

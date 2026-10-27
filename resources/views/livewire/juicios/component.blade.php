@@ -143,6 +143,136 @@
      {{-- CONTENEDOR PERMANENTE PARA EL MODAL --}}
         {{-- CONTENEDOR PERMANENTE PARA EL MODAL --}}
     <div>
+        @if($showFirmarModal)
+            <div wire:click.self="cancelarFirma" class="fixed top-0 left-0 w-full h-full flex items-center justify-center" style="z-index: 110; background-color: rgba(0,0,0,0.6);">
+                <div onclick="event.stopPropagation()" class="bg-white rounded-xl relative shadow-2xl overflow-y-auto border-2 border-slate-300" style="width: 90%; max-width: 800px; max-height: 90vh;">
+
+                    <div class="flex justify-between items-center px-6 py-3 mb-4 sticky top-0 z-10" style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%); border-radius: 0.7rem 0.7rem 0 0;">
+                        <h2 class="text-xl font-bold text-white">
+                            <i class="fas fa-signature mr-2"></i> Firmar actividad digitalmente
+                        </h2>
+                        <div class="flex items-center gap-2">
+                            <button type="button" wire:click="cancelarFirma" wire:loading.attr="disabled" wire:target="cancelarFirma" class="btn btn-sm px-4 font-bold" style="background-color: #60a5fa; color: #000; border: 1px solid #1e3a8a;">
+                                <span wire:loading.remove wire:target="cancelarFirma">Cerrar</span>
+                                <span wire:loading wire:target="cancelarFirma">Cerrando...</span>
+                            </button>
+                            <button type="button" wire:click="cancelarFirma" wire:loading.attr="disabled" wire:target="cancelarFirma" class="text-white hover:text-gray-200 text-3xl font-bold leading-none px-2" title="Cerrar">&times;</button>
+                        </div>
+                    </div>
+
+                    <div class="px-6 pb-5">
+                        <div class="mb-4">
+                            <div class="flex items-center justify-between gap-3 mb-2">
+                                <h3 class="font-bold text-slate-800">Escoja el certificado con el cual va a firmar la actividad</h3>
+                            </div>
+
+                            @if($firmaModo === 'automatico')
+                                <div class="rounded-lg border border-blue-200 bg-blue-50 p-3">
+                                    <div class="flex items-start gap-3">
+                                        <div class="w-9 h-9 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                                            <i class="fas fa-building"></i>
+                                        </div>
+                                        <div>
+                                            <div class="font-semibold text-slate-800">Certificado institucional obligatorio</div>
+                                            <p class="text-xs text-slate-600 mt-1">La política del despacho exige firmar con este certificado.</p>
+                                            <p class="text-sm text-slate-700 mt-1"><strong>Titular:</strong> {{ $firmaOpciones['despacho']['titular'] ?? '—' }}</p>
+                                            @if($firmaOpciones['despacho']['vencimiento'] ?? null)
+                                                <p class="text-xs text-slate-500">Vence: {{ $firmaOpciones['despacho']['vencimiento'] }}</p>
+                                            @endif
+                                        </div>
+                                    </div>
+                                </div>
+                            @else
+                                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    @if($firmaOpciones['despacho']['disponible'] ?? false)
+                                        <button type="button" wire:click="$set('firmaOrigen', 'despacho')"
+                                            aria-pressed="{{ $firmaOrigen === 'despacho' ? 'true' : 'false' }}"
+                                            class="relative w-full text-left rounded-lg border-2 p-3 cursor-pointer transition {{ $firmaOrigen === 'despacho' ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-200' : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50' }}">
+                                            <div class="flex items-start gap-3">
+                                                <div class="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 flex items-center justify-center shrink-0">
+                                                    <i class="fas fa-building"></i>
+                                                </div>
+                                                <div class="min-w-0 pr-7">
+                                                    <div class="font-semibold text-slate-800">Certificado del despacho</div>
+                                                    <div class="text-xs text-slate-600 mt-1 truncate">{{ $firmaOpciones['despacho']['titular'] ?? '—' }}</div>
+                                                    @if($firmaOpciones['despacho']['vencimiento'] ?? null)
+                                                        <div class="text-xs text-slate-500 mt-1">Vence: {{ $firmaOpciones['despacho']['vencimiento'] }}</div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            @if($firmaOrigen === 'despacho')
+                                                <span class="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm"><i class="fas fa-check text-xs"></i></span>
+                                            @endif
+                                        </button>
+                                    @endif
+
+                                    @if($firmaOpciones['personal']['permitido'] ?? false)
+                                        <button type="button" wire:click="$set('firmaOrigen', 'personal')"
+                                            aria-pressed="{{ $firmaOrigen === 'personal' ? 'true' : 'false' }}"
+                                            class="relative w-full text-left rounded-lg border-2 p-3 cursor-pointer transition {{ $firmaOrigen === 'personal' ? 'border-blue-600 bg-blue-50 ring-2 ring-blue-200' : 'border-slate-200 hover:border-blue-300 hover:bg-slate-50' }}">
+                                            <div class="flex items-start gap-3">
+                                                <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                                                    <i class="fas fa-id-card"></i>
+                                                </div>
+                                                <div class="min-w-0 pr-7">
+                                                    <div class="font-semibold text-slate-800">Mi certificado personal</div>
+                                                    @if($firmaOpciones['personal']['disponible'] ?? false)
+                                                        <div class="text-xs text-slate-600 mt-1 truncate">{{ $firmaOpciones['personal']['titular'] ?? '—' }}</div>
+                                                        @if($firmaOpciones['personal']['vencimiento'] ?? null)
+                                                            <div class="text-xs text-slate-500 mt-1">Vence: {{ $firmaOpciones['personal']['vencimiento'] }}</div>
+                                                        @endif
+                                                    @else
+                                                        <div class="text-xs text-slate-600 mt-1">Buscar certificado personal o de terceros .p12/.pfx</div>
+                                                    @endif
+                                                </div>
+                                            </div>
+                                            @if($firmaOrigen === 'personal')
+                                                <span class="absolute top-2.5 right-2.5 w-6 h-6 rounded-full bg-blue-600 text-white flex items-center justify-center shadow-sm"><i class="fas fa-check text-xs"></i></span>
+                                            @endif
+                                        </button>
+                                    @endif
+                                </div>
+                                @error('firmaOrigen') <p class="text-red-500 text-xs mt-2">{{ $message }}</p> @enderror
+                            @endif
+                        </div>
+
+                        @if($firmaModo !== 'automatico' && $firmaOrigen === 'personal' && !($firmaOpciones['personal']['disponible'] ?? false))
+                            <div class="mb-4 rounded-lg border border-slate-200 p-3">
+                                <label class="font-semibold text-slate-800 block mb-2">Buscar certificado personal</label>
+                                <input type="file" wire:model="firmaArchivoPersonal" accept=".p12,.pfx" class="form-control">
+                                <div wire:loading wire:target="firmaArchivoPersonal" class="text-primary text-sm mt-2">
+                                    <i class="fas fa-spinner fa-spin mr-1"></i> Cargando archivo...
+                                </div>
+                                @if($firmaArchivoPersonal)
+                                    <p class="text-xs text-emerald-700 mt-2"><i class="fas fa-check-circle mr-1"></i>Archivo seleccionado: {{ $firmaArchivoPersonal->getClientOriginalName() }}</p>
+                                @else
+                                    <p class="text-xs text-slate-500 mt-2">Selecciona el archivo .p12/.pfx que usarás para esta firma.</p>
+                                @endif
+                                @error('firmaArchivoPersonal') <p class="text-red-500 text-xs mt-2">{{ $message }}</p> @enderror
+                            </div>
+                        @endif
+
+                        <div>
+                            <label class="font-bold text-slate-800 block mb-2">
+                                <i class="fas fa-key text-amber-500 mr-1"></i>
+                                Contraseña del certificado {{ $firmaOrigen === 'despacho' ? 'del despacho' : 'personal' }}
+                            </label>
+                            <input type="password" wire:model="firmaPasswordConfirm" class="form-control w-full h-10" placeholder="Ingresa la contraseña del PKCS#12" autocomplete="new-password">
+                            @error('firmaPasswordConfirm') <p class="text-red-500 text-xs mt-2">{{ $message }}</p> @enderror
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-3 bg-slate-50 border-t border-slate-200 flex justify-end gap-2 sticky bottom-0" style="border-radius: 0 0 0.7rem 0.7rem;">
+                        <button type="button" wire:click="cancelarFirma" class="btn btn-outline-secondary px-4 py-2">Cancelar</button>
+                        <button type="button" wire:click="confirmarFirma" wire:loading.attr="disabled" wire:target="confirmarFirma" class="btn btn-primary px-5 py-2">
+                            <span wire:loading.remove wire:target="confirmarFirma"><i class="fas fa-signature mr-2"></i>Firmar y guardar</span>
+                            <span wire:loading wire:target="confirmarFirma"><i class="fas fa-spinner fa-spin mr-2"></i>Firmando...</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
+
         @if($showRoadmapModal && $juicioRoadmap)
             <!-- Fondo oscuro (clic fuera de la caja también cierra; sin blur para no relentizar con muchos items) -->
             <div id="roadmap-overlay" wire:click="closeRoadmap" onclick="if(event.target===this){cerrarRoadmapModal();}" class="fixed top-0 left-0 w-full h-full flex items-center justify-center" style="z-index: 100; background-color: rgba(0,0,0,0.6);">
