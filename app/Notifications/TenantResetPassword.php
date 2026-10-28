@@ -20,8 +20,8 @@ class TenantResetPassword extends Notification
 
     public function via($notifiable)
     {
-        if (env('SENDGRID_API_KEY')) {
-           $this->sendViaResend($notifiable);
+        if (config('services.resend.key')) {
+            $this->sendViaResend($notifiable);
             return []; // Handled manually
         }
         return ['mail'];
@@ -107,7 +107,7 @@ class TenantResetPassword extends Notification
         protected function sendViaResend($notifiable)
     {
         try {
-            $apiKey = env('RESEND_API_KEY');
+            $apiKey = config('services.resend.key');
             if (!$apiKey) return;
 
             $client = new \GuzzleHttp\Client();
@@ -117,7 +117,7 @@ class TenantResetPassword extends Notification
             ], false));
 
             $payload = [
-                'from' => "Facta SAAS <" . env('MAIL_FROM_ADDRESS', 'noreply@facta.ec') . ">",
+                'from' => config('services.resend.from_name', 'Facta SAAS') . " <" . config('services.resend.from', 'noreply@facta.ec') . ">",
                 'to' => [$notifiable->email],
                 'subject' => 'Restablecer Contraseña',
                 'html' => "Hola,<br><br>Recibes este correo porque solicitaste restablecer tu contraseña.<br><br>

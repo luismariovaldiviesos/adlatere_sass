@@ -143,13 +143,13 @@ class TenantSetupService
             //     Mail::to($data['admin_email'])->send(new WelcomeTenant($tenant, $user, $url));
             //     Log::info('[SETUP_SERVICE] Welcome Email Sent (SMTP Fallback) to: ' . $data['admin_email']);
             // }
-                        $resendKey = env('RESEND_API_KEY');
+            $resendKey = config('services.resend.key');
 
             if (!empty($resendKey)) {
                 Log::info('[SETUP_SERVICE] Dispatching Welcome Mail via Resend API');
                 
                 $payload = [
-                    'from' => "Facta SAAS <" . env('MAIL_FROM_ADDRESS', 'noreply@facta.ec') . ">",
+                    'from' => config('services.resend.from_name', 'Facta SAAS') . " <" . config('services.resend.from', 'noreply@facta.ec') . ">",
                     'to' => [$data['admin_email']],
                     'subject' => '¡Bienvenido a Facta!',
                     'html' => "Hola {$data['admin_name']},<br><br>Tu entorno ha sido creado exitosamente.<br>

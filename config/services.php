@@ -42,4 +42,10 @@ return [
         'key' => env('SENDGRID_API_KEY'),
     ],
 
+    'resend' => [
+        'key' => env('RESEND_API_KEY'),
+        'from' => env('MAIL_FROM_ADDRESS', 'noreply@facta.ec'),
+        'from_name' => env('MAIL_FROM_NAME', 'Facta'),
+    ],
+
 ];

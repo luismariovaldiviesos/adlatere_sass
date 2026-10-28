@@ -93,6 +93,13 @@
             window.livewire_app_url = "{{ request()->root() }}";
         </script>
         <livewire:scripts />
+        <script>
+            if (window.Livewire && window.Livewire.onPageExpired) {
+                window.Livewire.onPageExpired(function () {
+                    window.location.reload();
+                });
+            }
+        </script>
         <!-- BEGIN: JS Assets-->
             @include('layouts.theme.footer')
         <!-- END: JS Assets-->

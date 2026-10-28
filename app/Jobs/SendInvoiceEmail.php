@@ -98,7 +98,7 @@ class SendInvoiceEmail implements ShouldQueue
                 //     Log::error("[DEBUG_JOB] Error: SENDGRID_API_KEY no está configurado en el servidor (.env).");
                 //     throw new \Exception("Configuración de correo incompleta (API Key faltante).");
                 // }
-                                $resendKey = env('RESEND_API_KEY');
+                                $resendKey = config('services.resend.key');
 
                 if (!empty($resendKey)) {
                     $this->sendViaResendApi($resendKey, $pdfPath, $xmlPath, $settings);
@@ -201,8 +201,8 @@ class SendInvoiceEmail implements ShouldQueue
     {
         $client = new \GuzzleHttp\Client();
         
-        $fromEmail = env('MAIL_FROM_ADDRESS', 'noreply@facta.ec');
-        $fromName = $settings->razonSocial ?? 'Sistema de Facturación';
+        $fromEmail = config('services.resend.from') ?: env('MAIL_FROM_ADDRESS', 'noreply@facta.ec');
+        $fromName = config('services.resend.from_name') ?: ($settings->razonSocial ?? 'Sistema de Facturación');
         $replyTo = $settings->email ?? $fromEmail;
 
         Log::info("[DEBUG_JOB] Usando Remitente (From): " . $fromEmail);
