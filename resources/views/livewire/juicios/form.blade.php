@@ -5,6 +5,7 @@
     if (isset($juicio) && $juicio) {
         $juicio->loadMissing(['actividades.tipoActividad', 'audiencias', 'documentos', 'funcionarios', 'abogados.especialidades', 'participantes']);
     }
+
 @endphp
 <div id="juicio-form" x-data="{ tab: @entangle('tab').defer }" class="content space-y-6">
 
@@ -17,7 +18,7 @@
             </button>
             <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='juicio' }"  @click="tab='juicio'">Juicio</button>
             <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='sujetos' }"   @click="tab='sujetos'">Sujetos Procesales</button>
-           <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='actividades' }" @click="tab='actividades'; setTimeout(() => { if(typeof loadActividadQuillEditor === 'function') loadActividadQuillEditor(); }, 150)">Actividades</button>
+            <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='actividades' }" @click="tab='actividades'; setTimeout(() => { if(typeof loadActividadQuillEditor === 'function') loadActividadQuillEditor(); }, 150)">Actividades</button>
             <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='audiencias' }"     @click="tab='audiencias'">Audiencias</button>
             <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='documentos' }"   @click="tab='documentos'">Documentos</button>
             <button type="button" class=" px-6 py-2" :class="{ 'btn-primary': tab==='funcionarios' }" @click="tab='funcionarios'">Funcionarios</button>
@@ -25,6 +26,18 @@
 
         </div>
     </div>
+
+    @if(isset($faltantesBase) && count($faltantesBase))
+    <div class="intro-y box p-5 border-l-4 border-theme-12 bg-yellow-50">
+        <div class="flex items-start gap-3">
+            <i class="fas fa-lock text-theme-12 text-xl mt-1"></i>
+            <div>
+                <h3 class="font-bold text-theme-12">Trámite bloqueado</h3>
+                <p class="text-gray-700 mt-1">Complete la base del juicio antes de registrar actividades, audiencias, documentos o funcionarios. Falta: <strong>{{ implode(', ', $faltantesBase) }}</strong>.</p>
+            </div>
+        </div>
+    </div>
+    @endif
 
     {{-- GRID PRINCIPAL --}}
     <div class="grid grid-cols-12 gap-8 items-start">
@@ -35,7 +48,7 @@
                 @include('livewire.juicios.tabs.juicio')
             </div>
 
-             {{-- sujetos prpcesales --}}
+             {{-- sujetos procesales --}}
             <div class="intro-y box" x-show="tab==='sujetos'" x-cloak>
                 @include('livewire.juicios.tabs.sujetos')
             </div>
@@ -44,10 +57,6 @@
             <div class="intro-y box" x-show="tab==='actividades'" x-cloak>
                 @include('livewire.juicios.tabs.actividades')
             </div>
-
-          
-
-           
 
             {{-- audiencias --}}
             <div class="intro-y box" x-show="tab==='audiencias'" x-cloak>

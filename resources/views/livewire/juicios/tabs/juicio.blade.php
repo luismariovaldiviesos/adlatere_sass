@@ -1,20 +1,34 @@
+@php
+    $soloLectura = !($puedeEditarBase ?? false);
+@endphp
 <div class="p-8 grid grid-cols-12 gap-6">
+    @if($soloLectura)
+    <div class="col-span-12">
+        <div class="alert alert-info" role="alert">
+            @if(isset($juicio) && $juicio && $juicio->base_confirmada_at)
+            <strong>Base confirmada:</strong> la carátula y los sujetos procesales son inmutables. Este expediente está en modo solo lectura.
+            @else
+            <strong>Solo lectura:</strong> no tiene permiso para modificar la base de este juicio.
+            @endif
+        </div>
+    </div>
+    @endif
     <div class="col-span-12 md:col-span-12 grid grid-cols-12 gap-6">
         
         <div class="col-span-12 md:col-span-3">
             <label class="form-label text-base font-bold"># Proceso SATJE</label>
-            <input type="text" wire:model='cod_satje' class="form-control h-12 text-lg" placeholder="01333-202X-XXXXX">
+            <input type="text" wire:model.defer='cod_satje' class="form-control h-12 text-lg" placeholder="01333-202X-XXXXX" {{ $soloLectura ? 'disabled' : '' }}>
             @error('cod_satje') <x-alert msg="{{ $message }}" /> @enderror
         </div>
 
         <div class="col-span-12 md:col-span-3">
             <label class="form-label text-base font-bold">Fecha de Inicio / Sorteo</label>
-            <input type="date" wire:model='fecha_inicio' class="form-control h-12 text-lg">
+            <input type="date" wire:model.defer='fecha_inicio' class="form-control h-12 text-lg" {{ $soloLectura ? 'disabled' : '' }}>
             @error('fecha_inicio') <x-alert msg="{{ $message }}" /> @enderror
         </div>
            <div class="col-span-12 md:col-span-3">
             <label class="form-label text-base font-bold">Estado Procesal</label>
-            <select wire:model.live='estado_procesal_id' class="form-select h-12 text-lg">
+            <select wire:model.defer='estado_procesal_id' class="form-select h-12 text-lg" {{ $soloLectura ? 'disabled' : '' }}>
                 <option value="">Seleccione Estado...</option>
                 @foreach($estados_procesales as $e)
                     <option value="{{ $e->id }}">{{ $e->nombre }}</option>
@@ -25,7 +39,7 @@
 
         <div class="col-span-12 md:col-span-3">
             <label class="form-label text-base font-bold">Prioridad</label>
-            <select wire:model='prioridad' class="form-select h-12 text-lg">
+            <select wire:model.defer='prioridad' class="form-select h-12 text-lg" {{ $soloLectura ? 'disabled' : '' }}>
                 <option value="Baja">Baja</option>
                 <option value="Media">Media (Estándar)</option>
                 <option value="Alta">Alta</option>
@@ -38,27 +52,29 @@
 
         <div class="col-span-12 md:col-span-4">
             <label class="form-label text-base font-bold">Provincia</label>
-            <select wire:model.live='provincia_id' class="form-select h-12 text-lg">
+            <select wire:model='provincia_id' class="form-select h-12 text-lg" {{ $soloLectura ? 'disabled' : '' }}>
                 <option value="">Seleccione Provincia...</option>
                 @foreach($provincias as $p)
                     <option value="{{ $p->id }}">{{ $p->nombre }}</option>
                 @endforeach
             </select>
+            @error('provincia_id') <span class="text-theme-6 mt-1 block">{{ $message }}</span> @enderror
         </div>
 
         <div class="col-span-12 md:col-span-4">
             <label class="form-label text-base font-bold">Cantón</label>
-            <select wire:model.live='canton_id' class="form-select h-12 text-lg" {{ empty($cantones) ? 'disabled' : '' }}>
+            <select wire:model='canton_id' class="form-select h-12 text-lg" {{ $soloLectura || empty($cantones) ? 'disabled' : '' }}>
                 <option value="">Seleccione Cantón...</option>
                 @foreach($cantones as $c)
                     <option value="{{ $c->id }}">{{ $c->nombre }}</option>
                 @endforeach
             </select>
+            @error('canton_id') <span class="text-theme-6 mt-1 block">{{ $message }}</span> @enderror
         </div>
 
         <div class="col-span-12 md:col-span-4">
             <label class="form-label text-base font-bold">Unidad Judicial</label>
-            <select wire:model.live='unidad_id' class="form-select h-12 text-lg" {{ empty($unidades_judiciales) ? 'disabled' : '' }}>
+            <select wire:model='unidad_id' class="form-select h-12 text-lg" {{ $soloLectura || empty($unidades_judiciales) ? 'disabled' : '' }}>
                 <option value="">Seleccione Unidad...</option>
                 @foreach($unidades_judiciales as $u)
                     <option value="{{ $u->id }}">{{ $u->nombre }}</option>
@@ -71,27 +87,29 @@
 
         <div class="col-span-12 md:col-span-4">
             <label class="form-label text-base font-bold">Materia</label>
-            <select wire:model.live='materia_id' class="form-select h-12 text-lg">
+            <select wire:model='materia_id' class="form-select h-12 text-lg" {{ $soloLectura ? 'disabled' : '' }}>
                 <option value="">Seleccione Materia...</option>
                 @foreach($materias as $m)
                     <option value="{{ $m->id }}">{{ $m->nombre }}</option>
                 @endforeach
             </select>
+            @error('materia_id') <span class="text-theme-6 mt-1 block">{{ $message }}</span> @enderror
         </div>
 
         <div class="col-span-12 md:col-span-4">
             <label class="form-label text-base font-bold">Procedimiento</label>
-            <select wire:model.live='procedimiento_id' class="form-select h-12 text-lg" {{ empty($procedimientos) ? 'disabled' : '' }}>
+            <select wire:model='procedimiento_id' class="form-select h-12 text-lg" {{ $soloLectura || empty($procedimientos) ? 'disabled' : '' }}>
                 <option value="">Seleccione Procedimiento...</option>
                 @foreach($procedimientos as $p)
                     <option value="{{ $p->id }}">{{ $p->nombre }}</option>
                 @endforeach
             </select>
+            @error('procedimiento_id') <span class="text-theme-6 mt-1 block">{{ $message }}</span> @enderror
         </div>
 
         <div class="col-span-12 md:col-span-4">
             <label class="form-label text-base font-bold">Asunto Específico</label>
-            <select wire:model='asunto_id' class="form-select h-12 text-lg" {{ empty($asuntos) ? 'disabled' : '' }}>
+            <select wire:model.defer='asunto_id' class="form-select h-12 text-lg" {{ $soloLectura || empty($asuntos) ? 'disabled' : '' }}>
                 <option value="">Seleccione Asunto...</option>
                 @foreach($asuntos as $a)
                     <option value="{{ $a->id }}">{{ $a->nombre }}</option>
@@ -107,6 +125,7 @@
             </div>
         </div>
 
+        @if(!$soloLectura)
         <div class="col-span-12 flex justify-end mt-4">
             @if($editModeJuicio)
                 <button type="button" 
@@ -122,5 +141,6 @@
                 </button>
             @endif
         </div>
+        @endif
     </div>
 </div>

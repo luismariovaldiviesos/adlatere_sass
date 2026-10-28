@@ -166,6 +166,21 @@
                                 <h3 class="font-bold text-slate-800">Escoja el certificado con el cual va a firmar la actividad</h3>
                             </div>
 
+                            @if(($firmaOpciones['despacho']['permitido'] ?? false) && !($firmaOpciones['despacho']['disponible'] ?? false))
+                            <div class="mb-3 rounded-lg border border-amber-200 bg-amber-50 p-3">
+                                <div class="flex items-start gap-3">
+                                    <div class="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                                        <i class="fas fa-building"></i>
+                                    </div>
+                                    <div>
+                                        <div class="font-semibold text-slate-800">Certificado del despacho no disponible</div>
+                                        <p class="text-sm text-slate-700 mt-1">{{ $firmaOpciones['despacho']['motivo'] ?? 'El certificado del despacho no está configurado.' }}</p>
+                                        <p class="text-xs text-slate-500 mt-1">Debe configurarlo en Configuración &gt; Empresa &gt; Firma del despacho.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            @endif
+
                             @if($firmaModo === 'automatico')
                                 <div class="rounded-lg border border-blue-200 bg-blue-50 p-3">
                                     <div class="flex items-start gap-3">

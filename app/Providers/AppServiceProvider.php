@@ -23,12 +23,46 @@ class AppServiceProvider extends ServiceProvider
     }
 
     /**
+     * Algunos procesos web heredan APP_KEY vacío desde el servidor y Dotenv
+     * (inmutable) no lo reemplaza. Recuperamos la clave del .env antes de que
+     * EncryptCookies/sesión la necesiten.
+     */
+    private function ensureAppKey(): void
+    {
+        if (!empty(config('app.key'))) {
+            return;
+        }
+
+        $envPath = base_path('.env');
+        if (!is_file($envPath)) {
+            return;
+        }
+
+        foreach (file($envPath, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line) {
+            if (!str_starts_with(ltrim($line), 'APP_KEY=')) {
+                continue;
+            }
+
+            $value = trim(substr(ltrim($line), strlen('APP_KEY=')));
+            $value = trim($value, "\"'");
+
+            if ($value !== '') {
+                config(['app.key' => $value]);
+            }
+
+            return;
+        }
+    }
+
+    /**
      * Bootstrap any application services.
      *
      * @return void
      */
     public function boot()
     {
+        $this->ensureAppKey();
+
         // Observers de notificaciones internas
         \App\Models\Tarea::observe(\App\Observers\TareaObserver::class);
         \App\Models\Consulta::observe(\App\Observers\ConsultaObserver::class);
@@ -36,6 +70,7 @@ class AppServiceProvider extends ServiceProvider
         \App\Models\Actividad::observe(\App\Observers\ActividadObserver::class);
 
         // GLOBAL FIX FOR LIVEWIRE & ASSETS (Local & Ngrok)
+        // (Se conserva el resto de la configuración existente.)
         // Always force the asset/app URL to match the current request root.
         
         // Register Layout Component

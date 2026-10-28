@@ -13,12 +13,16 @@ class DatabaseSeeder extends Seeder
         if (function_exists('tenant') && tenant()) {
             $this->call(SistemaCoreSeeder::class);
             $this->call(PerfilesSeeder::class);
+            $this->call(AdminUserSeeder::class);
         } else {
             $this->call(PlanUnicoSeeder::class);
 
+            $email = env('SEED_CENTRAL_ADMIN_EMAIL') ?: 'admin@facta.com';
+            $password = env('SEED_CENTRAL_ADMIN_PASSWORD') ?: 'administrador';
+
             \App\Models\User::firstOrCreate(
-                ['email' => 'admin@facta.com'],
-                ['name' => 'Super Admin', 'password' => bcrypt('password')]
+                ['email' => $email],
+                ['name' => 'Super Admin', 'password' => bcrypt($password)]
             );
         }
     }

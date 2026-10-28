@@ -333,10 +333,13 @@ class CargaInicial extends Command
                 $j = \App\Models\Juicio::create([
                     'cod_satje' => $satje, 'asunto_id' => $asunto->id, 'unidad_id' => $unidad->id,
                     'estado_procesal_id' => $estado->id, 'fecha_inicio' => $fecha, 'prioridad' => $prioridad,
+                    // Los juicios del Excel son expedientes existentes: su base ya está aprobada.
+                    'sujetos_fijados_at' => now(),
+                    'base_confirmada_at' => now(),
                 ]);
                 $j->participantes()->attach($cliente->id, ['rol' => $rolCli, 'es_cliente' => true]);
                 if ($contra) $j->participantes()->attach($contra->id, ['rol' => $rolContra, 'es_cliente' => false]);
-                $j->abogados()->attach($abogado->id);
+                $j->abogados()->attach($abogado->id, ['rol_en_juicio' => 'Abogado Patrocinador']);
                 $hon = (float) ($c[11] ?? 0); $gas = (float) ($c[12] ?? 0);
                 if ($hon > 0 || $gas > 0 || trim((string) ($c[13] ?? '')) !== '') {
                     \App\Models\FinanzasJuicio::create([

@@ -7,22 +7,22 @@ use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
-// Bloques de permisos por perfil. Re-ejecutable: deja los sets exactos
-// (volver a correrlo restaura estos valores y borra ajustes manuales).
+// Bloques de permisos por perfil. Re-ejecutable en modo aditivo.
+// Para restaurar la matriz exacta: php artisan permisos:perfiles --force.
 class PerfilesSeeder extends Seeder
 {
     // Bloque legible => permisos que contiene
     public const BLOQUES = [
         'BASE' => ['menu_dashboard', 'ver_dash'],
         'SECCION_FACTURACION' => ['menu_facturacion'],
-        // Abogado: TODO en juicios (crear, carátula, sujetos, actividades+firma,
+        // Abogado: TODO en juicios (crear, carÃ¡tula, sujetos, actividades+firma,
         // audiencias, documentos, finanzas, funcionarios y abogados del juicio).
-        // El código además exige: ver solo asignados, tramitar solo patrocinador,
-        // archivar solo dueño, restaurar/eliminar físico solo Admin.
+        // El cÃ³digo ademÃ¡s exige: ver solo asignados, tramitar solo patrocinador,
+        // archivar solo dueÃ±o, restaurar/eliminar fÃ­sico solo Admin.
         'JUICIOS_ABOGADO' => [
             'menu_juicios', 'agregar_juicio', 'editar_juicio', 'eliminar_juicio',
-            'ver_pestana_caratula', 'ver_pestana_sujetos', 'ver_pestana_audiencias',
-            'ver_pestana_documentos', 'ver_pestana_funcionarios',
+            'ver_pestana_caratula', 'ver_pestana_sujetos', 'ver_pestana_actividades',
+            'ver_pestana_audiencias', 'ver_pestana_documentos', 'ver_pestana_funcionarios',
             'ver_pestana_abogados', 'actualizar_caratula',
             'agregar_sujeto', 'editar_sujeto', 'eliminar_sujeto',
             'agregar_actividad', 'editar_actividad', 'eliminar_actividad', 'firmar_actividad',
@@ -31,21 +31,29 @@ class PerfilesSeeder extends Seeder
             'asignar_funcionario', 'eliminar_funcionario',
             'asignar_abogado', 'eliminar_abogado',
         ],
-        // atender: solo Abogado (el código exige además que sea el asignado)
+        // atender: solo Abogado (el cÃ³digo exige ademÃ¡s que sea el asignado)
         'MIS_CONSULTAS' => ['menu_mis_consultas', 'guardar_notas_consulta', 'atender_consulta'],
         'CLIENTES_LECTURA' => ['menu_personas', 'menu_clientes', 'ver_cliente'],
-        // facturar: solo Asistente (convertir/eliminar quedan solo en Admin vía sync total)
-        // Asistente puede crear juicios (agregar_juicio) pero no editar/eliminar (solo Abogado/Admin)
+        // facturar: solo Asistente (convertir/eliminar quedan solo en Admin vÃ­a sync total)
+        // Asistente prepara carátula y sujetos; no tramita ni firma.
         'RECEPCION' => [
-            'menu_facturar', 'menu_consultas', 'ver_facturacion', 'crear_consulta', 
+            'menu_facturar', 'menu_consultas', 'ver_facturacion', 'crear_consulta',
             'editar_datos_consulta', 'marcar_pagada_consulta', 'facturar_consulta',
-            'menu_finanzas_juicios', 'crear_finanza', 'guarda_abono_finanza', 
+            'menu_finanzas_juicios', 'crear_finanza', 'guarda_abono_finanza',
             'facturar_abono_finanza', 'eliminar_abono_finanza',
-            'menu_juicios', 'agregar_juicio', 'menu_reprocesar', 
-            'menu_facturas_emitidas', 'menu_faturas_anuladas', 'menu_notas_credito',
-            'menu_cajas', 'menu_arqueos',
-            'menu_catalogo', 'menu_configuracion',
-            'menu_empresa', 'menu_roles', 'menu_asginar_permisos'
+            'menu_juicios', 'agregar_juicio', 'editar_juicio',
+            'ver_pestana_caratula', 'ver_pestana_sujetos', 'ver_pestana_actividades',
+            'ver_pestana_audiencias', 'ver_pestana_documentos', 'ver_pestana_funcionarios',
+            'ver_pestana_abogados', 'actualizar_caratula',
+            'agregar_sujeto', 'editar_sujeto', 'eliminar_sujeto',
+            'menu_reprocesar', 'ver_reprocesar', 'reprocesar',
+            'menu_facturas_emitidas', 'ver_facturas_emitidas', 'ver_detalle_factura_emitida',
+            'reenviar_pdf_factura_emitida', 'descargar_archivo_factura_emitida',
+            'menu_faturas_anuladas', 'ver_facturas_anuladas',
+            'menu_notas_credito', 'ver_notas_credito', 'ver_detalle_nota_credito', 'descargar_nota_credito',
+            'menu_cajas', 'ver_caja', 'abrir_caja', 'cerrar_caja', 'editar_caja',
+            'menu_arqueos', 'ver_arqueo',
+            'menu_catalogo'
         ],
         'CLIENTES_GESTION' => ['menu_personas', 'menu_clientes', 'ver_cliente', 'crear_cliente'],
         'CAJA_DIA' => ['menu_ventas_diarias', 'ver_venta_diaria'],
@@ -54,7 +62,7 @@ class PerfilesSeeder extends Seeder
         'CATALOGO_COMPLETO' => [
             'menu_categorias', 'ver_categoria', 'crear_categoria', 'editar_categoria', 'eliminar_categoria',
             'menu_productos', 'ver_producto', 'crear_producto', 'editar_producto', 'eliminar_producto',
-            'menu_descuentos', 'ver_descuentos', 'crear_descuento', 'editar_descuento', 'eliminar_descuentos',
+            'menu_descuentos', 'ver_descuentos', 'eliminar_descuentos',
             'menu_impuestos', 'ver_impuestos', 'crear_impuestos', 'editar_impuestos', 'eliminar_impuestos',
         ],
         'USUARIOS_SISTEMA' => ['menu_usuarios'],
@@ -76,7 +84,7 @@ class PerfilesSeeder extends Seeder
     // Perfil => bloques que recibe
     public const PERFIL_BLOQUES = [
         'Abogado' => ['BASE', 'SECCION_FACTURACION', 'JUICIOS_ABOGADO', 'MIS_CONSULTAS', 'CLIENTES_LECTURA', 'TAREAS_EJECUCION'],
-        'Asistente' => ['BASE', 'SECCION_FACTURACION', 'RECEPCION', 'CLIENTES_GESTION', 'CAJA_DIA', 'TAREAS_GESTION', 'CATALOGO_COMPLETO', 'USUARIOS_SISTEMA', 'GESTION_PROCESAL', 'SITIOS'],
+        'Asistente' => ['BASE', 'SECCION_FACTURACION', 'RECEPCION', 'CLIENTES_GESTION', 'CAJA_DIA', 'TAREAS_GESTION', 'CATALOGO_COMPLETO'],
     ];
 
     public static function permisosDe(array $bloques): array
@@ -87,25 +95,39 @@ class PerfilesSeeder extends Seeder
                 $nombres[] = $p;
             }
         }
-        // Solo los que existen en esta base (tolerante entre ambientes)
-        return Permission::whereIn('name', array_unique($nombres))->pluck('name')->toArray();
+        $nombres = array_values(array_unique($nombres));
+        $existentes = Permission::whereIn('name', $nombres)->pluck('name')->toArray();
+        $faltantes = array_values(array_diff($nombres, $existentes));
+
+        if (!empty($faltantes)) {
+            throw new \RuntimeException('Permisos no definidos en el catÃ¡logo: ' . implode(', ', $faltantes));
+        }
+
+        return $existentes;
+    }
+
+    public static function aplicarPerfil(string $profile, bool $force = false): void
+    {
+        $role = Role::firstOrCreate(['name' => $profile]);
+        $permisos = self::permisosDe(self::PERFIL_BLOQUES[$profile]);
+
+        if ($force) {
+            $role->syncPermissions($permisos);
+        } else {
+            $role->givePermissionTo($permisos);
+        }
     }
 
     public function run()
     {
         app()[\Spatie\Permission\PermissionRegistrar::class]->forgetCachedPermissions();
 
-        // Permisos del módulo Tareas y Finanzas Juicios
-        foreach (['menu_tareas', 'crear_tarea', 'completar_tarea', 'convertir_tarea', 'eliminar_tarea', 'menu_finanzas_juicios'] as $p) {
-            Permission::firstOrCreate(['name' => $p, 'guard_name' => 'web']);
-        }
-
         Role::firstOrCreate(['name' => 'Admin']);
-        $abogado = Role::firstOrCreate(['name' => 'Abogado']);
-        $asistente = Role::firstOrCreate(['name' => 'Asistente']);
+        Role::firstOrCreate(['name' => 'Abogado']);
+        Role::firstOrCreate(['name' => 'Asistente']);
 
-        $abogado->syncPermissions(self::permisosDe(self::PERFIL_BLOQUES['Abogado']));
-        $asistente->syncPermissions(self::permisosDe(self::PERFIL_BLOQUES['Asistente']));
+        self::aplicarPerfil('Abogado');
+        self::aplicarPerfil('Asistente');
         Role::findByName('Admin')->syncPermissions(Permission::all());
 
         // Alinear el rol de cada usuario con su profile (solo si el rol existe)

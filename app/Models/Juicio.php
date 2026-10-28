@@ -9,10 +9,12 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 class Juicio extends Model
 {
     use HasFactory, SoftDeletes;
-    protected $fillable = ['cod_satje', 'asunto_id','estado_procesal_id', 'fecha_inicio', 'prioridad', 'unidad_id'];
+    protected $fillable = ['cod_satje', 'asunto_id','estado_procesal_id', 'fecha_inicio', 'prioridad', 'unidad_id', 'sujetos_fijados_at', 'base_confirmada_at', 'base_confirmada_por', 'created_by'];
 
     protected $casts = [
         'ultima_actividad_at' => 'datetime',
+        'sujetos_fijados_at' => 'datetime',
+        'base_confirmada_at' => 'datetime',
     ];
 
     // Recalcula el último movimiento (lo llaman los observers de
@@ -179,6 +181,14 @@ class Juicio extends Model
                     ->withPivot('rol_en_juicio') // para acceder al rol del funcionario en el juicio
                     ->withTimestamps();
     }
+    public function creador(){
+        return $this->belongsTo(\App\Models\User::class, 'created_by');
+    }
+
+    public function confirmadaPor(){
+        return $this->belongsTo(\App\Models\User::class, 'base_confirmada_por');
+    }
+
     public function abogados(){
         return $this->belongsToMany(\App\Models\User::class, 'juicio_user')
                     ->withPivot('rol_en_juicio') // para acceder al rol del funcionario en el juicio

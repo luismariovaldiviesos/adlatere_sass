@@ -1,4 +1,4 @@
-<div class="relative" wire:poll.20s="refrescar" x-data="{}" x-on:click.outside="$wire.cerrar()">
+<div class="relative" x-data="{}" x-on:click.outside="$wire.cerrar()">
     <style>
         @keyframes notifRing {
             0%, 100% { transform: rotate(0); }

@@ -1,4 +1,5 @@
 <div class="p-8 space-y-6">
+    @if($puedeTramitar ?? false)
     <div class="grid grid-cols-12 gap-6 items-end">
         
         {{-- BUSCADOR DINÁMICO DE FUNCIONARIOS --}}
@@ -59,6 +60,8 @@
         </div>
     </div>
 
+    @endif
+
     {{-- LISTADO DE ASIGNADOS --}}
     <div class="overflow-x-auto mt-6 shadow-sm rounded-lg">
         <table class="table text-base border">
@@ -91,9 +94,13 @@
                         <small class="text-gray-500 block">{{ $fa->telefono }}</small>
                     </td>
                     <td class="p-4 text-center border-b">
+                        @if($puedeTramitar ?? false)
                         <button class="btn btn-outline-danger btn-sm" wire:click="removeFuncionario({{ $fa->id }})" title="Remover del Juicio">
                             <i class="fas fa-trash"></i>
                         </button>
+                        @else
+                        <span class="text-gray-400 text-sm">Solo lectura</span>
+                        @endif
                     </td>
                 </tr>
                 @empty

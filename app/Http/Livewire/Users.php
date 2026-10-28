@@ -17,7 +17,7 @@ class Users extends Component
 {
     use WithPagination, WithFileUploads;
 
-    public $name='', $ci='', $phone ='', $email='', $profile ='cajero', $status = 'ACTIVE',  $password='',
+    public $name='', $ci='', $phone ='', $email='', $profile ='', $status = 'ACTIVE',  $password='',
     $temppass='', $selected_id ='', $search ='';
     public $componentName = 'Usuarios', $form  = false;
 
@@ -88,7 +88,7 @@ class Users extends Component
         'email','password','profile','form','especialidadesSeleccionadas','searchEspecialidad', 
         'firma_archivo', 'firma_password', 'tieneFirma', 'puedeFirmarDespacho',
         'requiereReemplazo', 'reemplazo_id', 'casosAfectados' );  
-        $this->profile = 'cajero';
+        $this->profile = '';
         $this->status = 'ACTIVE';
     }
 

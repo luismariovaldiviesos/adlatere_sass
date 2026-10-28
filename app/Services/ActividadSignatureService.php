@@ -400,7 +400,7 @@ class ActividadSignatureService
         }
 
         if (!$config) {
-            $info['motivo'] = 'No hay configuración de empresa.';
+            $info['motivo'] = 'No hay configuración de empresa. Configure la firma del despacho en Configuración > Empresa.';
             return $info;
         }
 
@@ -411,7 +411,7 @@ class ActividadSignatureService
         $password = $mismo ? $config->cert_password : $config->firma_actividades_cert_password;
 
         if (!$archivo) {
-            $info['motivo'] = 'No hay un certificado del despacho configurado.';
+            $info['motivo'] = 'El certificado del despacho no está configurado. Cárguelo en Configuración > Empresa > Firma del despacho.';
             return $info;
         }
 

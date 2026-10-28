@@ -10,7 +10,6 @@ use App\Models\Product;
 use App\Models\Provincia;
 use App\Models\Canton;
 use App\Models\TipoActividad;
-use App\Models\User;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
@@ -43,8 +42,10 @@ class SistemaCoreSeeder extends Seeder
         'menu_clientes','menu_reportes','menu_ventas_diarias','menu_configuracion','menu_empresa',
         'menu_roles','menu_asginar_permisos','menu_usuarios','menu_descuentos','menu_impuestos',
         'menu_facturacion','menu_finanzas','menu_personas','menu_catalogo',
+        'menu_tareas','crear_tarea','completar_tarea','convertir_tarea','eliminar_tarea',
+        'menu_finanzas_juicios',
         'menu_juicios','agregar_juicio','eliminar_juicio','editar_juicio',
-        'ver_pestana_caratula','ver_pestana_sujetos','ver_pestana_audiencias','ver_pestana_documentos',
+        'ver_pestana_caratula','ver_pestana_sujetos','ver_pestana_actividades','ver_pestana_audiencias','ver_pestana_documentos',
         'ver_pestana_finanzas','ver_pestana_funcionarios','ver_pestana_abogados',
         'actualizar_caratula','agregar_sujeto','editar_sujeto','eliminar_sujeto',
         'agregar_actividad','editar_actividad','eliminar_actividad','firmar_actividad',
@@ -65,6 +66,7 @@ class SistemaCoreSeeder extends Seeder
         'menu_tipos_actividades','crear_tipo_actividad','editar_tipo_actividad','eliminar_tipo_actividad',
         'menu_plantillas_tipos_actividades','crear_plantilla_tipo_actividad','editar_plantilla_tipo_actividad',
         'eliminar_plantilla_tipo_actividad','previsualizar_plantilla_tipo_actividad',
+        'menu_prioridad_alertas','crear_prioridad_alerta','editar_prioridad_alerta','eliminar_prioridad_alerta',
         'menu_sitios',
         'menu_provincias','menu_cantones','menu_unidades',
     ];
@@ -145,10 +147,5 @@ class SistemaCoreSeeder extends Seeder
             'email' => 'final@mail', 'phone' => '999999', 'notes' => 'consumidor final por defecto',
         ]);
 
-        $admin = User::firstOrCreate(['email' => 'admin@mail.com'], [
-            'name' => 'Administrador', 'ci' => '9999999999', 'phone' => '0999999999',
-            'profile' => 'Admin', 'status' => 'ACTIVE', 'password' => bcrypt('administrador'),
-        ]);
-        $admin->syncRoles(['Admin']);
     }
 }

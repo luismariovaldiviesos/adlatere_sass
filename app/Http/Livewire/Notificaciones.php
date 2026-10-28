@@ -26,6 +26,10 @@ class Notificaciones extends Component
     public function toggle()
     {
         $this->open = !$this->open;
+
+        if ($this->open) {
+            $this->refrescar();
+        }
     }
 
     public function cerrar()
@@ -50,6 +54,10 @@ class Notificaciones extends Component
 
     public function ir($id)
     {
+        if (!auth()->check()) {
+            return;
+        }
+
         $n = auth()->user()->notifications()->where('id', $id)->first();
         if (!$n) {
             return;
@@ -78,6 +86,10 @@ class Notificaciones extends Component
 
     public function marcarTodas()
     {
+        if (!auth()->check()) {
+            return;
+        }
+
         auth()->user()->unreadNotifications()->update(['read_at' => now()]);
         $this->lastCount = 0;
     }
@@ -87,7 +99,7 @@ class Notificaciones extends Component
         $count = $this->unreadCount();
         $items = collect();
 
-        if ($this->open) {
+        if ($this->open && auth()->check()) {
             $items = auth()->user()->notifications()->latest()->limit(10)->get();
         }
 

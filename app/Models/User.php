@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Illuminate\Validation\Rule;
 use Spatie\Permission\Traits\HasRoles;
 
 use function PHPUnit\Framework\fileExists;
@@ -77,7 +78,7 @@ class User extends Authenticatable
                 'ci' => 'required|min:10|max:13|unique:users',
                 'phone' => 'required',
                 'email' => 'required|email|unique:users',
-                'profile'=> 'required|not_in:elegir',
+                'profile'=> ['required', Rule::exists('roles', 'name')],
                 'status'=> 'required|not_in:elegir'
             ];
         }
@@ -89,7 +90,7 @@ class User extends Authenticatable
                 'ci' => "required|min:10|max:13|unique:users,ci,{$id}",
                 'phone' => 'required',
                 'email' => "required|email|unique:users,email,{$id}",
-                'profile'=> 'required|not_in:elegir',
+                'profile'=> ['required', Rule::exists('roles', 'name')],
                 'status'=> 'required|not_in:elegir'
             ];
         }

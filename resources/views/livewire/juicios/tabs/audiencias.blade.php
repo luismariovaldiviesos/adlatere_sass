@@ -1,4 +1,5 @@
 <div class="p-8 space-y-6">
+    @if($puedeTramitar ?? false)
     <div class="grid grid-cols-12 gap-6 items-end">
 
         {{-- FECHA Y HORA --}}
@@ -88,6 +89,8 @@
 </div>
     </div>
 
+    @endif
+
     {{-- LISTADO DE AUDIENCIAS --}}
     @if(isset($juicio) && $juicio->audiencias->count() > 0)
     @php
@@ -175,6 +178,7 @@
                         </td>
                         <td class="table-report__action w-56">
                             <div class="flex justify-center items-center gap-4">
+                                @if($puedeTramitar ?? false)
                                 <a class="flex items-center text-primary" href="javascript:;"
                                    wire:click="editAudiencia({{ $aud->id }})">
                                     <i data-lucide="edit" class="w-4 h-4 mr-1"></i> Editar
@@ -184,12 +188,27 @@
                                    wire:click="destroyAudiencia({{ $aud->id }})">
                                     <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> Eliminar
                                 </a>
+                                @else
+                                <span class="text-gray-400 text-sm">Solo lectura</span>
+                                @endif
                             </div>
                         </td>
                     </tr>
                     @endforeach
                 </tbody>
             </table>
+        </div>
+    </div>
+    @else
+    <div class="mt-8 border-t border-gray-200 pt-8">
+        <div class="alert alert-secondary show flex items-start" role="alert">
+            <i data-lucide="calendar-x" class="w-6 h-6 mr-3 mt-0.5"></i>
+            <div>
+                <strong class="block">No hay audiencias registradas en este juicio.</strong>
+                @if(!($puedeTramitar ?? false))
+                <span class="text-sm text-gray-600">Solo el abogado patrocinador puede registrar audiencias.</span>
+                @endif
+            </div>
         </div>
     </div>
     @endif

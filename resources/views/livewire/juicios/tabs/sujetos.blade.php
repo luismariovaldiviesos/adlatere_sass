@@ -75,12 +75,25 @@
     </div>
 </div> --}}
 
+@php
+    $soloLecturaBase = isset($juicio) && $juicio ? !($puedeEditarBase ?? false) : false;
+@endphp
 <div class="p-8 space-y-6">
     @if(isset($juicio) && $juicio && !$juicio->participantes()->wherePivot('es_cliente', true)->exists())
     <div class="alert alert-warning" role="alert">
         <strong>Sin cliente marcado:</strong> este juicio aún no tiene cliente del despacho. Márquelo con la casilla al agregar o editar un sujeto.
     </div>
     @endif
+    @if(isset($juicio) && $juicio && $juicio->base_confirmada_at)
+    <div class="alert alert-info" role="alert">
+        <strong>Base confirmada:</strong> la carátula y los sujetos procesales quedaron inmutables el {{ $juicio->base_confirmada_at->format('d/m/Y H:i') }}.
+    </div>
+    @elseif($soloLecturaBase)
+    <div class="alert alert-info" role="alert">
+        <strong>Solo lectura:</strong> no tiene permiso para modificar los sujetos procesales de este juicio.
+    </div>
+    @endif
+    @if(!$soloLecturaBase)
     <div class="grid grid-cols-12 gap-6 items-end">
         
         {{-- BUSCADOR DINÁMICO DE CUSTOMERS Y BOTÓN NUEVO --}}
@@ -152,6 +165,7 @@
                 @endif
         </div>
     </div>
+    @endif
 
     {{-- TABLA DE RESULTADOS EN VIVO --}}
     <div class="overflow-x-auto mt-6 shadow-sm rounded-lg">
@@ -189,6 +203,7 @@
                         @endif
                     </td>
                     <td class="p-4 text-center border-b">
+                        @if(!$soloLecturaBase)
                         <button class="btn btn-outline-primary btn-sm mr-2" wire:click="editParticipante({{ $p->id }})" title="Editar Rol">
                             <i class="fas fa-edit"></i>
 
@@ -196,6 +211,9 @@
                         <button class="btn btn-outline-danger btn-sm" wire:click="removeParticipante({{ $p->id }})" title="Remover del Juicio">
                             <i class="fas fa-trash"></i>
                         </button>
+                        @else
+                        <span class="text-gray-400 text-sm">Fijado</span>
+                        @endif
                     </td>
                 </tr>
                                 @empty
@@ -209,6 +227,24 @@
             </tbody>
         </table>
     </div>
+
+    @if(isset($juicio) && $juicio && !$soloLecturaBase && !empty($puedeFijarSujetos))
+    <div class="mt-6 p-5 border rounded-lg bg-gray-50 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <h4 class="font-bold text-gray-800">Confirmar base del juicio</h4>
+            <p class="text-sm text-gray-600 mt-1">Verifique carátula, patrocinador, actores y demandados. Al confirmar, estos datos quedan inmutables para todos los perfiles.</p>
+        </div>
+        <button type="button" class="btn btn-primary px-6 py-2.5" wire:click="fijarSujetos" wire:loading.attr="disabled" wire:target="fijarSujetos" onclick="return confirm('¿Fijar la carga de sujetos? Después no podrá agregar, editar ni quitar sujetos.')">
+            <i class="fas fa-lock mr-2"></i> Confirmar base
+        </button>
+    </div>
+    @endif
+
+    @if(isset($juicio) && $juicio && !$soloLecturaBase && isset($puedeFijarSujetos) && !$puedeFijarSujetos)
+    <div class="mt-6 p-4 rounded-lg bg-blue-50 border border-blue-200 text-blue-800">
+        La base puede prepararse desde aquí. Un abogado patrocinador o un administrador debe revisarla y fijar los sujetos antes de iniciar el trámite.
+    </div>
+    @endif
 
 </div>
 

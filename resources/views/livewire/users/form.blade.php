@@ -49,7 +49,7 @@
                         <div class="col-end-2 bg-amber-500">
                             <label class="form-label">Perfil</label>
                             <select wire:model.lazy='profile' class="form-select form-select-lg sm:mr-2">
-                                <option value="Elegir" selected>Elegir</option>
+                                <option value="">Elegir</option>
                                 @foreach ($roles as $role )
                                 <option value="{{$role->name}}" >{{$role->name}}</option>
                                 @endforeach

@@ -1,6 +1,7 @@
 <div class="p-8 space-y-6">
     
     {{-- ZONA DE SUBIDA DE DOCUMENTOS GENERALES --}}
+    @if($puedeTramitar ?? false)
     <div class="grid grid-cols-12 gap-6 items-end bg-slate-50 p-6 rounded-lg border border-slate-200">
         <div class="col-span-12">
             <h2 class="text-lg font-medium">Subir Documento al Expediente</h2>
@@ -14,7 +15,7 @@
                 <option value="Sujetos Procesales">Sujetos Procesales (Cédulas, Poderes)</option>
                 {{-- <option value="Audiencia">Audiencia</option> --}}
                 <option value="Actividad">Actividad / Escrito</option>
-                <option value="Finanzas">Pagos / Finanzas</option>
+               
             </select>
             @error('doc_origen_tipo') <x-alert msg="{{ $message }}" /> @enderror
         </div>
@@ -41,6 +42,8 @@
             </button>
         </div>
     </div>
+
+    @endif
 
     {{-- LISTADO GLOBAL DE DOCUMENTOS (EL "DRIVE" DEL JUICIO) --}}
     <div class="mt-8 border-t border-gray-200 pt-8">
@@ -117,11 +120,13 @@
                                                     <a class="btn btn-sm btn-warning text-white flex items-center" href="{{ route('tenant.media', ['path' => $doc->ruta_archivo]) }}" target="_blank">
                                                         <i data-lucide="eye" class="w-4 h-4 mr-1"></i> Ver
                                                     </a>
+                                                    @if($puedeTramitar ?? false)
                                                     <a class="btn btn-sm btn-danger text-white flex items-center" href="javascript:;"
                                                        onclick="confirm('¿Seguro que desea eliminar este documento?') || event.stopImmediatePropagation()"
                                                        wire:click="destroyDocumento({{ $doc->id }})">
                                                         <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> Eliminar
                                                     </a>
+                                                    @endif
                                                 </div>
                                             </td>
                                         </tr>

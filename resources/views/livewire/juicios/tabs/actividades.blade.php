@@ -1,4 +1,5 @@
 <div class="p-8 space-y-6">
+    @if($puedeTramitar ?? false)
     <div class="grid grid-cols-12 gap-6 items-end">
         
         {{-- CAMBIO DE ESTADO PROCESAL (Requerimiento Técnico) --}}
@@ -102,6 +103,8 @@
         </div>
     </div>
 
+    @endif
+
     @php
         $hayJuicio = isset($juicio) && $juicio;
         $userId = auth()->id();
@@ -157,7 +160,7 @@
                                 <span class="flex items-center text-slate-400" title="Firmada digitalmente: no editable">
                                     <i data-lucide="lock" class="w-4 h-4 mr-1"></i> Bloqueada
                                 </span>
-                                @else
+                                @elseif($puedeTramitar ?? false)
                                 <a class="flex items-center mr-3 text-primary" href="javascript:;" wire:click="editActividad({{ $act->id }})">
                                     <i data-lucide="edit" class="w-4 h-4 mr-1"></i> Editar
                                 </a>
@@ -277,7 +280,16 @@
 
         window.actividadEditorInstance = quill;
 
+        let contenidoActividadTimer = null;
         quill.on('text-change', function() {
+            // Evita una petición Livewire por cada tecla.
+            clearTimeout(contenidoActividadTimer);
+            contenidoActividadTimer = setTimeout(function() {
+                @this.set('contenido', quill.root.innerHTML);
+            }, 800);
+        });
+        quill.root.addEventListener('blur', function() {
+            clearTimeout(contenidoActividadTimer);
             @this.set('contenido', quill.root.innerHTML);
         });
     }
