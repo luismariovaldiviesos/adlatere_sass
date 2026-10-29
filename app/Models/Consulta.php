@@ -68,6 +68,13 @@ class Consulta extends Model
     public function juicio() { return $this->belongsTo(Juicio::class); }
     public function factura() { return $this->belongsTo(Factura::class); }
 
+    public function estaBloqueada(): bool
+    {
+        return in_array($this->estado_atencion, ['atendida', 'convertida'], true)
+            || (bool) $this->factura_id
+            || in_array($this->estado_pago, ['en_facturacion', 'facturada'], true);
+    }
+
     public function scopePendientes($q) { return $q->where('estado_atencion', 'pendiente'); }
     public function scopeAtendidas($q) { return $q->where('estado_atencion', 'atendida'); }
 }

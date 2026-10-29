@@ -50,24 +50,6 @@
                     @endif
                 </div>
 
-                {{-- PANEL CONVERTIR (selector de tipo de actividad) --}}
-                @if($convertir_id)
-                <div class="mx-5 mb-2 p-4 rounded-lg border border-green-300 bg-green-50 flex flex-wrap gap-3 items-end">
-                    <div>
-                        <label class="form-label text-xs">Convertir tarea #{{ $convertir_id }} en actividad tipo:</label>
-                        <select wire:model.defer="conv_tipo_actividad_id" class="form-select w-auto">
-                            <option value="">Seleccione...</option>
-                            @foreach($tiposActividades as $t)
-                            <option value="{{ $t->id }}">{{ $t->nombre }}</option>
-                            @endforeach
-                        </select>
-                        @error('conv_tipo_actividad_id') <span class="text-red-600 text-xs block">{{ $message }}</span> @enderror
-                    </div>
-                    <button wire:click.prevent="confirmarConvertir" class="btn btn-success text-white">Confirmar</button>
-                    <button wire:click.prevent="cancelarConvertir" class="btn btn-outline-secondary">Cancelar</button>
-                </div>
-                @endif
-
                 <div class="p-5">
                     <div class="preview">
                         <div class="overflow-x-auto">
@@ -209,6 +191,45 @@
 
         @include('livewire.tareas.form')
 
+    @endif
+
+    {{-- MODAL CONVERTIR TAREA EN ACTIVIDAD --}}
+    @if($convertir_id)
+    <div id="convertir-tarea-overlay" wire:click="cancelarConvertir"
+         class="fixed top-0 left-0 w-full h-full flex items-center justify-center"
+         style="z-index: 100; background-color: rgba(0,0,0,0.6);">
+        <div onclick="event.stopPropagation()" class="bg-white rounded-xl relative shadow-2xl border-2 border-slate-300"
+             style="width: 90%; max-width: 520px;">
+            <div class="flex justify-between items-center px-6 py-3" style="background: linear-gradient(135deg, #065f46 0%, #10b981 100%); border-radius: 0.7rem 0.7rem 0 0;">
+                <h2 class="text-lg font-bold text-white">
+                    <i class="fas fa-gavel mr-2"></i> Convertir tarea en actividad
+                </h2>
+                <button type="button" wire:click="cancelarConvertir" class="text-white hover:text-gray-200 text-3xl font-bold leading-none px-2" title="Cerrar">&times;</button>
+            </div>
+
+            <div class="px-6 py-5">
+                <p class="text-sm text-gray-600 mb-1">Tarea #{{ $convertir_id }}</p>
+                <p class="font-medium text-gray-800 mb-4">{{ $conv_tarea_titulo }}</p>
+
+                <label class="form-label text-xs">Tipo de actividad</label>
+                <select wire:model.defer="conv_tipo_actividad_id" class="form-select w-full">
+                    <option value="">Seleccione...</option>
+                    @foreach($tiposActividades as $tipoActividad)
+                    <option value="{{ $tipoActividad->id }}">{{ $tipoActividad->nombre }}</option>
+                    @endforeach
+                </select>
+                @error('conv_tipo_actividad_id') <span class="text-red-600 text-xs block mt-1">{{ $message }}</span> @enderror
+
+                <div class="flex justify-end gap-2 mt-5">
+                    <button type="button" wire:click="cancelarConvertir" class="btn btn-outline-secondary">Cancelar</button>
+                    <button type="button" wire:click="confirmarConvertir" wire:loading.attr="disabled" wire:target="confirmarConvertir" class="btn btn-success text-white">
+                        <span wire:loading.remove wire:target="confirmarConvertir"><i class="fas fa-check mr-1"></i> Confirmar</span>
+                        <span wire:loading wire:target="confirmarConvertir">Convirtiendo...</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     @endif
 
     {{-- MODAL VER DETALLES TAREA --}}

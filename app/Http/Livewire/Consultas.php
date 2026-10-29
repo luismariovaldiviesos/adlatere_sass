@@ -319,6 +319,11 @@ class Consultas extends Component
         $anterior = $this->selected_id ? Consulta::find($this->selected_id) : null;
         $esAbogadoAsignado = $anterior && $this->esAbogadoAsignado($anterior);
 
+        if ($anterior && $anterior->estaBloqueada()) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La consulta ya fue atendida o facturada; no se puede modificar. Solo puede consultar el detalle.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+
         if ($esAbogadoAsignado) {
             if (in_array($anterior->estado_atencion, ['atendida', 'convertida'], true)) {
                 $this->dispatchBrowserEvent('noty', ['msg' => 'La consulta ya fue atendida; solo puede consultar el detalle.', 'type' => 'error', 'action' => '']);
@@ -461,8 +466,7 @@ class Consultas extends Component
         }
 
         $esAbogadoAsignado = $this->esAbogadoAsignado($consulta);
-        $soloLectura = $esAbogadoAsignado
-            && in_array($consulta->estado_atencion, ['atendida', 'convertida'], true);
+        $soloLectura = $consulta->estaBloqueada();
 
         $this->selected_id = $consulta->id;
         $this->customer_id = $consulta->customer_id;
@@ -530,7 +534,7 @@ class Consultas extends Component
         $consulta = Consulta::find($id);
         if (!$consulta || !$this->puedeAdministrar()) return;
         if (auth()->user()->cannot('marcar_pagada_consulta')) return;
-        if ($consulta->estado_pago === 'facturada' || $consulta->factura_id) return;
+        if ($consulta->estado_pago !== 'pendiente' || $consulta->factura_id) return;
         $consulta->estado_pago = 'no_factura';
         $consulta->save();
         $this->dispatchBrowserEvent('noty', ['msg' => 'Consulta marcada como no se cobra.', 'type' => 'success', 'action' => '']);
@@ -558,7 +562,7 @@ class Consultas extends Component
         $consulta = Consulta::find($id);
         if (!$consulta || !$this->puedeAdministrar()) return;
         if (auth()->user()->cannot('marcar_pagada_consulta')) return;
-        if ($consulta->estado_pago === 'facturada' || $consulta->factura_id) return;
+        if ($consulta->estado_pago !== 'pendiente' || $consulta->factura_id) return;
         $consulta->estado_pago = 'pagada';
         $consulta->fecha_pago = $consulta->fecha_pago ?: now()->toDateString();
         $consulta->metodo_pago = $consulta->metodo_pago ?: 'Efectivo';
@@ -862,6 +866,10 @@ class Consultas extends Component
     {
         $consulta = Consulta::find($id);
         if (!$consulta || auth()->user()->cannot('eliminar_consulta')) return;
+        if ($consulta->estaBloqueada()) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'No se puede eliminar: la consulta ya fue atendida o facturada.', 'type' => 'error', 'action' => '']);
+            return;
+        }
         if ($consulta->juicio_id || $consulta->factura_id) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'No se puede eliminar: ya tiene juicio o factura vinculada.', 'type' => 'success', 'action' => '']);
             return;

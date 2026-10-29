@@ -6,7 +6,7 @@
 
     @if($soloLectura)
     <div class="alert alert-info py-2 px-3 text-sm mb-4">
-        La consulta ya fue atendida. Solo puede consultar el detalle; no se puede modificar.
+        La consulta ya fue atendida o facturada. Solo puede consultar el detalle; no se puede modificar.
     </div>
     @endif
 

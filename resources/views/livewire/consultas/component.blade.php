@@ -148,9 +148,7 @@
                                         <td class="text-center">
                                             <div class="flex justify-center gap-1 flex-wrap">
                                                 @php
-                                                    $verSoloDetalle = $esAbogado
-                                                        && (int) $con->abogado_id === (int) auth()->id()
-                                                        && in_array($con->estado_atencion, ['atendida', 'convertida'], true);
+                                                $verSoloDetalle = $con->estaBloqueada();
                                                 @endphp
                                                 @if(auth()->user()->can('editar_datos_consulta') || auth()->user()->can('guardar_notas_consulta'))
                                                 <button class="btn {{ $verSoloDetalle ? 'btn-secondary' : 'btn-warning text-blue' }} border-0"

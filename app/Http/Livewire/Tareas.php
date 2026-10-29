@@ -35,7 +35,7 @@ class Tareas extends Component
     public $soloMias = false;
 
     // Conversión a actividad
-    public $convertir_id = null, $conv_tipo_actividad_id;
+    public $convertir_id = null, $conv_tipo_actividad_id, $conv_tarea_titulo;
 
     // Ver detalles
     public $verDetalle_id = null;
@@ -230,7 +230,7 @@ class Tareas extends Component
         $this->reset([
             'titulo', 'descripcion', 'contenido', 'tipo', 'juicio_id', 'searchJuicio', 'juicios',
             'juicio_nombre', 'showJuicioDropdown', 'asignado_a', 'fecha_limite',
-            'selected_id', 'convertir_id', 'conv_tipo_actividad_id', 'adjunto', 'adjuntos',
+            'selected_id', 'convertir_id', 'conv_tipo_actividad_id', 'conv_tarea_titulo', 'adjunto', 'adjuntos',
             'fecha_id', 'fecha_edit', 'abrirFecha',
         ]);
         $this->tipo = 'externa';
@@ -391,22 +391,38 @@ class Tareas extends Component
     public function abrirConvertir($id)
     {
         $t = Tarea::with('juicio')->find($id);
-        if (!$t) return;
-        if (auth()->user()->cannot('convertir_tarea')) return;
-        if ($t->tipo !== 'juicio' || !$t->juicio_id) return;
-        if ($t->estado !== 'completada' || $t->actividad_id) return;
+        if (!$t) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La tarea ya no existe.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        if (auth()->user()->cannot('convertir_tarea')) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'No tiene permiso para convertir tareas.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        if ($t->tipo !== 'juicio' || !$t->juicio_id) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo las tareas vinculadas a un juicio se pueden convertir.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        if ($t->estado !== 'completada' || $t->actividad_id) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo una tarea completada y sin actividad puede convertirse.', 'type' => 'error', 'action' => '']);
+            return;
+        }
         if ((int) $t->asignado_a !== (int) auth()->id()) {
             $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el asignado puede convertirla.', 'type' => 'error', 'action' => '']);
             return;
         }
         $this->convertir_id = $t->id;
+        $this->conv_tarea_titulo = $t->titulo;
         $this->conv_tipo_actividad_id = null;
+        $this->resetValidation('conv_tipo_actividad_id');
     }
 
     public function cancelarConvertir()
     {
         $this->convertir_id = null;
         $this->conv_tipo_actividad_id = null;
+        $this->conv_tarea_titulo = null;
+        $this->resetValidation('conv_tipo_actividad_id');
     }
 
     // Ver detalles de tarea (todos los perfiles)
@@ -510,10 +526,22 @@ class Tareas extends Component
     public function confirmarConvertir()
     {
         $t = Tarea::find($this->convertir_id);
-        if (!$t) return;
-        if (auth()->user()->cannot('convertir_tarea')) return;
-        if ($t->tipo !== 'juicio' || !$t->juicio_id || $t->estado !== 'completada' || $t->actividad_id) return;
-        if ((int) $t->asignado_a !== (int) auth()->id()) return;
+        if (!$t) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La tarea ya no existe.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        if (auth()->user()->cannot('convertir_tarea')) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'No tiene permiso para convertir tareas.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        if ($t->tipo !== 'juicio' || !$t->juicio_id || $t->estado !== 'completada' || $t->actividad_id) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'La tarea cambió de estado o ya fue convertida.', 'type' => 'error', 'action' => '']);
+            return;
+        }
+        if ((int) $t->asignado_a !== (int) auth()->id()) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'Solo el asignado puede convertirla.', 'type' => 'error', 'action' => '']);
+            return;
+        }
 
         $this->validate(
             ['conv_tipo_actividad_id' => 'required|exists:tipos_actividades,id'],
@@ -552,6 +580,7 @@ class Tareas extends Component
             DB::commit();
             $this->convertir_id = null;
             $this->conv_tipo_actividad_id = null;
+            $this->conv_tarea_titulo = null;
             $this->dispatchBrowserEvent('noty', ['msg' => 'Tarea convertida en actividad del juicio.', 'type' => 'success', 'action' => '']);
         } catch (\Exception $e) {
             DB::rollBack();
