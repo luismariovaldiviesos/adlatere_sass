@@ -2,7 +2,7 @@
 
     @if (!$form)
 
-        <div class="intro-y col-span-12">
+        <div class="intro-y col-span-12" wire:key="plantillas-listado">
 
             <div class="intro-y box">
 

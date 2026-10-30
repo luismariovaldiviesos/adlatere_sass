@@ -1,4 +1,4 @@
-<div class="intro-y col-span-12">
+<div class="intro-y col-span-12" wire:key="plantilla-formulario">
     <div class="intro-y box">
         <div class="flex flex-col sm:flex-row items-center p-5 border-b border-gray-200 dark:border-dark-5">
             <h2 class="font-medium text-base mr-auto">
@@ -35,6 +35,7 @@
                             </div>
                         </div>
                     </div>
+                    <textarea id="contenido-livewire" wire:model.defer="contenido" class="hidden" aria-hidden="true"></textarea>
                     @error('contenido') <x-alert msg="{{ $message }}" /> @enderror
                 </div>
 
@@ -75,12 +76,20 @@
 
             <div class="mt-5 flex justify-end gap-2">
                 <x-back wire:click="resetUI" />
-                <x-save wire:click="Store" />
+                <x-save wire:click="Store" onclick="syncPlantillaContenido()" />
             </div>
         </div>
     </div>
 
     <script>
+        function syncPlantillaContenido() {
+            const input = document.getElementById('contenido-livewire');
+            if (input && window.editorInstance) {
+                input.value = window.editorInstance.root.innerHTML;
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+            }
+        }
+
         function loadQuillEditor() {
             if (typeof Quill !== 'undefined') {
                 startWordEditor();
@@ -140,9 +149,9 @@
 
             window.editorInstance = quill;
 
-            // Sincronizar datos con Livewire
+            // Sincronizar con el campo diferido (sin peticiones Livewire por cada tecla)
             quill.on('text-change', function() {
-                @this.set('contenido', quill.root.innerHTML);
+                syncPlantillaContenido();
             });
 
             // Escuchar evento para cargar contenido al editar (solo si no se ha registrado)
@@ -150,6 +159,7 @@
                 window.addEventListener('set-editor-content', event => {
                     if (window.editorInstance) {
                         window.editorInstance.root.innerHTML = event.detail.content;
+                        syncPlantillaContenido();
                     }
                 });
                 window.hasSetEditorContentListener = true;

@@ -11,6 +11,11 @@ php artisan make:model Asunto
 
 
 
+php artisan tenants:run "carga:inicial" --tenants=despachouno --argument="archivo=datos_cliente.xlsx" --option="validar=1"
+php artisan tenants:run "carga:inicial" --tenants=despachouno --argument="archivo=datos_cliente.xlsx"
+
+
+
 
 
 
