@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasDocumentos;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Audiencia extends Model
 {
-    use HasFactory;
+    use HasFactory, HasDocumentos;
     protected $fillable = [
         'juicio_id',
         'fecha_hora',

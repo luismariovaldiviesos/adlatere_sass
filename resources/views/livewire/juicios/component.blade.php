@@ -300,6 +300,10 @@
                             <i class="fas fa-history mr-2"></i> Histórico del Juicio: {{ $juicioRoadmap->cod_satje }}
                         </h2>
                         <div class="flex items-center gap-2">
+                            <button type="button" wire:click="descargarHistorialPdf" wire:loading.attr="disabled" wire:target="descargarHistorialPdf" class="btn btn-sm btn-danger text-white font-bold" title="Descargar todo el historial en PDF">
+                                <span wire:loading.remove wire:target="descargarHistorialPdf"><i class="fas fa-file-pdf mr-1"></i> PDF</span>
+                                <span wire:loading wire:target="descargarHistorialPdf">Generando...</span>
+                            </button>
                             <button type="button" wire:click="closeRoadmap" wire:loading.attr="disabled" wire:target="closeRoadmap" onclick="cerrarRoadmapModal()" class="btn btn-sm px-4 font-bold" style="background-color: #60a5fa; color: #000; border: 1px solid #1e3a8a;">
                                 <span wire:loading.remove wire:target="closeRoadmap">Cerrar</span>
                                 <span wire:loading wire:target="closeRoadmap">Cerrando…</span>

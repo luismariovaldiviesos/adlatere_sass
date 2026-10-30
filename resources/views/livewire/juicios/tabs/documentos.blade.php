@@ -1,77 +1,76 @@
 <div class="p-8 space-y-6">
-    
-    {{-- ZONA DE SUBIDA DE DOCUMENTOS GENERALES --}}
-    @if($puedeTramitar ?? false)
-    <div class="grid grid-cols-12 gap-6 items-end bg-slate-50 p-6 rounded-lg border border-slate-200">
-        <div class="col-span-12">
-            <h2 class="text-lg font-medium">Subir Documento al Expediente</h2>
+
+    {{-- ZONA DE SUBIDA DE DOCUMENTOS DEL EXPEDIENTE --}}
+    @if(($puedeTramitar ?? false) && !$doc_modal)
+    <div class="bg-slate-50 p-6 rounded-lg border border-slate-200">
+        <div class="mb-4">
+            <h2 class="text-lg font-medium">Subir documento al expediente</h2>
+            <p class="text-sm text-slate-500 mt-1">
+                Elija qué documento es y a qué parte del juicio pertenece. El nombre ya no necesita identificar la tarea.
+            </p>
         </div>
 
-        <div class="col-span-12 md:col-span-3">
-            <label class="form-label text-base">Clasificación / Etapa</label>
-            <select wire:model.defer="doc_origen_tipo" class="form-select h-12 text-lg">
-                <option value="General">General / Otros</option>
-                <option value="Carátula / Demanda">Carátula / Demanda Inicial</option>
-                <option value="Sujetos Procesales">Sujetos Procesales (Cédulas, Poderes)</option>
-                {{-- <option value="Audiencia">Audiencia</option> --}}
-                <option value="Actividad">Actividad / Escrito</option>
-               
-            </select>
-            @error('doc_origen_tipo') <x-alert msg="{{ $message }}" /> @enderror
-        </div>
-
-        <div class="col-span-12 md:col-span-3">
-            <label class="form-label text-base">Nombre / Descripción</label>
-            <input type="text" wire:model.defer="doc_nombre" class="form-control h-12 text-lg" placeholder="Ej: Poder Notariado">
-            @error('doc_nombre') <x-alert msg="{{ $message }}" /> @enderror
-        </div>
-
-        <div class="col-span-12 md:col-span-4">
-            <label class="form-label text-base">Archivo (PDF, Word, JPG)</label>
-            <input type="file" wire:model="doc_archivo" class="form-control h-12 pt-2">
-            @error('doc_archivo') <x-alert msg="{{ $message }}" /> @enderror
-            
-            <div wire:loading wire:target="doc_archivo" class="text-primary mt-2 text-sm font-medium">
-                Cargando archivo...
-            </div>
-        </div>
-
-        <div class="col-span-12 md:col-span-2 flex justify-end">
-            <button class="btn btn-primary text-lg px-8 py-2.5 w-full" wire:click="saveDocumentoGeneral" wire:loading.attr="disabled" wire:target="doc_archivo">
-                <i data-lucide="upload-cloud" class="w-5 h-5 mr-2"></i> Subir
-            </button>
-        </div>
+        @include('livewire.juicios.tabs.documentos-form')
     </div>
-
     @endif
 
     {{-- LISTADO GLOBAL DE DOCUMENTOS (EL "DRIVE" DEL JUICIO) --}}
-    <div class="mt-8 border-t border-gray-200 pt-8">
-        <div class="flex flex-col sm:flex-row items-center justify-between mb-8">
-            <h3 class="text-xl font-bold mb-4 sm:mb-0">Expediente Digital del Juicio</h3>
+    <div class="border-t border-gray-200 pt-8">
+        <div class="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
+            <div>
+                <h3 class="text-xl font-bold">Expediente digital del juicio</h3>
+                <p class="text-sm text-slate-500 mt-1">Un documento puede estar vinculado a una actividad, audiencia, tarea o consulta.</p>
+            </div>
             <div class="w-full sm:w-80 relative text-slate-500">
                 <i data-lucide="search" class="w-4 h-4 absolute my-auto inset-y-0 ml-3 left-0"></i>
-                <input type="text" wire:model="search_doc" class="form-control w-full pl-10" placeholder="Buscar por nombre del documento...">
+                <input type="text" wire:model="search_doc" class="form-control w-full pl-10" placeholder="Buscar por nombre o vínculo...">
             </div>
         </div>
 
         @if(isset($juicio) && $juicio->documentos->count() > 0)
             @php
-                // Filtrar la colección de documentos si hay búsqueda
-                $docs = $juicio->documentos;
-                if(strlen($search_doc) > 0) {
-                    $docs = $docs->filter(function($item) {
-                        return stripos($item->nombre, $this->search_doc) !== false;
+                $docs = $juicio->documentos->filter(function ($item) {
+                    return $item->vinculos->isEmpty()
+                        || $item->vinculos->contains(fn ($vinculo) => $vinculo->vinculable_type !== 'tarea');
+                });
+
+                if (strlen(trim($search_doc)) > 0) {
+                    $busqueda = mb_strtolower(trim($search_doc));
+                    $docs = $docs->filter(function ($item) use ($busqueda) {
+                        return str_contains(mb_strtolower($item->nombre ?? ''), $busqueda)
+                            || str_contains(mb_strtolower($item->descripcion ?? ''), $busqueda)
+                            || str_contains(mb_strtolower($item->vinculado_a ?? ''), $busqueda);
                     });
                 }
-                // Agrupar los documentos por la clasificación (origen_tipo)
-                $groupedDocs = $docs->sortByDesc('created_at')->groupBy('origen_tipo');
+
+                if (($doc_filtro_vinculo ?? 'todos') === 'expediente') {
+                    $docs = $docs->filter(fn ($item) => $item->vinculos->isEmpty());
+                } elseif (($doc_filtro_vinculo ?? 'todos') === 'vinculados') {
+                    $docs = $docs->filter(fn ($item) => $item->vinculos->isNotEmpty());
+                } elseif (in_array(($doc_filtro_vinculo ?? 'todos'), ['actividad', 'audiencia', 'consulta'], true)) {
+                    $docs = $docs->filter(function ($item) use ($doc_filtro_vinculo) {
+                        return $item->vinculos->contains(fn ($vinculo) => $vinculo->vinculable_type === $doc_filtro_vinculo);
+                    });
+                }
+
+                $groupedDocs = $docs->sortByDesc('created_at')
+                    ->groupBy(fn ($item) => $item->tipoDocumento->nombre ?? 'Sin tipo');
             @endphp
+
+            <div class="flex flex-wrap gap-2 mb-4">
+                <select wire:model="doc_filtro_vinculo" class="form-select w-auto text-sm">
+                    <option value="todos">Todos los documentos</option>
+                    <option value="vinculados">Solo vinculados</option>
+                    <option value="expediente">Solo del expediente</option>
+                    <option value="actividad">De actividades</option>
+                    <option value="audiencia">De audiencias</option>
+                    <option value="consulta">De consultas</option>
+                </select>
+            </div>
 
             @if($groupedDocs->count() > 0)
                 <div class="space-y-4">
                     @foreach($groupedDocs as $tipo => $documentosGrupo)
-                        {{-- ACORDEÓN NATIVO HTML PARA CADA GRUPO --}}
                         <details class="group bg-white border border-slate-200 rounded-lg shadow-sm" open>
                             <summary class="flex items-center justify-between p-4 font-medium cursor-pointer bg-slate-50 hover:bg-slate-100 transition-colors">
                                 <div class="flex items-center">
@@ -89,7 +88,9 @@
                                     <thead>
                                         <tr>
                                             <th class="whitespace-nowrap">DOCUMENTO</th>
-                                            <th class="whitespace-nowrap">TIPO</th>
+                                            <th class="whitespace-nowrap">FORMATO</th>
+                                            <th class="whitespace-nowrap">VINCULADO A</th>
+                                            <th class="whitespace-nowrap">ETAPA</th>
                                             <th class="whitespace-nowrap">FECHA</th>
                                             <th class="whitespace-nowrap">TAMAÑO</th>
                                             <th class="text-center whitespace-nowrap">ACCIONES</th>
@@ -98,7 +99,7 @@
                                     <tbody>
                                         @foreach($documentosGrupo as $doc)
                                         <tr class="intro-x">
-                                            <td class="font-medium whitespace-nowrap">
+                                            <td class="font-medium min-w-[260px]">
                                                 <div class="flex items-center">
                                                     @if(in_array($doc->tipo_archivo, ['pdf']))
                                                         <i data-lucide="file-text" class="w-5 h-5 mr-2 text-danger"></i>
@@ -109,10 +110,17 @@
                                                     @else
                                                         <i data-lucide="file" class="w-5 h-5 mr-2 text-slate-500"></i>
                                                     @endif
-                                                    {{ $doc->nombre }}
+                                                    <div>
+                                                        <div>{{ $doc->nombre }}</div>
+                                                        @if($doc->descripcion)
+                                                            <div class="text-xs text-slate-500 font-normal mt-0.5">{{ \Illuminate\Support\Str::limit($doc->descripcion, 80) }}</div>
+                                                        @endif
+                                                    </div>
                                                 </div>
                                             </td>
                                             <td><span class="uppercase text-xs font-bold text-slate-500">{{ $doc->tipo_archivo }}</span></td>
+                                            <td class="text-sm text-slate-600 min-w-[220px]">{{ $doc->vinculado_a }}</td>
+                                            <td class="text-sm text-slate-600">{{ $doc->estadoProcesal->nombre ?? '—' }}</td>
                                             <td>{{ $doc->created_at->format('d M Y') }}</td>
                                             <td class="text-slate-500">{{ number_format($doc->peso_kb / 1024, 2) }} MB</td>
                                             <td class="table-report__action w-56">

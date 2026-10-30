@@ -3,7 +3,7 @@
     // Precarga única de colecciones de pestañas (loadMissing = 0 consultas si ya están).
     // La carga maestra trae lo mínimo; esto completa lo que muestran las pestañas.
     if (isset($juicio) && $juicio) {
-        $juicio->loadMissing(['actividades.tipoActividad', 'audiencias', 'documentos', 'funcionarios', 'abogados.especialidades', 'participantes']);
+        $juicio->loadMissing(['actividades.tipoActividad', 'actividades.documentos', 'audiencias', 'audiencias.documentos', 'documentos.tipoDocumento', 'documentos.estadoProcesal', 'documentos.vinculos.vinculable', 'funcionarios', 'abogados.especialidades', 'participantes']);
     }
 
 @endphp
@@ -84,8 +84,65 @@
             @include('livewire.juicios.tabs.sidebar')
         </aside>
 
+    {{-- MODAL DE DOCUMENTOS DEL CONTEXTO (ACTIVIDAD / AUDIENCIA / TAREA / CONSULTA) --}}
+    @if($doc_modal)
+    <div class="fixed top-0 left-0 w-full h-full flex items-center justify-center"
+         style="z-index: 100000; background-color: rgba(0,0,0,0.65);"
+         wire:click="cerrarDocumentosModal">
+        <div onclick="event.stopPropagation()" class="bg-white rounded-xl shadow-2xl border-2 border-slate-300"
+             style="width: 94%; max-width: 980px; max-height: 92vh; overflow-y: auto;">
+            <div class="flex justify-between items-center px-6 py-4 sticky top-0 z-10"
+                 style="background: linear-gradient(135deg, #1e3a8a 0%, #3b82f6 100%);">
+                <div>
+                    <h2 class="text-xl font-bold text-white"><i class="fas fa-folder-open mr-2"></i> Documentos del contexto</h2>
+                    <p class="text-blue-100 text-sm mt-0.5">{{ $doc_contexto_titulo ?: 'Expediente del juicio' }}</p>
+                </div>
+                <button type="button" wire:click="cerrarDocumentosModal" class="text-white hover:text-gray-200 text-3xl font-bold leading-none px-2" title="Cerrar">&times;</button>
+            </div>
+
+            <div class="p-6 space-y-6">
+                @if($puedeTramitar ?? false)
+                <div class="bg-slate-50 p-5 rounded-lg border border-slate-200">
+                    @include('livewire.juicios.tabs.documentos-form')
+                </div>
+                @endif
+
+                <div>
+                    <h3 class="font-bold text-slate-700 mb-3">Documentos ya vinculados ({{ $documentosContexto->count() }})</h3>
+                    @if($documentosContexto->count())
+                    <div class="space-y-2">
+                        @foreach($documentosContexto as $doc)
+                        <div class="flex items-center justify-between gap-3 p-3 border rounded-lg bg-white">
+                            <div class="min-w-0">
+                                <p class="font-medium truncate">{{ $doc->nombre }}</p>
+                                <p class="text-xs text-slate-500">
+                                    {{ $doc->tipoDocumento->nombre ?? 'Sin tipo' }}
+                                    · {{ $doc->created_at->format('d/m/Y H:i') }}
+                                    · {{ number_format($doc->peso_kb / 1024, 2) }} MB
+                                </p>
+                            </div>
+                            <div class="flex items-center gap-2 shrink-0">
+                                <a class="btn btn-sm btn-warning text-white" href="{{ route('tenant.media', ['path' => $doc->ruta_archivo]) }}" target="_blank">Ver</a>
+                                @if($puedeTramitar ?? false)
+                                <a class="btn btn-sm btn-danger text-white" href="javascript:;"
+                                   onclick="confirm('¿Eliminar este documento?') || event.stopImmediatePropagation()"
+                                   wire:click="destroyDocumento({{ $doc->id }})">Eliminar</a>
+                                @endif
+                            </div>
+                        </div>
+                        @endforeach
+                    </div>
+                    @else
+                    <p class="text-sm text-slate-500 italic">Todavía no hay documentos vinculados a este contexto.</p>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
+
             {{-- =========================================================================
-                                MODAL DE CREACIÓN RÁPIDA 
+                                MODAL DE CREACI�"N R�?PIDA
        ========================================================================= --}}
     <div wire:ignore.self id="modalQuickCustomer" class="modal" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog modal-lg"> <!-- Modal más ancho para mayor comodidad -->
@@ -93,7 +150,7 @@
                 <div class="modal-header bg-gray-100 border-b">
                     <h2 class="font-bold text-lg mr-auto text-gray-700">Registrar Nuevo Sujeto Procesal</h2>
                 </div>
-                
+
                 <div class="modal-body grid grid-cols-12 gap-5 gap-y-4 p-6">
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label font-bold">Tipo Identificación</label>
@@ -103,31 +160,31 @@
                             <option value="pasaporte">Pasaporte</option>
                         </select>
                     </div>
-                    
+
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label font-bold">Identificación</label>
                         <input wire:model="q_valueidenti" type="text" class="form-control text-lg" placeholder="Ej: 0102030405">
                         @error('q_valueidenti') <span class="text-theme-6">{{ $message }}</span> @enderror
                     </div>
-                    
+
                     <div class="col-span-12">
                         <label class="form-label font-bold">Nombre / Razón Social</label>
                         <input wire:model="q_businame" type="text" class="form-control text-lg" placeholder="Ej: Juan Perez">
                         @error('q_businame') <span class="text-theme-6">{{ $message }}</span> @enderror
                     </div>
-                    
+
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label font-bold">Teléfono</label>
                         <input wire:model="q_phone" type="text" class="form-control text-lg" placeholder="099...">
                     </div>
-                    
+
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label font-bold">Correo Electrónico <small>(Opcional)</small></label>
                         <input wire:model="q_email" type="email" class="form-control text-lg" placeholder="correo@ejemplo.com">
                         @error('q_email') <span class="text-theme-6">{{ $message }}</span> @enderror
                     </div>
                 </div>
-                
+
                 <div class="modal-footer text-right bg-gray-50 border-t">
                     <button type="button" data-dismiss="modal" class="btn btn-outline-secondary w-24 mr-2">Cancelar</button>
                     <button type="button" wire:click="saveQuickCustomer" class="btn btn-primary w-24 shadow-md">

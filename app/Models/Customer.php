@@ -8,7 +8,10 @@ use Illuminate\Database\Eloquent\Model;
 class Customer extends Model
 {
     use HasFactory;
-    protected $fillable = ['businame','typeidenti','valueidenti','address','email','phone','notes'];
+    protected $fillable = [
+        'businame', 'typeidenti', 'valueidenti', 'address', 'estado_civil',
+        'profesion_ocupacion', 'canton_id', 'email', 'phone', 'notes',
+    ];
 
 
 
@@ -27,6 +30,9 @@ class Customer extends Model
                 'typeidenti' => 'required',
                 'valueidenti' => 'required|max:13|unique:customers',
                 'address' => 'required',
+                'estado_civil' => 'nullable|string|max:50',
+                'profesion_ocupacion' => 'nullable|string|max:150',
+                'canton_id' => 'nullable|exists:cantones,id',
                 'email' => 'required|unique:customers',
                 'phone' => 'required'
             ];
@@ -38,6 +44,9 @@ class Customer extends Model
                 'typeidenti' => 'required',
                 'valueidenti' => "required|max:13|unique:customers,valueidenti,{$id}",
                 'address' => 'required',
+                'estado_civil' => 'nullable|string|max:50',
+                'profesion_ocupacion' => 'nullable|string|max:150',
+                'canton_id' => 'nullable|exists:cantones,id',
                 'email' => "required|unique:customers,email,{$id}",
                 'phone' => 'required'
             ];
@@ -59,6 +68,11 @@ class Customer extends Model
         'phone.required' => 'email es requerido'
     ];
 
+
+    public function canton()
+    {
+        return $this->belongsTo(Canton::class, 'canton_id');
+    }
 
     public function juicios (){
         return $this->belongsToMany(Juicio::class, 'juicio_participante')->withPivot('rol', 'es_cliente');

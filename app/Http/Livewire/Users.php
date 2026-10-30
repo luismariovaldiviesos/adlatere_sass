@@ -249,7 +249,12 @@ class Users extends Component
     {
         $tieneJuicios = \App\Models\Juicio::whereHas('abogados', fn($q) => $q->where('user_id', $user->id))->exists();
         $tieneConsultas = \App\Models\Consulta::where('abogado_id', $user->id)->whereIn('estado_atencion', ['pendiente','atendida'])->exists();
-        if ($user->facturas->count() < 1 && $user->especialidades->count() < 1 && !$tieneJuicios && !$tieneConsultas) {
+        $tieneTareas = \App\Models\Tarea::where('asignado_a', $user->id)->exists();
+        $tieneHistorial = \App\Models\JuicioHistorialEstado::where('user_id', $user->id)->exists()
+            || \App\Models\TareaHistorial::where('user_id', $user->id)->exists();
+        $tienePagos = \App\Models\PagosJuicio::where('user_id', $user->id)->exists();
+
+        if ($user->facturas->count() < 1 && $user->especialidades->count() < 1 && !$tieneJuicios && !$tieneConsultas && !$tieneTareas && !$tieneHistorial && !$tienePagos) {
             $user->especialidades()->detach();
             $user->delete();
             $this->noty("El usuario <b>$user->name</b> fue eliminado del sistema");

@@ -115,6 +115,14 @@ class Unidades extends Component
 
     public function Destroy(Unidad $unidad)
     {
+        $enJuicios = \App\Models\Juicio::where('unidad_id', $unidad->id)->exists();
+        $enMaterias = \App\Models\Materia::where('unidad_id', $unidad->id)->exists();
+
+        if ($enJuicios || $enMaterias) {
+            $this->noty('No se puede eliminar la unidad porque está siendo usada por juicios o materias.', 'noty', false, 'error');
+            return;
+        }
+
         $unidad->delete();
         $this->noty('Se eliminó la unidad');
     }

@@ -452,7 +452,9 @@ class Tareas extends Component
             'juicio:id,cod_satje',
             'tarea:id,titulo',
             'user:id,name',
-            'adjuntos'
+            'documentos.tipoDocumento',
+            'documentos.estadoProcesal',
+            'documentos.vinculos.vinculable',
         ])->find($id);
     }
 
@@ -561,6 +563,8 @@ class Tareas extends Component
                 'contenido' => $t->descripcion ?: $t->titulo,
                 'estado_firma' => ($tipo && $tipo->es_firmable) ? 'pendiente' : 'no_requerida',
             ]);
+
+            $t->promoverDocumentosAActividad($act);
 
             $t->actividad_id = $act->id;
             $t->estado = 'convertida';

@@ -63,6 +63,13 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->ensureAppKey();
 
+        \Illuminate\Database\Eloquent\Relations\Relation::morphMap([
+            'actividad' => \App\Models\Actividad::class,
+            'audiencia' => \App\Models\Audiencia::class,
+            'tarea' => \App\Models\Tarea::class,
+            'consulta' => \App\Models\Consulta::class,
+        ]);
+
         // Observers de notificaciones internas
         \App\Models\Tarea::observe(\App\Observers\TareaObserver::class);
         \App\Models\Consulta::observe(\App\Observers\ConsultaObserver::class);

@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasDocumentos;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Actividad extends Model
 {
-    use HasFactory;
+    use HasFactory, HasDocumentos;
     protected $table = 'actividades';
 
     protected $fillable = [
@@ -118,6 +119,10 @@ class Actividad extends Model
 
    public function juicio(){
         return $this->belongsTo(Juicio::class, 'juicio_id');
+   }
+
+   public function tarea(){
+        return $this->hasOne(Tarea::class, 'actividad_id');
    }
 
        public function user() {

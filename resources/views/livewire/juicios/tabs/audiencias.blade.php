@@ -178,6 +178,10 @@
                         </td>
                         <td class="table-report__action w-56">
                             <div class="flex justify-center items-center gap-4">
+                                <a class="flex items-center text-theme-1" href="javascript:;"
+                                   wire:click="abrirDocumentosAudiencia({{ $aud->id }})" title="Documentos de esta audiencia">
+                                    <i data-lucide="folder-open" class="w-4 h-4 mr-1"></i> Docs ({{ $aud->documentos->count() }})
+                                </a>
                                 @if($puedeTramitar ?? false)
                                 <a class="flex items-center text-primary" href="javascript:;"
                                    wire:click="editAudiencia({{ $aud->id }})">

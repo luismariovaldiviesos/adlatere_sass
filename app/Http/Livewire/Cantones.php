@@ -115,6 +115,11 @@ class Cantones extends Component
 
     public function Destroy(Canton $canton)
     {
+        if (\App\Models\Unidad::where('canton_id', $canton->id)->exists()) {
+            $this->noty('No se puede eliminar el cantón porque tiene unidades judiciales asociadas.', 'noty', false, 'error');
+            return;
+        }
+
         $canton->delete();
         $this->noty('Se eliminó el cantón');
     }

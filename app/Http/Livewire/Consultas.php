@@ -810,17 +810,24 @@ class Consultas extends Component
 
             // Comprobante de la consulta -> gestor documental del juicio nuevo
             if ($consulta->comprobante_ruta) {
-                Documento::create([
-                    'juicio_id'     => $juicio->id,
-                    'origen_tipo'   => 'Consulta',
-                    'origen_id'     => $consulta->id,
-                    'nombre'        => 'Comprobante consulta #' . $consulta->id,
-                    'ruta_archivo'  => $consulta->comprobante_ruta,
-                    'tipo_archivo'  => strtolower(pathinfo($consulta->comprobante_ruta, PATHINFO_EXTENSION)),
-                    'tamaño_archivo' => null,
+                $tipoComprobante = \App\Models\TipoDocumento::where('codigo', 'comprobante')->value('id');
+                $documentoComprobante = new Documento();
+                $documentoComprobante->fill([
+                    'juicio_id' => $juicio->id,
+                    'tipo_documento_id' => $tipoComprobante,
+                    'estado_procesal_id' => $juicio->estado_procesal_id,
+                    'origen_tipo' => 'Consulta',
+                    'origen_id' => $consulta->id,
+                    'nombre' => 'Comprobante consulta #' . $consulta->id,
+                    'descripcion' => 'Comprobante de pago de la consulta convertida en juicio.',
+                    'fecha_documento' => now()->toDateString(),
+                    'ruta_archivo' => $consulta->comprobante_ruta,
+                    'tipo_archivo' => strtolower(pathinfo($consulta->comprobante_ruta, PATHINFO_EXTENSION)),
+                    'created_by' => auth()->id(),
                 ]);
+                $documentoComprobante->save();
+                $documentoComprobante->vincularA($consulta, 'principal');
             }
-
             // Notas de la consulta -> primera actividad del juicio
             if (trim(strip_tags($consulta->notas ?? '')) !== '') {
                 $tipo = TipoActividad::orderBy('id', 'asc')->first();

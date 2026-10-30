@@ -37,12 +37,22 @@
 
                                         <td class="dark:border-dark-5">
                                             <h6 class="mb-1 font-medium">{{ $customer->businame }}</h6>
+                                            @if($customer->estado_civil || $customer->profesion_ocupacion)
+                                                <div class="text-xs text-slate-500">
+                                                    {{ $customer->estado_civil }}
+                                                    @if($customer->estado_civil && $customer->profesion_ocupacion) · @endif
+                                                    {{ $customer->profesion_ocupacion }}
+                                                </div>
+                                            @endif
                                         </td>
                                         <td class="dark:border-dark-5">
                                             <h6 class="mb-1 font-medium">{{ $customer->valueidenti }}</h6>
                                         </td>
                                         <td class="dark:border-dark-5">
                                             <h6 class="mb-1 font-medium">{{ $customer->address }}</h6>
+                                            @if($customer->canton)
+                                                <div class="text-xs text-slate-500">{{ $customer->canton->nombre }}</div>
+                                            @endif
                                         </td>
                                         <td class="dark:border-dark-5">
                                             <h6 class="mb-1 font-medium">{{ $customer->email }}</h6>

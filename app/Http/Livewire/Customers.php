@@ -2,6 +2,7 @@
 
 namespace App\Http\Livewire;
 
+use App\Models\Canton;
 use App\Models\Customer;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -10,7 +11,15 @@ class Customers extends Component
 {
     use WithPagination;
 
-    public $businame = "", $typeidenti ="", $valueidenti ="",$address ="",$email ="",$phone ="", $notes='', $selected_id =0;
+    public $businame = "", $typeidenti ="", $valueidenti ="",$address ="";
+    public $estado_civil = "", $profesion_ocupacion = "", $canton_id = "";
+    public $email ="",$phone ="", $notes='', $selected_id =0;
+    public $cantones = [];
+
+    public function mount()
+    {
+        $this->cantones = Canton::orderBy('nombre', 'asc')->get();
+    }
 
     public $action = 'Listado', $componentName = 'CLIENTES', $search = '', $form = false;
     private $pagination =10;
@@ -59,7 +68,7 @@ class Customers extends Component
     {
         $this->resetPage();
         $this->resetValidation();
-        $this->reset('businame','typeidenti','valueidenti','address','email','phone','notes','selected_id','search','form');
+        $this->reset('businame','typeidenti','valueidenti','address','estado_civil','profesion_ocupacion','canton_id','email','phone','notes','selected_id','search','form');
     }
 
     public function Edit(Customer $customer){
@@ -69,6 +78,9 @@ class Customers extends Component
         $this->typeidenti = $customer->typeidenti;
         $this->valueidenti = $customer->valueidenti;
         $this->address = $customer->address;
+        $this->estado_civil = $customer->estado_civil;
+        $this->profesion_ocupacion = $customer->profesion_ocupacion;
+        $this->canton_id = $customer->canton_id;
         $this->email = $customer->email;
         $this->phone = $customer->phone;
         $this->notes = $customer->notes;
@@ -89,6 +101,9 @@ class Customers extends Component
                 'typeidenti' => $this->typeidenti,
                 'valueidenti' => $this->valueidenti,
                 'address' => $this->address,
+                'estado_civil' => $this->estado_civil ?: null,
+                'profesion_ocupacion' => $this->profesion_ocupacion ?: null,
+                'canton_id' => $this->canton_id ?: null,
                 'email' => $this->email,
                 'phone' => $this->phone,
                 'notes' => $this->notes
@@ -104,12 +119,14 @@ class Customers extends Component
     {
         $tieneFacturas = $customer->facturas()->count() > 0;
         $tieneJuicios = \App\Models\Juicio::whereHas('participantes', fn($q) => $q->where('customers.id', $customer->id))->exists();
-        if(!$tieneFacturas && !$tieneJuicios)
+        $tieneConsultas = \App\Models\Consulta::where('customer_id', $customer->id)->exists();
+
+        if(!$tieneFacturas && !$tieneJuicios && !$tieneConsultas)
         {
             $customer->delete();
-            $this->noty("El cliente <b>$customer->businame </b> ha sido elmininado");
+            $this->noty("El cliente <b>$customer->businame </b> ha sido eliminado");
         }else{
-            $this->noty("El cliente tiene facturas o juicios relacionados, no es posible eliminarlo");
+            $this->noty("El cliente tiene facturas, consultas o juicios relacionados; no es posible eliminarlo", 'noty', false, 'error');
         }
     }
 

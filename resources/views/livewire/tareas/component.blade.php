@@ -429,20 +429,27 @@
                         </div>
 
                         <div class="mb-4">
-                            <label class="text-xs font-medium text-gray-500">Adjuntos ({{ $this->actividadDetalle->adjuntos_count ?? 0 }})</label>
-                            @forelse($this->actividadDetalle->adjuntos as $adj)
-                            @php $adjUrl = route('tenant.media', ['path' => $adj->ruta_archivo]); @endphp
+                            <label class="text-xs font-medium text-gray-500">Documentos ({{ $this->actividadDetalle->documentos->count() }})</label>
+                            @forelse($this->actividadDetalle->documentos as $doc)
+                            @php $docUrl = route('tenant.media', ['path' => $doc->ruta_archivo]); @endphp
                             <div class="flex items-center gap-3 p-3 bg-gray-50 border rounded mb-2">
                                 <i class="fas fa-paperclip text-gray-400 text-lg"></i>
                                 <div class="flex-1 min-w-0">
-                                    <p class="font-medium truncate">{{ $adj->nombre }}</p>
-                                    <p class="text-xs text-gray-500">{{ $adj->tipo_archivo }} · {{ number_format($adj->tamano_archivo / 1024, 1) }} KB · Subido por {{ $adj->usuario->name ?? '—' }} el {{ $adj->created_at->format('d/m/Y H:i') }}</p>
+                                    <p class="font-medium truncate">{{ $doc->nombre }}</p>
+                                    <p class="text-xs text-gray-500">
+                                        {{ $doc->tipoDocumento->nombre ?? 'Documento' }} &middot;
+                                        {{ strtoupper($doc->tipo_archivo) }} &middot;
+                                        {{ number_format($doc->peso_kb / 1024, 1) }} KB &middot;
+                                        {{ $doc->creadoPor->name ?? '—' }} &middot;
+                                        {{ $doc->created_at->format('d/m/Y H:i') }}
+                                    </p>
+                                    <p class="text-xs text-slate-500 mt-1">Vinculado a: {{ $doc->vinculado_a }}</p>
                                 </div>
-                                <a href="{{ $adjUrl }}" target="_blank" class="btn btn-outline-primary btn-sm">Ver</a>
-                                <a href="{{ $adjUrl }}" download="{{ e($adj->nombre) }}" class="btn btn-outline-secondary btn-sm ml-1">Descargar</a>
+                                <a href="{{ $docUrl }}" target="_blank" class="btn btn-outline-primary btn-sm">Ver</a>
+                                <a href="{{ $docUrl }}" download="{{ e($doc->nombre) }}" class="btn btn-outline-secondary btn-sm ml-1">Descargar</a>
                             </div>
                             @empty
-                            <p class="text-sm text-gray-400 italic">Sin adjuntos.</p>
+                            <p class="text-sm text-gray-400 italic">Sin documentos.</p>
                             @endforelse
                         </div>
 

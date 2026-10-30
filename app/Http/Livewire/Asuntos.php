@@ -125,10 +125,16 @@ class Asuntos extends Component
 
      public function Destroy(Asunto $asunto)
     {
-        //dd($asunto);
-        $asunto->delete();
-        $this->noty('Asunto Eliminado');
+        $enJuicios = \App\Models\Juicio::where('asunto_id', $asunto->id)->exists();
+        $enConsultas = \App\Models\Consulta::where('asunto_id', $asunto->id)->exists();
 
+        if ($enJuicios || $enConsultas) {
+            $this->noty('No se puede eliminar el asunto porque está siendo usado por juicios o consultas.', 'noty', false, 'error');
+            return;
+        }
+
+        $asunto->delete();
+        $this->noty('Asunto eliminado');
     }
 
 

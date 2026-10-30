@@ -6,7 +6,7 @@
     <div class="col-span-12">
         <div class="alert alert-info" role="alert">
             @if(isset($juicio) && $juicio && $juicio->base_confirmada_at)
-            <strong>Base confirmada:</strong> la carátula y los sujetos procesales son inmutables. Este expediente está en modo solo lectura.
+            <strong>Base confirmada:</strong> la carátula y los sujetos procesales son inmutables. Solo se puede actualizar el estado procesal (Administrador y abogado dueño) y la prioridad (solo Administrador).
             @else
             <strong>Solo lectura:</strong> no tiene permiso para modificar la base de este juicio.
             @endif
@@ -28,7 +28,7 @@
         </div>
            <div class="col-span-12 md:col-span-3">
             <label class="form-label text-base font-bold">Estado Procesal</label>
-            <select wire:model.defer='estado_procesal_id' class="form-select h-12 text-lg" {{ $soloLectura ? 'disabled' : '' }}>
+            <select wire:model.defer='estado_procesal_id' class="form-select h-12 text-lg" {{ $puedeEditarEstadoProcesal ? '' : 'disabled' }}>
                 <option value="">Seleccione Estado...</option>
                 @foreach($estados_procesales as $e)
                     <option value="{{ $e->id }}">{{ $e->nombre }}</option>
@@ -39,7 +39,7 @@
 
         <div class="col-span-12 md:col-span-3">
             <label class="form-label text-base font-bold">Prioridad</label>
-            <select wire:model.defer='prioridad' class="form-select h-12 text-lg" {{ $soloLectura ? 'disabled' : '' }}>
+            <select wire:model.defer='prioridad' class="form-select h-12 text-lg" {{ $puedeEditarPrioridadCaratula ? '' : 'disabled' }}>
                 <option value="Baja">Baja</option>
                 <option value="Media">Media (Estándar)</option>
                 <option value="Alta">Alta</option>
@@ -125,7 +125,7 @@
             </div>
         </div>
 
-        @if(!$soloLectura)
+        @if(!$soloLectura || $puedeEditarEstadoProcesal || $puedeEditarPrioridadCaratula)
         <div class="col-span-12 flex justify-end mt-4">
             @if($editModeJuicio)
                 <button type="button" 

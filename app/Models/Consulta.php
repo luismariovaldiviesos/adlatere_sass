@@ -2,12 +2,13 @@
 
 namespace App\Models;
 
+use App\Models\Concerns\HasDocumentos;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class Consulta extends Model
 {
-    use HasFactory;
+    use HasFactory, HasDocumentos;
 
     protected $fillable = [
         'customer_id', 'asunto_id', 'abogado_id', 'costo',

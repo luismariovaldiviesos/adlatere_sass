@@ -118,8 +118,12 @@ class Procedimientos extends Component
 
      public function Destroy(Procedimiento $procedimiento)
     {
-        $procedimiento->delete();
-        $this->noty('Procedimiento Eliminado');
+        if (\App\Models\Asunto::where('procedimiento_id', $procedimiento->id)->exists()) {
+            $this->noty('No se puede eliminar el procedimiento porque tiene asuntos asociados.', 'noty', false, 'error');
+            return;
+        }
 
+        $procedimiento->delete();
+        $this->noty('Procedimiento eliminado');
     }
 }

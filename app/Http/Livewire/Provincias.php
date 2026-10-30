@@ -104,7 +104,12 @@ class Provincias extends Component
 
     public function Destroy(Provincia $provincia)
     {
+        if (\App\Models\Canton::where('provincia_id', $provincia->id)->exists()) {
+            $this->noty('No se puede eliminar la provincia porque tiene cantones asociados.', 'noty', false, 'error');
+            return;
+        }
+
         $provincia->delete();
-        $this->noty('Se eliminó la Provincia');
+        $this->noty('Se eliminó la provincia');
     }
 }

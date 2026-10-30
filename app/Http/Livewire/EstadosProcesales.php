@@ -119,7 +119,15 @@ class EstadosProcesales extends Component
 
     public function Destroy(EstadoProcesal $estado)
     {
-        //dd($estado);    
+        $enJuicios = \App\Models\Juicio::where('estado_procesal_id', $estado->id)->exists();
+        $enHistorial = \App\Models\JuicioHistorialEstado::where('estado_procesal_id', $estado->id)->exists();
+        $enDocumentos = \App\Models\Documento::where('estado_procesal_id', $estado->id)->exists();
+
+        if ($enJuicios || $enHistorial || $enDocumentos) {
+            $this->noty('No se puede eliminar el estado procesal porque está siendo usado por juicios o por el historial.', 'noty', false, 'error');
+            return;
+        }
+
         $estado->delete();
         $this->noty('Se eliminó el estado procesal');
     }

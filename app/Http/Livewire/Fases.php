@@ -102,7 +102,12 @@ class Fases extends Component
 
     public function Destroy(Fase $fase)
     {
+        if (\App\Models\EstadoProcesal::where('fase_id', $fase->id)->exists()) {
+            $this->noty('No se puede eliminar la fase porque tiene estados procesales asociados.', 'noty', false, 'error');
+            return;
+        }
+
         $fase->delete();
-        $this->noty('Se eliminó la Fase');
+        $this->noty('Se eliminó la fase');
     }
 }

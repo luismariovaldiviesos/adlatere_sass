@@ -287,10 +287,17 @@ class CargaInicial extends Command
                 || $this->dup(\App\Models\Customer::class, 'email', $cliEmail, 'cliemail')) {
                 $this->err('Clientes', $n, "duplicado (identi o email): {$valueidenti}"); continue;
             }
+            $cantonNombre = trim((string) ($c[9] ?? ''));
+            $canton = $cantonNombre !== ''
+                ? \App\Models\Canton::where('nombre', $cantonNombre)->first()
+                : null;
             if (!$this->validar) \App\Models\Customer::create([
                 'businame' => $businame, 'typeidenti' => $typeidenti, 'valueidenti' => $valueidenti,
                 'address' => trim((string) ($c[3] ?? '')) ?: 's/n', 'email' => $cliEmail,
                 'phone' => trim((string) ($c[5] ?? '')) ?: '-', 'notes' => trim((string) ($c[6] ?? '')) ?: '-',
+                'estado_civil' => trim((string) ($c[7] ?? '')) ?: null,
+                'profesion_ocupacion' => trim((string) ($c[8] ?? '')) ?: null,
+                'canton_id' => $canton?->id,
             ]);
             $this->memorize('cliid', $valueidenti);
             $this->memorize('cliemail', $cliEmail);

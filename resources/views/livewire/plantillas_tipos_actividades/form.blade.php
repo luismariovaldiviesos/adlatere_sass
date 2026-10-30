@@ -41,13 +41,35 @@
                 <div class="col-span-12 mt-3">
                     <details class="bg-white border rounded p-3 text-sm">
                         <summary class="cursor-pointer font-bold text-theme-1">Variables disponibles (clic para ver) — se reemplazan solas al cargar la plantilla en el juicio</summary>
-                        <div class="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2 text-slate-700">
-                            <div><b>Juicio:</b><br>[COD_SATJE] [FECHA_INICIO] [MATERIA] [PROCEDIMIENTO] [ASUNTO] [UNIDAD_JUDICIAL] [CIUDAD] [PROVINCIA] [ESTADO_PROCESAL] [FASE] [PRIORIDAD] [FECHA_ACTUAL] [FECHA_ACTIVIDAD]</div>
-                            <div><b>Actor:</b><br>[ACTORES] [ACTORES_IDENTIFICACION] [ACTORES_DIRECCION] [ACTORES_CORREO] [ACTORES_TELEFONO]<br><b>Demandado:</b><br>[DEMANDADOS] [DEMANDADOS_IDENTIFICACION] [DEMANDADOS_DIRECCION] [DEMANDADOS_CORREO] [DEMANDADOS_TELEFONO]<br><b>Contraparte (no cliente):</b><br>[CONTRAPARTE] [CONTRAPARTE_IDENTIFICACION]</div>
-                            <div><b>Cliente del despacho:</b><br>[CLIENTE] [CLIENTE_IDENTIFICACION] [CLIENTE_DIRECCION] [CLIENTE_CORREO] [CLIENTE_TELEFONO]<br><b>Abogado patrocinador:</b><br>[ABOGADO] [ABOGADO_IDENTIFICACION] [ABOGADO_CORREO]<br><b>Funcionarios:</b><br>[JUEZ] [SECRETARIO] [FUNCIONARIOS]</div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-2 text-slate-700">
+                            <div>
+                                <b>Juicio:</b><br>
+                                [COD_SATJE] [FECHA_INICIO] [MATERIA] [PROCEDIMIENTO] [ASUNTO]
+                                [UNIDAD_JUDICIAL] [CIUDAD] [PROVINCIA] [ESTADO_PROCESAL] [FASE]
+                                [PRIORIDAD] [FECHA_ACTUAL] [FECHA_ACTIVIDAD]
+                                <br><br>
+                                <b>Abogado patrocinador:</b><br>
+                                [ABOGADO] [ABOGADO_IDENTIFICACION] [ABOGADO_CORREO]
+                                <br><br>
+                                <b>Funcionarios:</b><br>
+                                [JUEZ] [SECRETARIO] [FUNCIONARIOS]
+                            </div>
+                            <div>
+                                <b>Actor:</b><br>
+                                [ACTOR] [ACTOR_IDENTIFICACION] [ACTOR_DIRECCION]
+                                [ACTOR_CORREO] [ACTOR_TELEFONO] [ACTOR_ESTADO_CIVIL]
+                                [ACTOR_PROFESION_OCUPACION] [ACTOR_CANTON]
+                            </div>
+                            <div>
+                                <b>Demandado:</b><br>
+                                [DEMANDADO] [DEMANDADO_IDENTIFICACION] [DEMANDADO_DIRECCION]
+                                [DEMANDADO_CORREO] [DEMANDADO_TELEFONO] [DEMANDADO_ESTADO_CIVIL]
+                                [DEMANDADO_PROFESION_OCUPACION] [DEMANDADO_CANTON]
+                            </div>
                         </div>
                         <p class="mt-2 text-xs text-slate-500">También con llaves: {VARIABLE}. Mayúsculas o minúsculas.</p>
-                    </details>
+                    <p class="mt-1 text-xs text-slate-500">Si hay varios actores o demandados, cada campo se muestra numerado: 1), 2), 3)... manteniendo el mismo orden entre todos los campos.</p>
+</details>
                 </div>
             </div>
 

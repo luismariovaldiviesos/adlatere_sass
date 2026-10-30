@@ -114,8 +114,15 @@ use WithPagination;
 
     public function Destroy(Materia $materia)
     {
-        $materia->delete();
-        $this->noty('Materia Eliminada');
+        $tieneProcedimientos = \App\Models\Procedimiento::where('materia_id', $materia->id)->exists();
+        $tieneEspecialidades = \App\Models\Especialidad::where('materia_id', $materia->id)->exists();
 
+        if ($tieneProcedimientos || $tieneEspecialidades) {
+            $this->noty('No se puede eliminar la materia porque tiene procedimientos o especialidades asociadas.', 'noty', false, 'error');
+            return;
+        }
+
+        $materia->delete();
+        $this->noty('Materia eliminada');
     }
 }

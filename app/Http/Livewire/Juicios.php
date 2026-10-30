@@ -83,8 +83,16 @@ class Juicios extends Component
  // Propiedades para Documentos
     public $doc_nombre;
     public $doc_archivo;
-    public $doc_origen_tipo = 'General'; // Valor por defecto
+    public $doc_origen_tipo = 'General'; // Compatibilidad con datos anteriores
     public $search_doc = ''; // Buscador de documentos
+    public $doc_tipo_documento_id;
+    public $doc_estado_procesal_id;
+    public $doc_descripcion;
+    public $doc_vinculo_tipo = 'expediente';
+    public $doc_vinculo_id = null;
+    public $doc_modal = false;
+    public $doc_contexto_titulo = '';
+    public $doc_filtro_vinculo = 'todos';
 
 
     //propiedades de funcionarios
@@ -171,7 +179,7 @@ class Juicios extends Component
         $q = Juicio::with([
             'asunto.procedimiento.materia',
             'unidadJudicial.canton.provincia',
-            'actores', 'demandados', 'estadoProcesal',
+            'actores.canton', 'demandados.canton', 'estadoProcesal',
             'abogados',
         ]);
         if (!$this->esAdmin() && !$this->esAsistente()) {
@@ -435,6 +443,18 @@ class Juicios extends Component
 
     // La base (carátula/sujetos) la prepara el Admin, el patrocinador o un
     // Asistente con permisos. No habilita actividades ni firma.
+    private function puedeEditarEstadoProcesal($juicio = null)
+    {
+        if ($this->esAdmin()) return true;
+        if (!$juicio) return $this->esAbogado() || $this->esAsistente();
+        return $this->esAbogado() && $this->esPatrocinadorActual($juicio);
+    }
+
+    private function puedeEditarPrioridadEnCaratula()
+    {
+        return $this->esAdmin();
+    }
+
     private function usuarioPuedeGestionarBase($notificar = true)
     {
         if (!$this->selected_id) {
@@ -646,6 +666,58 @@ class Juicios extends Component
         $puedeEditarBase = $this->form
             ? (!$this->juicio || $this->usuarioPuedeGestionarBase(false))
             : false;
+        $puedeEditarEstadoProcesal = $this->form
+            ? $this->puedeEditarEstadoProcesal($this->juicio)
+            : false;
+        $puedeEditarPrioridadCaratula = $this->form
+            ? $this->puedeEditarPrioridadEnCaratula()
+            : false;
+
+        $docTipos = $this->form
+            ? \App\Models\TipoDocumento::activos()->get()
+            : collect();
+
+        $docActividades = collect();
+        $docAudiencias = collect();
+        $docConsultas = collect();
+        $documentosContexto = collect();
+
+        if ($this->form && $this->juicio) {
+            $this->juicio->loadMissing([
+                'documentos.tipoDocumento',
+                'documentos.estadoProcesal',
+                'documentos.vinculos.vinculable',
+                'actividades.documentos',
+                'audiencias.documentos',
+            ]);
+
+            if ($this->doc_vinculo_tipo === 'actividad') {
+                $docActividades = \App\Models\Actividad::with('tipoActividad')
+                    ->where('juicio_id', $this->selected_id)
+                    ->orderByDesc('fecha_actividad')
+                    ->get();
+            } elseif ($this->doc_vinculo_tipo === 'audiencia') {
+                $docAudiencias = \App\Models\Audiencia::where('juicio_id', $this->selected_id)
+                    ->orderByDesc('fecha_hora')
+                    ->get();
+            } elseif ($this->doc_vinculo_tipo === 'consulta') {
+                $docConsultas = \App\Models\Consulta::where('juicio_id', $this->selected_id)
+                    ->orderByDesc('id')
+                    ->get();
+            }
+
+            if ($this->doc_modal && $this->doc_vinculo_id) {
+                $documentosContexto = $this->juicio->documentos
+                    ->filter(function ($documento) {
+                        return $documento->vinculos->contains(function ($vinculo) {
+                            return $vinculo->vinculable_type === $this->doc_vinculo_tipo
+                                && (int) $vinculo->vinculable_id === (int) $this->doc_vinculo_id;
+                        });
+                    })
+                    ->sortByDesc('created_at')
+                    ->values();
+            }
+        }
 
         return view('livewire.juicios.component', [
             'juicios' => $info,
@@ -654,6 +726,13 @@ class Juicios extends Component
             'puedeTramitar' => $puedeTramitar,
             'puedeGestionarPatrocinador' => $puedeGestionarPatrocinador,
             'puedeEditarBase' => $puedeEditarBase,
+            'puedeEditarEstadoProcesal' => $puedeEditarEstadoProcesal,
+            'puedeEditarPrioridadCaratula' => $puedeEditarPrioridadCaratula,
+            'docTipos' => $docTipos,
+            'docActividades' => $docActividades,
+            'docAudiencias' => $docAudiencias,
+            'docConsultas' => $docConsultas,
+            'documentosContexto' => $documentosContexto,
            // 'tipos_actividades' => \App\Models\TipoActividad::orderBy('nombre', 'asc')->get(),
            'tipos_actividades' => $this->form ? \App\Models\TipoActividad::orderBy('nombre','asc')->get() : [],
            //'lista_actividadades' => \App\Models\Actividad::orderBy('fecha_actividad', 'desc')->get(),
@@ -706,7 +785,10 @@ class Juicios extends Component
         $this->resetPage();
         $this->resetValidation();
         $this->reset('cod_satje','asunto_id','unidad_id','provincia_id','canton_id','materia_id',
-        'procedimiento_id','estado_procesal_id','fecha_inicio','prioridad','selected_id','search');
+        'procedimiento_id','estado_procesal_id','fecha_inicio','prioridad','selected_id','search',
+        'doc_nombre','doc_descripcion','doc_archivo','doc_tipo_documento_id','doc_estado_procesal_id','doc_vinculo_id',
+        'doc_modal','doc_contexto_titulo');
+        $this->doc_vinculo_tipo = 'expediente';
         $this->cantones = [];
         $this->unidades_judiciales = [];
         $this->procedimientos = [];
@@ -714,6 +796,34 @@ class Juicios extends Component
     }
 
        public function saveJuicio(){
+        $eraNuevo = !$this->selected_id;
+        $juicioActual = $eraNuevo ? null : Juicio::find($this->selected_id);
+
+        if (!$eraNuevo && !$juicioActual) {
+            $this->noty('El juicio ya no existe.', 'noty', false, 'error');
+            return;
+        }
+
+        $puedeBase = $eraNuevo
+            ? auth()->user()->can('agregar_juicio')
+            : $this->usuarioPuedeGestionarBase(false);
+        $puedeEstado = $this->puedeEditarEstadoProcesal($juicioActual);
+        $puedePrioridad = $this->puedeEditarPrioridadEnCaratula();
+
+        if (!$eraNuevo && !$puedeBase && !$puedeEstado && !$puedePrioridad) {
+            $this->noty('No tiene permiso para modificar la carátula de este juicio.', 'noty', false, 'error');
+            return;
+        }
+
+        if ($eraNuevo && !$puedeBase) {
+            $this->noty('No tiene permiso para registrar juicios.', 'noty', false, 'error');
+            return;
+        }
+
+        if (!$eraNuevo && $juicioActual && $juicioActual->base_confirmada_at) {
+            $this->guardarCambiosCaratulaBloqueada($juicioActual, $puedeEstado, $puedePrioridad);
+            return;
+        }
         $this->validate(array_merge(Juicio::rules($this->selected_id), [
             'provincia_id' => 'required|exists:provincias,id',
             'canton_id' => ['required', Rule::exists('cantones', 'id')->where('provincia_id', $this->provincia_id)],
@@ -731,11 +841,6 @@ class Juicios extends Component
             'procedimiento_id.exists' => 'El procedimiento no pertenece a la materia seleccionada.',
             'asunto_id.exists' => 'El asunto no pertenece al procedimiento seleccionado.',
         ]));
-        $eraNuevo = !$this->selected_id;
-        // La carátula la puede preparar Admin, patrocinador o Asistente con permiso.
-        if (!$eraNuevo && !$this->usuarioPuedeGestionarBase()) return;
-        if ($eraNuevo && auth()->user()->cannot('agregar_juicio')) return;
-
         $idAb = null;
         if ($eraNuevo) {
             if ($this->esAdmin()) {
@@ -754,13 +859,20 @@ class Juicios extends Component
 
         }
 
+        $estadoSeguro = $puedeEstado
+            ? $this->estado_procesal_id
+            : ($juicioActual->estado_procesal_id ?? $this->estado_procesal_id);
+        $prioridadSegura = $puedePrioridad
+            ? ($this->prioridad ?? 'Baja')
+            : ($juicioActual->prioridad ?? 'Baja');
+
         $datosJuicio = [
             'cod_satje' => $this->cod_satje,
             'asunto_id' => $this->asunto_id,
             'unidad_id' => $this->unidad_id,
-            'estado_procesal_id' => $this->estado_procesal_id,
+            'estado_procesal_id' => $estadoSeguro,
             'fecha_inicio' => $this->fecha_inicio,
-            'prioridad' => $this->prioridad ?? 'Baja'
+            'prioridad' => $prioridadSegura,
         ];
         if ($eraNuevo) {
             $datosJuicio['created_by'] = auth()->id();
@@ -855,6 +967,66 @@ class Juicios extends Component
         // Si era nuevo, ahora pasamos a modo edición por si quiere seguir editando la carátula
        
         //$this->tab = 'ficha'; // avanzar a Ficha
+    }
+
+    private function guardarCambiosCaratulaBloqueada($juicio, $puedeEstado, $puedePrioridad)
+    {
+        $reglas = [];
+        if ($puedeEstado) {
+            $reglas['estado_procesal_id'] = 'required|exists:estados_procesales,id';
+        }
+        if ($puedePrioridad) {
+            $reglas['prioridad'] = 'required|in:Baja,Media,Alta,Urgente';
+        }
+
+        if ($reglas) {
+            $this->validate($reglas, [
+                'estado_procesal_id.required' => 'Seleccione el estado procesal.',
+                'estado_procesal_id.exists' => 'El estado procesal no es válido.',
+                'prioridad.required' => 'Seleccione la prioridad.',
+                'prioridad.in' => 'La prioridad no es válida.',
+            ]);
+        }
+
+        $cambios = [];
+
+        if ($puedeEstado && (int) $juicio->estado_procesal_id !== (int) $this->estado_procesal_id) {
+            $cambios['estado_procesal_id'] = $this->estado_procesal_id;
+        }
+        if ($puedePrioridad && $juicio->prioridad !== $this->prioridad) {
+            $cambios['prioridad'] = $this->prioridad;
+        }
+
+        if (empty($cambios)) {
+            $this->noty('No hay cambios para guardar.', 'noty', false, 'error');
+            return;
+        }
+
+        $juicio->update($cambios);
+        $juicio->load('estadoProcesal');
+        $this->cargarJuicioMaestro($juicio->id, true);
+        $this->estado_procesal_id = $juicio->estado_procesal_id;
+        $this->prioridad = $juicio->prioridad;
+
+        $detalles = [];
+        if (isset($cambios['estado_procesal_id'])) {
+            $detalles[] = 'Estado procesal: ' . ($juicio->estadoProcesal->nombre ?? $juicio->estado_procesal_id);
+        }
+        if (isset($cambios['prioridad'])) {
+            $detalles[] = 'Prioridad: ' . $juicio->prioridad;
+        }
+
+        \App\Models\JuicioHistorialEstado::create([
+            'juicio_id' => $juicio->id,
+            'user_id' => auth()->id(),
+            'estado_procesal_id' => $juicio->estado_procesal_id,
+            'tipo_movimiento' => 'caratula_actualizada',
+            'referencia_tipo' => 'Juicio',
+            'referencia_id' => $juicio->id,
+            'descripcion' => 'Se actualizó la carátula en campos permitidos. ' . implode('. ', $detalles),
+        ]);
+
+        $this->noty('Carátula actualizada: ' . implode('; ', $detalles), 'noty', false);
     }
 
     public function addParticipante(){
@@ -966,6 +1138,7 @@ class Juicios extends Component
         $this->cod_satje = $juicio->cod_satje;
         $this->asunto_id = $juicio->asunto_id;
         $this->estado_procesal_id = $juicio->estado_procesal_id;
+        $this->doc_estado_procesal_id = $juicio->estado_procesal_id;
         $this->fecha_inicio = Carbon::parse($juicio->fecha_inicio)->format('Y-m-d');
         $this->prioridad = $juicio->prioridad;
         
@@ -1094,41 +1267,26 @@ public function editParticipanteEnJuicio(){
    }
 
    private function reemplazarVariables($textoHtml) {
-        // Reutilizar carga maestra en lugar de consultar de nuevo
        $juicio = $this->cargarJuicioMaestro();
-       if($juicio) $juicio->loadMissing(['funcionarios', 'estadoProcesal.fase']);
-       if(!$juicio) return $textoHtml;
-        $actores_identificacion = $juicio->actores->pluck('valueidenti')->implode(', ');
-        $actores_direccion = $juicio->actores->pluck('address')->implode(' | ');
-        $actores_correo = $juicio->actores->pluck('email')->implode(', ');
-        $actores_telefono = $juicio->actores->pluck('phone')->implode(', ');
-        $demandados_identificacion = $juicio->demandados->pluck('valueidenti')->implode(', ');
-        $demandados_direccion = $juicio->demandados->pluck('address')->implode(' | ');
-        $demandados_correo = $juicio->demandados->pluck('email')->implode(', ');
-        $demandados_telefono = $juicio->demandados->pluck('phone')->implode(', ');
-       if(!$juicio) return $textoHtml;
+       if (!$juicio) return $textoHtml;
 
-       $actores = $juicio->actores->pluck('businame')->implode(', ');
-       $demandados = $juicio->demandados->pluck('businame')->implode(', ');
-        // Clientes del despacho (marcados, en cualquier lado; sin consultas extra)
-        $clientes = $juicio->actores->merge($juicio->demandados)
-            ->filter(fn($p) => !empty($p->pivot->es_cliente))->unique('id');
-        $nombres_clientes = $clientes->pluck('businame')->implode(', ');
-       //juez ponente 
-         $juez = $juicio->funcionarios->first(function($f) {
-            return strtolower($f->pivot->rol_en_juicio) === 'juez ponente' 
-                || strtolower($f->cargo) === 'juez';
-        })?->nombre ?? '';
+       $juicio->loadMissing(['actores.canton', 'demandados.canton', 'funcionarios', 'estadoProcesal.fase']);
 
-            // 2. Buscar al funcionario asignado como Secretario
-        $secretario = $juicio->funcionarios->first(function($f) {
-            return strtolower($f->pivot->rol_en_juicio) === 'secretario' 
-                || strtolower($f->cargo) === 'secretario';
-        })?->nombre ?? '';
-        // 3. Formatear la lista completa de todos los funcionarios asignados y sus roles
-        $todosFuncionarios = $juicio->funcionarios->map(function($f) {
-            return "{$f->nombre} ({$f->pivot->rol_en_juicio})";
-        })->implode(', ');
+       $juez = $juicio->funcionarios->first(function($f) {
+           return strtolower($f->pivot->rol_en_juicio) === 'juez ponente'
+               || strtolower($f->cargo) === 'juez';
+       })?->nombre ?? '';
+
+       $secretario = $juicio->funcionarios->first(function($f) {
+           return strtolower($f->pivot->rol_en_juicio) === 'secretario'
+               || strtolower($f->cargo) === 'secretario';
+       })?->nombre ?? '';
+
+       $todosFuncionarios = $juicio->funcionarios->map(function($f) {
+           return "{$f->nombre} ({$f->pivot->rol_en_juicio})";
+       })->implode(', ');
+
+       $abogados = $juicio->abogados->filter(fn($a) => str_contains(strtolower(trim($a->pivot->rol_en_juicio ?? '')), 'patrocinador'));
 
        $variables = [
            'COD_SATJE' => $juicio->cod_satje ?? '',
@@ -1139,42 +1297,38 @@ public function editParticipanteEnJuicio(){
            'UNIDAD_JUDICIAL' => $juicio->unidadJudicial->nombre ?? '',
            'CIUDAD' => $juicio->unidadJudicial->canton->nombre ?? '',
            'PROVINCIA' => $juicio->unidadJudicial->canton->provincia->nombre ?? '',
-           'ACTORES' => $actores,
-           'DEMANDADOS' => $demandados,
-           'ACTORES_IDENTIFICACION'    => $actores_identificacion,
-            'ACTORES_DIRECCION'         => $actores_direccion,
-            'ACTORES_CORREO'            => $actores_correo,
-            'ACTORES_TELEFONO'          => $actores_telefono,
-
-            'DEMANDADOS_IDENTIFICACION' => $demandados_identificacion,
-            'DEMANDADOS_DIRECCION'      => $demandados_direccion,
-            'DEMANDADOS_CORREO'         => $demandados_correo,
-            'DEMANDADOS_TELEFONO'       => $demandados_telefono,
-            'CLIENTE' => $nombres_clientes,
-            'CLIENTE_IDENTIFICACION'    => $clientes->pluck('valueidenti')->implode(', '),
-            'CLIENTE_DIRECCION'         => $clientes->pluck('address')->implode(' | '),
-            'CLIENTE_CORREO'            => $clientes->pluck('email')->implode(', '),
-        'CLIENTE_TELEFONO'          => $clientes->pluck('phone')->implode(', '),
-        // Patrocinadores del juicio
-        'ABOGADO' => $juicio->abogados->filter(fn($a) => str_contains(strtolower(trim($a->pivot->rol_en_juicio ?? '')), 'patrocinador'))->pluck('name')->implode(', '),
-        'ABOGADO_IDENTIFICACION' => $juicio->abogados->filter(fn($a) => str_contains(strtolower(trim($a->pivot->rol_en_juicio ?? '')), 'patrocinador'))->pluck('ci')->implode(', '),
-        'ABOGADO_CORREO' => $juicio->abogados->filter(fn($a) => str_contains(strtolower(trim($a->pivot->rol_en_juicio ?? '')), 'patrocinador'))->pluck('email')->implode(', '),
-        // Contraparte: sujetos que NO son clientes del despacho
-        'CONTRAPARTE' => $juicio->actores->merge($juicio->demandados)->filter(fn($p) => empty($p->pivot->es_cliente))->unique('id')->pluck('businame')->implode(', '),
-        'CONTRAPARTE_IDENTIFICACION' => $juicio->actores->merge($juicio->demandados)->filter(fn($p) => empty($p->pivot->es_cliente))->unique('id')->pluck('valueidenti')->implode(', '),
-        // Estado y prioridad
-        'ESTADO_PROCESAL' => $juicio->estadoProcesal->nombre ?? '',
-        'FASE' => $juicio->estadoProcesal->fase->nombre ?? '',
-        'PRIORIDAD' => $juicio->prioridad ?? '',
-        'FECHA_ACTIVIDAD' => !empty($this->fecha_actividad) ? \Carbon\Carbon::parse($this->fecha_actividad)->format('d/m/Y') : '',
-        'FECHA_ACTUAL' => \Carbon\Carbon::now()->translatedFormat('d \d\e F \d\e Y'),
-             'JUEZ' => $juez,
-            'SECRETARIO' => $secretario,
-            'FUNCIONARIOS' => $todosFuncionarios,
+           'ESTADO_PROCESAL' => $juicio->estadoProcesal->nombre ?? '',
+           'FASE' => $juicio->estadoProcesal->fase->nombre ?? '',
+           'PRIORIDAD' => $juicio->prioridad ?? '',
+           'FECHA_ACTIVIDAD' => !empty($this->fecha_actividad) ? \Carbon\Carbon::parse($this->fecha_actividad)->format('d/m/Y') : '',
+           'FECHA_ACTUAL' => \Carbon\Carbon::now()->translatedFormat('d \d\e F \d\e Y'),
+           'ABOGADO' => $abogados->pluck('name')->implode(', '),
+           'ABOGADO_IDENTIFICACION' => $abogados->pluck('ci')->implode(', '),
+           'ABOGADO_CORREO' => $abogados->pluck('email')->implode(', '),
+           'JUEZ' => $juez,
+           'SECRETARIO' => $secretario,
+           'FUNCIONARIOS' => $todosFuncionarios,
        ];
 
+       $variables['ACTOR'] = $this->formatearValoresParte($juicio->actores->pluck('businame'));
+       $variables['ACTOR_IDENTIFICACION'] = $this->formatearValoresParte($juicio->actores->pluck('valueidenti'));
+       $variables['ACTOR_DIRECCION'] = $this->formatearValoresParte($juicio->actores->pluck('address'));
+       $variables['ACTOR_CORREO'] = $this->formatearValoresParte($juicio->actores->pluck('email'));
+       $variables['ACTOR_TELEFONO'] = $this->formatearValoresParte($juicio->actores->pluck('phone'));
+       $variables['ACTOR_ESTADO_CIVIL'] = $this->formatearValoresParte($juicio->actores->pluck('estado_civil'));
+       $variables['ACTOR_PROFESION_OCUPACION'] = $this->formatearValoresParte($juicio->actores->pluck('profesion_ocupacion'));
+       $variables['ACTOR_CANTON'] = $this->formatearValoresParte($juicio->actores->map(fn($p) => $p->canton->nombre ?? ''));
+
+       $variables['DEMANDADO'] = $this->formatearValoresParte($juicio->demandados->pluck('businame'));
+       $variables['DEMANDADO_IDENTIFICACION'] = $this->formatearValoresParte($juicio->demandados->pluck('valueidenti'));
+       $variables['DEMANDADO_DIRECCION'] = $this->formatearValoresParte($juicio->demandados->pluck('address'));
+       $variables['DEMANDADO_CORREO'] = $this->formatearValoresParte($juicio->demandados->pluck('email'));
+       $variables['DEMANDADO_TELEFONO'] = $this->formatearValoresParte($juicio->demandados->pluck('phone'));
+       $variables['DEMANDADO_ESTADO_CIVIL'] = $this->formatearValoresParte($juicio->demandados->pluck('estado_civil'));
+       $variables['DEMANDADO_PROFESION_OCUPACION'] = $this->formatearValoresParte($juicio->demandados->pluck('profesion_ocupacion'));
+       $variables['DEMANDADO_CANTON'] = $this->formatearValoresParte($juicio->demandados->map(fn($p) => $p->canton->nombre ?? ''));
+
        foreach($variables as $key => $value) {
-           // Soporta [VARIABLE], {VARIABLE}, [variable], {variable}
            $textoHtml = str_ireplace('[' . $key . ']', $value, $textoHtml);
            $textoHtml = str_ireplace('{' . $key . '}', $value, $textoHtml);
        }
@@ -1182,6 +1336,19 @@ public function editParticipanteEnJuicio(){
        return $textoHtml;
    }
 
+   private function formatearValoresParte($valores): string
+   {
+       $valores = collect($valores)->values();
+
+       if ($valores->count() <= 1) {
+           return trim((string) $valores->first()) ?: '';
+       }
+
+       return $valores->map(function ($valor, $indice) {
+           $valor = trim((string) $valor);
+           return $valor === '' ? null : ($indice + 1) . ') ' . $valor;
+       })->filter()->implode('; ');
+   }
    public function cargarPlantilla(){
        if($this->plantilla_seleccionada_id){
             $plantilla = \App\Models\PlantillaTipoActividad::find($this->plantilla_seleccionada_id);
@@ -1283,7 +1450,7 @@ public function editParticipanteEnJuicio(){
     }
 
     // Recargar solo actividades y estado procesal (lo único que pudo cambiar aquí)
-    if ($this->juicio) $this->juicio->load('actividades.tipoActividad', 'estadoProcesal');
+    if ($this->juicio) $this->juicio->load('actividades.tipoActividad', 'actividades.documentos', 'estadoProcesal');
 
     $this->resetActividadInputs();
 
@@ -1321,7 +1488,7 @@ public function editParticipanteEnJuicio(){
             return;
         }
         $act->delete();
-        if ($this->juicio) $this->juicio->load('actividades.tipoActividad');
+        if ($this->juicio) $this->juicio->load('actividades.tipoActividad', 'actividades.documentos');
         $this->noty('Actividad eliminada', 'noty', false);
         \App\Models\JuicioHistorialEstado::create([
             'juicio_id'          => $this->selected_id,
@@ -1434,17 +1601,29 @@ public function editParticipanteEnJuicio(){
         $extension = $this->aud_archivo->getClientOriginalExtension();
         $pesoKb = filesize($this->aud_archivo->getRealPath()) / 1024;
 
-        // 5. CREAR NUEVO REGISTRO DOCUMENTO
-        \App\Models\Documento::create([
-            'juicio_id'     => $this->selected_id,
-            'origen_tipo'   => 'Audiencia',
-            'origen_id'     => $idAud,
-            'nombre'        => 'Acta de Audiencia - ' . $this->aud_tipo_audiencia,
-            'ruta_archivo'  => $ruta,
-            'tipo_archivo'  => $extension,
-            'tamaño_archivo' => round($pesoKb, 2),
+        // 5. CREAR NUEVO REGISTRO DOCUMENTO Y VINCULARLO A LA AUDIENCIA
+        $tipoActa = \App\Models\TipoDocumento::where('codigo', 'acta')->value('id');
+        $documentoActa = new \App\Models\Documento();
+        $documentoActa->fill([
+            'juicio_id' => $this->selected_id,
+            'tipo_documento_id' => $tipoActa,
+            'estado_procesal_id' => $this->estado_procesal_id,
+            'origen_tipo' => 'Audiencia',
+            'origen_id' => $idAud,
+            'nombre' => 'Acta de Audiencia - ' . $this->aud_tipo_audiencia,
+            'descripcion' => 'Acta o resumen de la audiencia del ' . \Carbon\Carbon::parse($this->aud_fecha_hora)->format('d/m/Y H:i'),
+            'fecha_documento' => now()->toDateString(),
+            'ruta_archivo' => $ruta,
+            'tipo_archivo' => strtolower($extension),
+            'created_by' => auth()->id(),
         ]);
+        $documentoActa->setAttribute('tamaño_archivo', round($pesoKb, 2));
+        $documentoActa->save();
 
+        $audienciaDocumento = \App\Models\Audiencia::find($idAud);
+        if ($audienciaDocumento) {
+            $documentoActa->vincularA($audienciaDocumento, 'principal');
+        }
         \App\Models\JuicioHistorialEstado::create([
             'juicio_id'          => $this->selected_id,
             'user_id'            => auth()->id(),
@@ -1459,7 +1638,7 @@ public function editParticipanteEnJuicio(){
         $this->aud_archivo = null;
     }
         // Refrescar solo audiencias y documentos del expediente
-        if ($this->juicio) $this->juicio->load('audiencias', 'documentos');
+        if ($this->juicio) $this->juicio->load('audiencias.documentos', 'documentos.tipoDocumento', 'documentos.estadoProcesal', 'documentos.vinculos.vinculable');
         $this->resetAudienciaInputs();
    }
 
@@ -1515,51 +1694,197 @@ public function editParticipanteEnJuicio(){
 // DOCUMENTOS (GESTOR GLOBAL)
 // ─────────────────────────────────────────
 
-    public function saveDocumentoGeneral(){
+    public function saveDocumentoGeneral()
+    {
         if (!$this->usuarioPuedeTramitar()) return;
         if (!$this->exigirBaseProcesal()) return;
-        $this->validate([
-            'doc_nombre'      => 'required|string|max:255',
-            'doc_origen_tipo' => 'required|string|max:255',
-            'doc_archivo'     => 'required|file|max:5120', // Máximo 5MB
+
+        $reglas = [
+            'doc_nombre' => 'required|string|max:255',
+            'doc_tipo_documento_id' => 'required|exists:tipos_documentos,id',
+            'doc_estado_procesal_id' => 'nullable|exists:estados_procesales,id',
+            'doc_descripcion' => 'nullable|string|max:2000',
+            'doc_vinculo_tipo' => 'required|in:expediente,actividad,audiencia,consulta',
+            'doc_archivo' => 'required|file|max:10240|mimes:pdf,doc,docx,jpg,jpeg,png,xls,xlsx',
+        ];
+
+        if ($this->doc_vinculo_tipo !== 'expediente') {
+            $reglas['doc_vinculo_id'] = 'required|integer';
+        }
+
+        $this->validate($reglas, [
+            'doc_nombre.required' => 'Indique un nombre para el documento.',
+            'doc_tipo_documento_id.required' => 'Seleccione el tipo de documento.',
+            'doc_tipo_documento_id.exists' => 'El tipo de documento no es válido.',
+            'doc_estado_procesal_id.exists' => 'La etapa procesal no es válida.',
+            'doc_vinculo_tipo.required' => 'Indique a qué se vincula el documento.',
+            'doc_vinculo_tipo.in' => 'El vínculo seleccionado no es válido.',
+            'doc_vinculo_id.required' => 'Seleccione el registro al que pertenece el documento.',
+            'doc_archivo.required' => 'Seleccione el archivo a subir.',
+            'doc_archivo.file' => 'El archivo no se cargó completamente. Espere y vuelva a intentar.',
+            'doc_archivo.max' => 'El archivo no debe superar los 10 MB.',
+            'doc_archivo.mimes' => 'Solo se permiten PDF, Word, imágenes o Excel.',
         ]);
 
+        $destino = null;
+        if ($this->doc_vinculo_tipo !== 'expediente') {
+            $destino = $this->resolverDocumentoVinculo();
+            if (!$destino) {
+                $this->addError('doc_vinculo_id', 'El registro seleccionado no pertenece a este juicio.');
+                return;
+            }
+        }
 
-        // Obtener información del archivo
-    $extension = $this->doc_archivo->getClientOriginalExtension();
-    $pesoKb = filesize($this->doc_archivo->getRealPath()) / 1024;
-    // Guardar el archivo físicamente. 
-    // NOTA: Como usas stancl/tenancy, el disco 'public' ya se aísla automáticamente en la carpeta de cada tenant.
-    $ruta = $this->doc_archivo->store('documentos_juicios', 'public');
-    // Registrar en la base de datos
- $nuevoDoc = \App\Models\Documento::create([
-        'juicio_id'    => $this->selected_id,
-        'origen_tipo'  => $this->doc_origen_tipo, // Aquí guardamos la clasificación seleccionada
-        'origen_id'    => null,
-        'nombre'       => $this->doc_nombre,
-        'ruta_archivo' => $ruta,
-        'tipo_archivo' => strtolower($extension),
-        'tamaño_archivo'      => $pesoKb,
-    ]);
-    // Registrar en el historial de auditoría
-  \App\Models\JuicioHistorialEstado::create([
-        'juicio_id'          => $this->selected_id,
-        'user_id'            => auth()->id(),
-        'estado_procesal_id' => $this->estado_procesal_id,
-        'tipo_movimiento'    => 'documento_subido',
-        'referencia_tipo'    => 'Documento',
-        'referencia_id'      => $nuevoDoc->id,
-        'descripcion'        => 'Se subió un documento (' . $this->doc_origen_tipo . '): ' . $this->doc_nombre,
-    ]);
-    $this->noty('Documento subido con éxito.', 'noty', false);
-    // Limpiar inputs
-    $this->reset(['doc_nombre', 'doc_archivo']);
-    $this->doc_origen_tipo = 'General';
-    
-    // Refrescar solo documentos del expediente
-    if ($this->juicio) $this->juicio->load('documentos');
+        $extension = strtolower($this->doc_archivo->getClientOriginalExtension());
+        $pesoKb = filesize($this->doc_archivo->getRealPath()) / 1024;
+        $hash = hash_file('sha256', $this->doc_archivo->getRealPath());
+        $ruta = $this->doc_archivo->store('documentos_juicios', 'public');
+
+        $nuevoDoc = new \App\Models\Documento();
+        $nuevoDoc->fill([
+            'juicio_id' => $this->selected_id,
+            'tipo_documento_id' => $this->doc_tipo_documento_id,
+            'estado_procesal_id' => $this->doc_estado_procesal_id ?: $this->estado_procesal_id,
+            'nombre' => $this->doc_nombre,
+            'descripcion' => $this->doc_descripcion,
+            'fecha_documento' => now()->toDateString(),
+            'ruta_archivo' => $ruta,
+            'tipo_archivo' => $extension,
+            'hash' => $hash,
+            'created_by' => auth()->id(),
+        ]);
+        $nuevoDoc->setAttribute('tamaño_archivo', round($pesoKb, 2));
+        $nuevoDoc->save();
+
+        if ($destino) {
+            $nuevoDoc->vincularA($destino, 'principal');
+        }
+
+        $tipoNombre = \App\Models\TipoDocumento::find($this->doc_tipo_documento_id)->nombre ?? 'Documento';
+        $vinculoNombre = $destino ? ' vinculado a ' . $this->doc_contexto_titulo : ' del expediente';
+
+        \App\Models\JuicioHistorialEstado::create([
+            'juicio_id' => $this->selected_id,
+            'user_id' => auth()->id(),
+            'estado_procesal_id' => $this->estado_procesal_id,
+            'tipo_movimiento' => 'documento_subido',
+            'referencia_tipo' => 'Documento',
+            'referencia_id' => $nuevoDoc->id,
+            'descripcion' => 'Se subió un documento (' . $tipoNombre . ')' . $vinculoNombre . ': ' . $nuevoDoc->nombre,
+        ]);
+
+        $this->noty('Documento subido y vinculado correctamente.', 'noty', false);
+        $this->doc_nombre = null;
+        $this->doc_descripcion = null;
+        $this->doc_archivo = null;
+        $this->doc_tipo_documento_id = null;
+        $this->resetValidation();
+
+        if ($this->juicio) {
+            $this->juicio->load('documentos.tipoDocumento', 'documentos.estadoProcesal', 'documentos.vinculos.vinculable', 'actividades.documentos', 'audiencias.documentos');
+        }
     }
 
+    public function updatedDocArchivo()
+    {
+        if (!$this->doc_nombre && $this->doc_archivo) {
+            $this->doc_nombre = pathinfo($this->doc_archivo->getClientOriginalName(), PATHINFO_FILENAME);
+        }
+    }
+
+    public function updatedDocVinculoTipo($value)
+    {
+        $this->doc_vinculo_id = null;
+        $this->doc_contexto_titulo = $value === 'expediente' ? 'Expediente del juicio' : '';
+        $this->resetValidation('doc_vinculo_id');
+    }
+
+    public function updatedDocVinculoId($value)
+    {
+        $destino = $this->resolverDocumentoVinculo();
+        $this->doc_contexto_titulo = $destino ? $this->etiquetaDocumentoVinculo($destino) : '';
+    }
+
+    private function etiquetaDocumentoVinculo($destino): string
+    {
+        if ($destino instanceof \App\Models\Actividad) {
+            return 'Actividad #' . $destino->id . ' · ' . ($destino->descripcion ?: 'Actividad');
+        }
+        if ($destino instanceof \App\Models\Audiencia) {
+            return 'Audiencia #' . $destino->id . ' · ' . $destino->tipo_audiencia;
+        }
+        if ($destino instanceof \App\Models\Consulta) {
+            return 'Consulta #' . $destino->id;
+        }
+
+        return 'Expediente del juicio';
+    }
+
+    private function resolverDocumentoVinculo()
+    {
+        $clases = [
+            'actividad' => \App\Models\Actividad::class,
+            'audiencia' => \App\Models\Audiencia::class,
+            'consulta' => \App\Models\Consulta::class,
+        ];
+
+        $clase = $clases[$this->doc_vinculo_tipo] ?? null;
+        if (!$clase || !$this->doc_vinculo_id) {
+            return null;
+        }
+
+        return $clase::where('id', $this->doc_vinculo_id)
+            ->where('juicio_id', $this->selected_id)
+            ->first();
+    }
+
+    private function abrirDocumentosContexto(string $tipo, $id, string $titulo)
+    {
+        if (!$this->usuarioPuedeTramitar()) return;
+
+        $this->doc_vinculo_tipo = $tipo;
+        $this->doc_vinculo_id = $id;
+        $this->doc_contexto_titulo = $titulo;
+        $this->doc_estado_procesal_id = $this->doc_estado_procesal_id ?: $this->estado_procesal_id;
+        $this->doc_modal = true;
+        $this->resetValidation();
+    }
+
+    public function abrirDocumentosActividad($id)
+    {
+        $actividad = \App\Models\Actividad::with('tipoActividad')
+            ->where('id', $id)
+            ->where('juicio_id', $this->selected_id)
+            ->first();
+
+        if (!$actividad) {
+            $this->noty('Actividad no encontrada en este juicio.', 'noty', false, 'error');
+            return;
+        }
+
+        $titulo = 'Actividad #' . $actividad->id . ' · ' . ($actividad->descripcion ?: ($actividad->tipoActividad->nombre ?? 'Actividad'));
+        $this->abrirDocumentosContexto('actividad', $actividad->id, $titulo);
+    }
+
+    public function abrirDocumentosAudiencia($id)
+    {
+        $audiencia = \App\Models\Audiencia::where('id', $id)
+            ->where('juicio_id', $this->selected_id)
+            ->first();
+
+        if (!$audiencia) {
+            $this->noty('Audiencia no encontrada en este juicio.', 'noty', false, 'error');
+            return;
+        }
+
+        $this->abrirDocumentosContexto('audiencia', $audiencia->id, 'Audiencia #' . $audiencia->id . ' · ' . $audiencia->tipo_audiencia);
+    }
+
+    public function cerrarDocumentosModal()
+    {
+        $this->doc_modal = false;
+        $this->resetValidation();
+    }
     public function destroyDocumento($id){
         if (!$this->usuarioPuedeTramitar()) return;
         if (!$this->exigirBaseProcesal()) return;
@@ -1567,8 +1892,13 @@ public function editParticipanteEnJuicio(){
         if (!$doc) { $this->noty('Documento no encontrado en este juicio.', 'noty', false, 'error'); return; }
         $docId = $doc->id;
         $docNombre = $doc->nombre;
-        // Eliminar el archivo físicamente
-        if (\Storage::disk('public')->exists($doc->ruta_archivo)) {
+        // Eliminar el archivo físicamente solo si no lo usa otro registro
+        $archivoCompartido = \App\Models\TareaAdjunto::where('ruta_archivo', $doc->ruta_archivo)->exists()
+            || \App\Models\Documento::where('ruta_archivo', $doc->ruta_archivo)
+                ->where('id', '!=', $doc->id)
+                ->exists();
+
+        if (!$archivoCompartido && \Storage::disk('public')->exists($doc->ruta_archivo)) {
             \Storage::disk('public')->delete($doc->ruta_archivo);
         }
         // Eliminar el registro de la base de datos
@@ -1584,7 +1914,7 @@ public function editParticipanteEnJuicio(){
             'descripcion'     => 'Se eliminó el documento: ' . $docNombre,
         ]);
         $this->noty('Documento eliminado.', 'noty', false);
-        if ($this->juicio) $this->juicio->load('documentos');
+        if ($this->juicio) $this->juicio->load('documentos.tipoDocumento', 'documentos.estadoProcesal', 'documentos.vinculos.vinculable');
     }
 
 
@@ -1929,6 +2259,54 @@ public function descargarPdf(Audiencia $audiencia)
         $this->showRoadmapModal = false;
         $this->historialRoadmap = [];
         $this->juicioRoadmap = null;
+    }
+
+    public function descargarHistorialPdf()
+    {
+        $juicio = $this->juicioRoadmap
+            ?: ($this->selected_id ? Juicio::with('estadoProcesal')->find($this->selected_id) : null);
+
+        if (!$juicio) {
+            $this->noty('No se encontró el juicio para descargar el historial.', 'noty', false, 'error');
+            return;
+        }
+
+        if (!$this->esAdmin() && !$this->esAsistente()) {
+            $permitido = Juicio::where('id', $juicio->id)
+                ->whereHas('abogados', fn ($q) => $q->where('user_id', auth()->id()))
+                ->exists();
+
+            if (!$permitido) {
+                $this->noty('No tiene permiso para descargar este historial.', 'noty', false, 'error');
+                return;
+            }
+        }
+
+        $juicio->loadMissing([
+            'asunto.procedimiento.materia',
+            'unidadJudicial',
+            'estadoProcesal',
+            'actores',
+            'demandados',
+        ]);
+
+        $historial = \App\Models\JuicioHistorialEstado::with(['user', 'estadoProcesal'])
+            ->where('juicio_id', $juicio->id)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $pdf = Pdf::loadView('pdf.historial-juicio', [
+            'juicio' => $juicio,
+            'historial' => $historial,
+            'generadoEn' => now(),
+        ])->setPaper('a4', 'portrait');
+
+        $nombre = 'historial_' . \Illuminate\Support\Str::slug($juicio->cod_satje ?: 'juicio_' . $juicio->id)
+            . '_' . now()->format('Ymd_His') . '.pdf';
+
+        return response()->streamDownload(function () use ($pdf) {
+            echo $pdf->output();
+        }, $nombre, ['Content-Type' => 'application/pdf']);
     }
 
    public function updatedFirmaArchivoPersonal(): void
