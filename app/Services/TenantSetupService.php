@@ -58,10 +58,20 @@ class TenantSetupService
             Setting::updateOrCreate(
                 ['id' => 1],
                 [
-                    'razonSocial' => $data['company_name'],
-                    'nombreComercial' => $data['company_name'],
-                    'email' => $data['admin_email'],
+                    'razonSocial' => $data['company_name'] ?? $tenant->name,
+                    'nombreComercial' => $data['company_name'] ?? $tenant->name,
                     'ruc' => $data['admin_ci'] ?? '9999999999',
+                    'estab' => '001',
+                    'ptoEmi' => '001',
+                    'dirMatriz' => 's/n',
+                    'dirEstablecimiento' => 's/n',
+                    'email' => $data['admin_email'],
+                    'ambiente' => 1,
+                    'tipoEmision' => 1,
+                    'contribuyenteEspecial' => 'NO',
+                    'obligadoContabilidad' => 'NO',
+                    'annulment_days' => 15,
+                    'enable_caja' => false,
                 ]
             );
 
@@ -147,12 +157,16 @@ class TenantSetupService
 
             if (!empty($resendKey)) {
                 Log::info('[SETUP_SERVICE] Dispatching Welcome Mail via Resend API');
-                
+
+                $url = 'http://' . (optional($tenant->domains->first())->domain ?? '');
+                $adminName = $data['admin_name'] ?? $user->name ?? $data['company_name'] ?? 'equipo';
+                $client = new Client();
+
                 $payload = [
-                    'from' => config('services.resend.from_name', 'Facta SAAS') . " <" . config('services.resend.from', 'noreply@facta.ec') . ">",
+                    'from' => config('services.resend.from_name', 'Adlatere') . " <" . config('services.resend.from', 'noreply@adlatere.ec') . ">",
                     'to' => [$data['admin_email']],
-                    'subject' => '¡Bienvenido a Facta!',
-                    'html' => "Hola {$data['admin_name']},<br><br>Tu entorno ha sido creado exitosamente.<br>
+                    'subject' => '¡Bienvenido a Adlatere!',
+                    'html' => "Hola {$adminName},<br><br>Tu entorno ha sido creado exitosamente.<br>
                                Puedes acceder en: <a href='{$url}'>{$url}</a><br>
                                Usuario: {$data['admin_email']}<br>
                                Contraseña: la que elegiste en el registro.<br><br>Saludos."

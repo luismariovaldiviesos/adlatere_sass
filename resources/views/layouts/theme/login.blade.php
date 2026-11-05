@@ -5,8 +5,8 @@
         <meta charset="utf-8">
         <link href="{{ asset('dist/images/logo.svg')}}" rel="shortcut icon">
         <meta name="viewport" content="width=device-width, initial-scale=1">
-        <meta name="description" content="Sistema Facta SaaS">
-        <title>Login - Facta SaaS</title>
+        <meta name="description" content="Sistema Adlatere SaaS">
+        <title>Login - Adlatere SaaS</title>
         <!-- BEGIN: CSS Assets-->
         <link rel="stylesheet" href="{{ asset('dist/css/app.css')}}" />
         <!-- END: CSS Assets-->

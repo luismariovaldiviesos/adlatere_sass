@@ -48,7 +48,7 @@ class CentralController extends Controller
 
     public function registerRedirect()
     {
-        return redirect('/#applications');
+        return redirect('/#registro');
     }
 
     public function debugRouting()

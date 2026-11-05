@@ -151,8 +151,22 @@ class Payator extends Component
                 Log::info('Free Plan detected. Running setup immediately: ' . $this->tenant_id);
                 $setupService = new \App\Services\TenantSetupService();
                 $pending = $tenant->pending_data;
-                $setupService->finalize($tenant, $pending);
-                
+
+                if (!$setupService->finalize($tenant, $pending)) {
+                    $this->addError('tenant_id', 'El espacio fue creado, pero no se pudo configurar. Contacta a soporte.');
+                    return;
+                }
+
+                if (app()->environment('local')) {
+                    $hosts = app(\App\Services\LocalHostsService::class)->ensure($domain);
+                    if (!$hosts['ok']) {
+                        return redirect()->route('registration.complete', [
+                            'domain' => request()->getHost(),
+                            'tenant' => $tenant->id,
+                        ]);
+                    }
+                }
+
                 return redirect()->to('http://' . $domain . '/login');
             }
 

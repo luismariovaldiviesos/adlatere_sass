@@ -17,13 +17,20 @@ class DatabaseSeeder extends Seeder
         } else {
             $this->call(PlanUnicoSeeder::class);
 
-            $email = env('SEED_CENTRAL_ADMIN_EMAIL') ?: 'admin@facta.com';
-            $password = env('SEED_CENTRAL_ADMIN_PASSWORD') ?: 'administrador';
+            $email = env('SEED_CENTRAL_ADMIN_EMAIL') ?: 'admin@adlatere.ec';
+            $password = env('SEED_CENTRAL_ADMIN_PASSWORD') ?: 'administardor';
 
-            \App\Models\User::firstOrCreate(
+            $admin = \App\Models\User::firstOrCreate(
                 ['email' => $email],
-                ['name' => 'Super Admin', 'password' => bcrypt($password)]
+                ['name' => 'Super Admin', 'profile' => 'Admin', 'password' => bcrypt($password)]
             );
+
+            // Mantiene operativo el acceso si el seeder se ejecuta de nuevo.
+            $admin->forceFill([
+                'name' => 'Super Admin',
+                'profile' => 'Admin',
+                'password' => bcrypt($password),
+            ])->save();
         }
     }
 }

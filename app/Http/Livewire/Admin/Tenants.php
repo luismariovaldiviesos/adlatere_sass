@@ -55,7 +55,7 @@ class Tenants extends Component
             'month_revenue' => $this->getMonthRevenue(), // This was the old graph/list logic, kept for compatibility if needed
             'total_collected' => $totalCollectedCents / 100,
             'projected_mrr' => $projectedMrr
-        ])->layout('layouts.theme.app', ['title' => 'Admin Tenants - Facta SaaS']);
+        ])->layout('layouts.theme.app', ['title' => 'Admin Tenants - Adlatere SaaS']);
     }
 
     function loadTenants()

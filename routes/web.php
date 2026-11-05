@@ -27,6 +27,14 @@ Route::domain('{domain}')->where(['domain' => $centralRegex])->group(function ()
     Route::get('/payment/response', [\App\Http\Controllers\PaymentController::class, 'response'])->name('payment.response');
     Route::get('/payment/cancel', [\App\Http\Controllers\PaymentController::class, 'cancel'])->name('payment.cancel');
 
+    Route::get('/payment/paypal/simulate', [\App\Http\Controllers\PaymentController::class, 'paypalSimulate'])->name('payment.paypal.simulate');
+    Route::post('/payment/paypal/simulate/approve', [\App\Http\Controllers\PaymentController::class, 'paypalSimulateApprove'])->name('payment.paypal.simulate.approve');
+    Route::get('/payment/paypal/return', [\App\Http\Controllers\PaymentController::class, 'paypalReturn'])->name('payment.paypal.return');
+    Route::get('/payment/paypal/cancel', [\App\Http\Controllers\PaymentController::class, 'paypalCancel'])->name('payment.paypal.cancel');
+
+    Route::get('/registro/completado/{tenant}', [\App\Http\Controllers\PaymentController::class, 'registrationComplete'])->name('registration.complete');
+    Route::get('/registro/{tenant}/hosts-script', [\App\Http\Controllers\PaymentController::class, 'hostsScript'])->middleware('signed')->name('registration.hostsScript');
+
     // Subscription Renewal Route
     Route::get('/payment/renewal/{tenant}', [\App\Http\Controllers\PaymentController::class, 'createRenewal'])->name('payment.renewal');
 

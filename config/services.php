@@ -31,11 +31,23 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'payments' => [
+        'default' => env('PAYMENT_GATEWAY', 'paypal'),
+    ],
+
     'payphone' => [
         'mode' => env('PAYMENT_MODE', 'sandbox'),
         'id' => env('PAYPHONE_ID'),
         'secret' => env('PAYPHONE_SECRET'),
         'token' => env('PAYPHONE_TOKEN'), // Developer Token often used
+    ],
+
+    'paypal' => [
+        'mode' => env('PAYPAL_MODE', 'simulation'),
+        'client_id' => env('PAYPAL_CLIENT_ID'),
+        'client_secret' => env('PAYPAL_CLIENT_SECRET'),
+        'currency' => env('PAYPAL_CURRENCY', 'USD'),
+        'base_url' => env('PAYPAL_BASE_URL', 'https://api-m.sandbox.paypal.com'),
     ],
 
     'sendgrid' => [
@@ -44,8 +56,8 @@ return [
 
     'resend' => [
         'key' => env('RESEND_API_KEY'),
-        'from' => env('MAIL_FROM_ADDRESS', 'noreply@facta.ec'),
-        'from_name' => env('MAIL_FROM_NAME', 'Facta'),
+        'from' => env('MAIL_FROM_ADDRESS', 'noreply@adlatere.ec'),
+        'from_name' => env('MAIL_FROM_NAME', 'Adlatere'),
     ],
 
 ];

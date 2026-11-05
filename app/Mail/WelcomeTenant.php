@@ -37,8 +37,8 @@ class WelcomeTenant extends Mailable
     public function envelope()
     {
         return new Envelope(
-            from: new \Illuminate\Mail\Mailables\Address('no-reply@facta.ec', 'Facta SaaS'),
-            subject: '¡Bienvenido a Facta SaaS!',
+            from: new \Illuminate\Mail\Mailables\Address('no-reply@adlatere.ec', 'Adlatere SaaS'),
+            subject: '¡Bienvenido a Adlatere SaaS!',
         );
     }
 

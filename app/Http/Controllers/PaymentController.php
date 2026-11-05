@@ -142,25 +142,236 @@ class PaymentController extends Controller
             return back()->with('error', "No se pudo determinar el precio para el plan: {$tenant->suscription_type}. Por favor, contacta a soporte.");
         }
 
-        $payphoneService = new \App\Services\Payments\PayphoneService();
+        $paymentGateway = app(\App\Services\Payments\PaymentGatewayInterface::class);
         
         // Identificador de transacción único: tenantId + timestamp
         $clientTxId = $tenant->id . '---' . time();
 
         $pending = $tenant->pending_data;
         $clientData = [
-            'email' => $pending['admin_email'] ?? ($tenant->email ?? 'pago@facta.ec'),
+            'email' => $pending['admin_email'] ?? ($tenant->email ?? 'pago@adlatere.ec'),
             'phone' => $pending['admin_phone'] ?? '0999999999',
             'ci' => $pending['admin_ci'] ?? '9999999999',
             'name' => $tenant->name
         ];
 
-        $response = $payphoneService->preparePayment($amount, $clientTxId, $clientData);
+        $response = $paymentGateway->preparePayment($amount, $clientTxId, $clientData);
 
         if ($response['success']) {
             return view('payments.redirect', ['url' => $response['url']]);
         }
 
-        return back()->with('error', 'Error Payphone: ' . ($response['message'] ?? 'Desconocido'));
+        return back()->with('error', 'Error del pasarela de pago: ' . ($response['message'] ?? 'Desconocido'));
+    }
+
+    public function paypalSimulate(Request $request)
+    {
+        $reference = (string) $request->query('reference');
+        $amount = (float) $request->query('amount', 0);
+        $tenantId = $this->tenantIdFromReference($reference);
+        $tenant = $tenantId ? Tenant::find($tenantId) : null;
+
+        if (!$tenant) {
+            return redirect('/')->with('error', 'No se encontró el despacho para simular el pago.');
+        }
+
+        return view('payments.paypal-simulate', [
+            'tenant' => $tenant,
+            'reference' => $reference,
+            'amount' => $amount,
+        ]);
+    }
+
+    public function paypalSimulateApprove(Request $request)
+    {
+        $reference = (string) $request->input('reference');
+        $tenantId = $this->tenantIdFromReference($reference);
+        $tenant = $tenantId ? Tenant::find($tenantId) : null;
+
+        if (!$tenant) {
+            return redirect('/')->with('error', 'No se encontró el despacho para simular el pago.');
+        }
+
+        $orderId = 'SIM-' . strtoupper(substr(hash('sha256', $reference . microtime(true)), 0, 18));
+
+        return redirect()->route('payment.paypal.return', [
+            'domain' => request()->getHost(),
+            'reference' => $reference,
+            'token' => $orderId,
+            'simulated' => 1,
+        ]);
+    }
+
+    public function paypalReturn(Request $request)
+    {
+        $reference = (string) $request->query('reference');
+        $orderId = (string) ($request->query('token') ?: $request->query('order'));
+        $tenantId = $this->tenantIdFromReference($reference);
+        $tenant = $tenantId ? Tenant::find($tenantId) : null;
+
+        if (!$tenant) {
+            return redirect('/')->with('error', 'No se encontró el despacho asociado al pago.');
+        }
+
+        if (!$orderId) {
+            return redirect('/')->with('error', 'PayPal no devolvió el identificador de la orden.');
+        }
+
+        $paypal = new \App\Services\Payments\PayPalService();
+        $capture = $paypal->captureOrder($orderId);
+
+        if (!$capture['success']) {
+            Log::error('[PAYPAL_RETURN_ERROR]', [
+                'tenant' => $tenant->id,
+                'order' => $orderId,
+                'message' => $capture['message'] ?? 'Error desconocido',
+            ]);
+
+            return redirect('/')->with('error', $capture['message'] ?? 'No se pudo confirmar el pago con PayPal.');
+        }
+
+        return $this->completeTenantPayment($tenant, 'paypal', $orderId, [
+            'gateway' => 'paypal',
+            'reference' => $reference,
+            'capture' => $capture['data'] ?? [],
+        ]);
+    }
+
+    public function paypalCancel(Request $request)
+    {
+        return redirect('/')->with('error', 'El pago con PayPal fue cancelado.');
+    }
+
+    public function registrationComplete($tenantId)
+    {
+        $tenant = Tenant::find($tenantId);
+        if (!$tenant) {
+            return redirect('/')->with('error', 'No se encontró el despacho registrado.');
+        }
+
+        $domain = optional($tenant->domains->first())->domain;
+
+        if (!$domain) {
+            return redirect('/')->with('error', 'El despacho no tiene un dominio configurado.');
+        }
+
+        $hosts = app(\App\Services\LocalHostsService::class)->ensure($domain);
+
+        if ($hosts['ok'] || !app()->environment('local')) {
+            return redirect('http://' . $domain . '/login')
+                ->with('success', 'Tu espacio está listo. Inicia sesión.');
+        }
+
+        $scriptUrl = \Illuminate\Support\Facades\URL::temporarySignedRoute(
+            'registration.hostsScript',
+            now()->addHours(4),
+            ['domain' => request()->getHost(), 'tenant' => $tenant->id]
+        );
+
+        return view('registro.tenant-listo', [
+            'tenant' => $tenant,
+            'domain' => $domain,
+            'hostsEntry' => $hosts['entry'],
+            'hostsPath' => $hosts['hosts_path'],
+            'scriptUrl' => $scriptUrl,
+        ]);
+    }
+
+    public function hostsScript(Request $request, $tenantId)
+    {
+        $tenant = Tenant::find($tenantId);
+        if (!$tenant) {
+            abort(404);
+        }
+
+        $domain = optional($tenant->domains->first())->domain;
+        if (!$domain) {
+            abort(404);
+        }
+
+        $content = app(\App\Services\LocalHostsService::class)->scriptFor($domain);
+        $filename = 'hosts-' . preg_replace('/[^a-z0-9_-]/i', '-', $tenant->id) . '.bat';
+
+        return response()->streamDownload(function () use ($content) {
+            echo $content;
+        }, $filename, ['Content-Type' => 'application/octet-stream']);
+    }
+
+    private function tenantIdFromReference(string $reference): ?string
+    {
+        if ($reference === '') {
+            return null;
+        }
+
+        $delimiter = strpos($reference, '---');
+
+        return $delimiter === false ? $reference : substr($reference, 0, $delimiter);
+    }
+
+    private function completeTenantPayment(Tenant $tenant, string $gateway, string $paymentId, array $paymentData = [])
+    {
+        try {
+            \App\Models\PaymentHistory::firstOrCreate(
+                ['stripe_id' => $paymentId],
+                [
+                    'tenant_id' => $tenant->id,
+                    'amount' => $tenant->amount ? $tenant->amount * 100 : 0,
+                    'payment_data' => $paymentData,
+                ]
+            );
+        } catch (\Throwable $e) {
+            Log::error('[PAYMENT_HISTORY_ERROR]', ['tenant' => $tenant->id, 'error' => $e->getMessage()]);
+        }
+
+        if ((int) $tenant->status === 1) {
+            $currentBillDate = $tenant->bill_date
+                ? \Carbon\Carbon::parse($tenant->bill_date)
+                : now();
+
+            $newBillDate = $currentBillDate->gt(now())
+                ? $currentBillDate->addMonth()
+                : now()->addMonth();
+
+            $tenant->update([
+                'bill_date' => $newBillDate,
+                'last_payment_date' => now(),
+                'next_payment_due' => $newBillDate,
+            ]);
+
+            $domain = optional($tenant->domains->first())->domain;
+
+            return redirect('http://' . $domain . '/dash')
+                ->with('success', 'Tu suscripción ha sido renovada hasta el ' . $newBillDate->format('d/m/Y'));
+        }
+
+        $pending = $tenant->pending_data;
+        if (is_string($pending)) {
+            $pending = json_decode($pending, true);
+        }
+
+        if ($pending && is_array($pending)) {
+            $setup = new \App\Services\TenantSetupService();
+            if (!$setup->finalize($tenant, $pending)) {
+                return redirect('/')->with('error', 'Pago procesado, pero no se pudo configurar el sistema. Contacta a soporte.');
+            }
+        } else {
+            Log::warning('[PAYMENT_COMPLETE] Tenant sin pending_data: ' . $tenant->id);
+            $tenant->update(['status' => 1]);
+        }
+
+        $domain = optional($tenant->domains->first())->domain;
+
+        if (app()->environment('local') && $domain) {
+            $hosts = app(\App\Services\LocalHostsService::class)->ensure($domain);
+            if (!$hosts['ok']) {
+                return redirect()->route('registration.complete', [
+                    'domain' => request()->getHost(),
+                    'tenant' => $tenant->id,
+                ]);
+            }
+        }
+
+        return redirect('http://' . $domain . '/login')
+            ->with('success', 'Pago exitoso. Tu espacio está listo.');
     }
 }

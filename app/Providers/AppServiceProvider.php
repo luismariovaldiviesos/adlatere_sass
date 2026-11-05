@@ -16,9 +16,14 @@ class AppServiceProvider extends ServiceProvider
      */
     public function register()
     {
+        $gateway = config('services.payments.default', 'paypal');
+        $gatewayClass = $gateway === 'payphone'
+            ? \App\Services\Payments\PayphoneService::class
+            : \App\Services\Payments\PayPalService::class;
+
         $this->app->bind(
             \App\Services\Payments\PaymentGatewayInterface::class,
-            \App\Services\Payments\PayphoneService::class
+            $gatewayClass
         );
     }
 

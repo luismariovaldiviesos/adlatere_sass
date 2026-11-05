@@ -1,11 +1,11 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Bienvenido a Facta SaaS</title>
+    <title>Bienvenido a Adlatere SaaS</title>
 </head>
 <body>
     <h1>¡Hola, {{ $user->name }}!</h1>
-    <p>Gracias por elegir <strong>Facta SaaS</strong> para la gestión de tu negocio.</p>
+    <p>Gracias por elegir <strong>Adlatere SaaS</strong> para la gestión de tu negocio.</p>
     
     <p>Tu espacio ha sido creado exitosamente bajo el nombre de: <strong>{{ $tenant->name }}</strong>.</p>
     
@@ -23,6 +23,6 @@
     
     <p>Si tienes alguna duda o necesitas soporte técnico, no dudes en contactarnos.</p>
     
-    <p>Saludos,<br>El equipo de Facta SaaS</p>
+    <p>Saludos,<br>El equipo de Adlatere SaaS</p>
 </body>
 </html>

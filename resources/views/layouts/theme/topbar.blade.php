@@ -32,9 +32,11 @@
 
     <!-- END: Search -->
     <!-- BEGIN: Notifications -->
+    @if(tenant())
     <div class="intro-x mr-3" style="overflow: visible; position: relative; z-index: 50;">
         @livewire('notificaciones')
     </div>
+    @endif
     <!-- END: Notifications -->
 
 
