@@ -28,6 +28,19 @@ class Dashboard extends Component
     public $tenantid;
     public $modalOpen = false;
 
+    // Estado inicial del sistema
+    public $esSaas = false;
+    public $planNombre = 'Licencia local';
+    public $planEstado = 'Activo';
+    public $planMonto = 0;
+    public $planVencimiento = null;
+    public $tenantDominio = null;
+    public $configItems = [];
+    public $configCompletos = 0;
+    public $configTotal = 0;
+    public $configPorcentaje = 0;
+    public $configCompleta = false;
+
     public function openModal()
     {
         $this->modalOpen = true;
@@ -64,6 +77,7 @@ class Dashboard extends Component
         $this->getJuiciosByMateria();
         $this->getJuiciosByEstado();
         $this->getAudiencias14();
+        $this->prepararDiagnostico();
 
         return view('livewire.dash.component')->layout('layouts.theme.app');
     }
@@ -72,6 +86,108 @@ class Dashboard extends Component
     {
         $this->tenantid = auth()->user()->tenant_id;
         
+    }
+
+    private function prepararDiagnostico(): void
+    {
+        $this->esSaas = function_exists('tenant') && tenant();
+        $tenant = $this->esSaas ? tenant() : null;
+        $settings = \App\Models\Setting::first();
+        $mail = \App\Models\MailConfiguration::first();
+        $firmaPersonal = User::whereNotNull('firma_path')->exists();
+
+        if ($this->esSaas && $tenant) {
+            $this->planNombre = ucwords(str_replace(['_', '-'], ' ', $tenant->suscription_type ?: 'Demo'));
+            $this->planEstado = (int) ($tenant->status ?? 0) === 1 ? 'Activo' : 'Pendiente';
+            $this->planMonto = (float) ($tenant->amount ?? 0);
+            $this->planVencimiento = $tenant->bill_date
+                ? Carbon::parse($tenant->bill_date)->format('d/m/Y')
+                : null;
+            $this->tenantDominio = optional($tenant->domains->first())->domain;
+        } else {
+            $this->planNombre = 'Licencia local';
+            $this->planEstado = 'Activo';
+            $this->planMonto = 0;
+            $this->planVencimiento = null;
+            $this->tenantDominio = null;
+        }
+
+        $empresaOk = $settings
+            && filled($settings->razonSocial)
+            && filled($settings->ruc)
+            && filled($settings->email)
+            && filled($settings->dirMatriz);
+
+        $firmaFacturaOk = $settings
+            && filled($settings->cert_file)
+            && filled($settings->cert_password);
+
+        $correoOk = $mail
+            && filled($mail->host)
+            && filled($mail->username)
+            && filled($mail->from_address);
+
+        $catalogoOk = \App\Models\Materia::exists()
+            && \App\Models\Procedimiento::exists()
+            && \App\Models\Asunto::exists()
+            && \App\Models\EstadoProcesal::exists()
+            && \App\Models\Unidad::exists();
+
+        $firmaDespachoOk = ($settings && filled($settings->firma_actividades_cert_file))
+            || ($settings && $settings->firma_actividades_mismo_certificado && filled($settings->cert_file))
+            || $firmaPersonal;
+
+        $items = [];
+
+        $items[] = [
+            'label' => 'Datos de la empresa',
+            'description' => 'Razón social, RUC, dirección y correo.',
+            'done' => $empresaOk,
+            'url' => route('settings'),
+            'action' => 'Configurar',
+        ];
+
+        $items[] = [
+            'label' => 'Firma electrónica para facturar',
+            'description' => 'Certificado .p12 y contraseña para emitir comprobantes.',
+            'done' => $firmaFacturaOk,
+            'url' => route('settings'),
+            'action' => 'Configurar',
+        ];
+
+        if (!$this->esSaas) {
+            $items[] = [
+                'label' => 'Correo de facturación',
+                'description' => 'SMTP desde el que se enviará el PDF de las facturas.',
+                'done' => $correoOk,
+                'url' => route('mail.settings'),
+                'action' => 'Configurar',
+            ];
+        }
+
+        $items[] = [
+            'label' => 'Catálogo procesal',
+            'description' => 'Materias, procedimientos, asuntos, estados y unidades.',
+            'done' => $catalogoOk,
+            'url' => route('materias'),
+            'action' => 'Revisar',
+        ];
+
+        $items[] = [
+            'label' => 'Firma del despacho',
+            'description' => 'Certificado institucional o firma personal de un abogado.',
+            'done' => $firmaDespachoOk,
+            'url' => route('settings'),
+            'action' => 'Configurar',
+        ];
+
+        $this->configItems = $items;
+        $this->configTotal = count($items);
+        $this->configCompletos = collect($items)->where('done', true)->count();
+        $this->configPorcentaje = $this->configTotal > 0
+            ? (int) round($this->configCompletos * 100 / $this->configTotal)
+            : 0;
+        $this->configCompleta = $this->configCompletos === $this->configTotal;
     }
 
     public function getTop5 ()

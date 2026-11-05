@@ -1,61 +1,6 @@
 <div>
     @can('ver_dash')
-    <div class="intro-y grid grid-cols-12 gap-6 mt-5">
-        <div class="col-span-12 md:col-span-3">
-            <div class="intro-y box">
-                <h6 class="text-center font-bold">Elige el Año de Consulta</h6>
-                <select wire:model="year" class="form-select form-select-lg">
-                    @foreach($listYears as $y)
-                    <option value="{{$y}}">{{$y}}</option>
-                    @endforeach
-                </select>
-            </div>
-        </div>
-        <br>
-          <div class="col-span-12 md:col-span-3">
-            <div class="intro-y box">
-                <div class="p-5 text-center">
-                    <div class="text-3xl font-bold leading-8 mt-6">{{  'GRATUITO'}}</div>
-                    <div class="text-base text-gray-600 mt-1">Plan Actual</div>
-                    <div class="mt-2 text-gray-600 text-xs">Tenant ID: </div>
-
-                    {{-- @php
-                        $tenant = tenant();
-                        $count = $tenant->getCurrentCycleInvoiceCount();
-                        $limit = $tenant->getInvoiceLimit();
-                        
-                        // Dates Logic
-                        $lastPayment = \Carbon\Carbon::parse($tenant->bill_date);
-                        $expiration = $lastPayment->copy()->addMonth(); // Vence al mes del pago
-                        $daysDiff = intval(now()->diffInDays($expiration, false));
-                        $isOverdue = $expiration->isPast();
-
-                        // Payment URL (Fixed to Production domain)
-                        $paymentUrl = 'https://facta.ec/payment/renewal/' . $tenant->id;
-                    @endphp --}}
-
-                    <div class="mt-4 border-t border-gray-200 pt-4 text-left">
-                        <div class="flex justify-between mb-1">
-                             <span class="text-gray-600 text-xs">Facturas:</span>
-                             
-                        </div>
-                        <div class="flex justify-between mb-1">
-                             <span class="text-gray-600 text-xs">Último Pago:</span>
-                             <span class="font-bold text-xs"></span>
-                        </div>
-                        <div class="flex justify-between mb-2">
-                             <span class="text-gray-600 text-xs">Vencimiento:</span>
-                             <span class="font-bold text-xs"></span>
-                        </div>
-
-                    
-                    </div>
-                </div>
-        </div>
-          </div>
-    </div>
-
-   
+    @include('livewire.dash.estado-inicial')
 
     <div class="intro-y grid grid-cols-12 gap-6 mt-5">
 
