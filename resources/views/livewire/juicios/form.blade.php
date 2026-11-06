@@ -151,38 +151,8 @@
                     <h2 class="font-bold text-lg mr-auto text-gray-700">Registrar Nuevo Sujeto Procesal</h2>
                 </div>
 
-                <div class="modal-body grid grid-cols-12 gap-5 gap-y-4 p-6">
-                    <div class="col-span-12 sm:col-span-6">
-                        <label class="form-label font-bold">Tipo Identificación</label>
-                        <select wire:model="q_typeidenti" class="form-select text-lg">
-                            <option value="ci">Cédula</option>
-                            <option value="ruc">RUC</option>
-                            <option value="pasaporte">Pasaporte</option>
-                        </select>
-                    </div>
-
-                    <div class="col-span-12 sm:col-span-6">
-                        <label class="form-label font-bold">Identificación</label>
-                        <input wire:model="q_valueidenti" type="text" class="form-control text-lg" placeholder="Ej: 0102030405">
-                        @error('q_valueidenti') <span class="text-theme-6">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="col-span-12">
-                        <label class="form-label font-bold">Nombre / Razón Social</label>
-                        <input wire:model="q_businame" type="text" class="form-control text-lg" placeholder="Ej: Juan Perez">
-                        @error('q_businame') <span class="text-theme-6">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="col-span-12 sm:col-span-6">
-                        <label class="form-label font-bold">Teléfono</label>
-                        <input wire:model="q_phone" type="text" class="form-control text-lg" placeholder="099...">
-                    </div>
-
-                    <div class="col-span-12 sm:col-span-6">
-                        <label class="form-label font-bold">Correo Electrónico <small>(Opcional)</small></label>
-                        <input wire:model="q_email" type="email" class="form-control text-lg" placeholder="correo@ejemplo.com">
-                        @error('q_email') <span class="text-theme-6">{{ $message }}</span> @enderror
-                    </div>
+                <div class="modal-body p-6">
+                    <x-customer-fields prefix="q_" :cantones="$q_cantones" />
                 </div>
 
                 <div class="modal-footer text-right bg-gray-50 border-t">
@@ -196,6 +166,9 @@
     </div>
     {{-- FIN MODAL --}}
     </div>
+
+    @include('livewire.juicios.modals.quick-abogado')
+    @include('livewire.juicios.modals.quick-funcionario')
 
     <!-- SCRIPT PARA ABRIR Y CERRAR EL MODAL CON TAILWIND/TOM-SELECT -->
 <script>

@@ -88,11 +88,48 @@ class Dashboard extends Component
         
     }
 
+    private function menusProcesales(): array
+    {
+        $menus = [
+            ['label' => 'materias', 'route' => 'materias', 'exists' => \App\Models\Materia::exists()],
+            ['label' => 'procedimientos', 'route' => 'procedimientos', 'exists' => \App\Models\Procedimiento::exists()],
+            ['label' => 'asuntos', 'route' => 'asuntos', 'exists' => \App\Models\Asunto::exists()],
+            ['label' => 'fases procesales', 'route' => 'fases-procesales', 'exists' => \App\Models\Fase::exists()],
+            ['label' => 'estados procesales', 'route' => 'estados-procesales', 'exists' => \App\Models\EstadoProcesal::exists()],
+            ['label' => 'especialidades', 'route' => 'especialidades', 'exists' => \App\Models\Especialidad::exists()],
+            ['label' => 'tipos de actividades', 'route' => 'tipoactividad', 'exists' => \App\Models\TipoActividad::exists()],
+            ['label' => 'plantillas de actividades', 'route' => 'plantillas-tipos-actividad', 'exists' => \App\Models\PlantillaTipoActividad::exists()],
+            ['label' => 'alertas de juicios', 'route' => 'prioridad-alertas', 'exists' => \App\Models\PrioridadAlerta::exists()],
+            ['label' => 'provincias', 'route' => 'provincias', 'exists' => \App\Models\Provincia::exists()],
+            ['label' => 'cantones', 'route' => 'cantones', 'exists' => \App\Models\Canton::exists()],
+            ['label' => 'unidades judiciales', 'route' => 'unidades', 'exists' => \App\Models\Unidad::exists()],
+        ];
+
+        $items = [];
+
+        foreach ($menus as $menu) {
+            $items[] = [
+                'label' => $menu['exists']
+                    ? $menu['label']
+                    : 'Configurar ' . $menu['label'],
+                'description' => $menu['exists']
+                    ? 'Menú configurado.'
+                    : 'Aún no hay registros en este menú.',
+                'done' => (bool) $menu['exists'],
+                'url' => route($menu['route']),
+                'action' => 'Configurar',
+            ];
+        }
+
+        return $items;
+    }
+
     private function prepararDiagnostico(): void
     {
         $this->esSaas = function_exists('tenant') && tenant();
         $tenant = $this->esSaas ? tenant() : null;
-        $settings = \App\Models\Setting::first();
+        $empresa = app(\App\Services\EmpresaConfiguracionService::class)->empresa();
+        $settings = $empresa['settings'];
         $mail = \App\Models\MailConfiguration::first();
         $firmaPersonal = User::whereNotNull('firma_path')->exists();
 
@@ -112,26 +149,15 @@ class Dashboard extends Component
             $this->tenantDominio = null;
         }
 
-        $empresaOk = $settings
-            && filled($settings->razonSocial)
-            && filled($settings->ruc)
-            && filled($settings->email)
-            && filled($settings->dirMatriz);
+        $empresaOk = $empresa['ok'];
 
-        $firmaFacturaOk = $settings
-            && filled($settings->cert_file)
-            && filled($settings->cert_password);
+        $certificadoFacturacion = app(\App\Services\CertificadoFacturacionService::class)->estado();
+        $firmaFacturaOk = $certificadoFacturacion['ok'];
 
         $correoOk = $mail
             && filled($mail->host)
             && filled($mail->username)
             && filled($mail->from_address);
-
-        $catalogoOk = \App\Models\Materia::exists()
-            && \App\Models\Procedimiento::exists()
-            && \App\Models\Asunto::exists()
-            && \App\Models\EstadoProcesal::exists()
-            && \App\Models\Unidad::exists();
 
         $firmaDespachoOk = ($settings && filled($settings->firma_actividades_cert_file))
             || ($settings && $settings->firma_actividades_mismo_certificado && filled($settings->cert_file))
@@ -149,7 +175,9 @@ class Dashboard extends Component
 
         $items[] = [
             'label' => 'Firma electrónica para facturar',
-            'description' => 'Certificado .p12 y contraseña para emitir comprobantes.',
+            'description' => $certificadoFacturacion['ok']
+                ? 'Certificado listo para emitir comprobantes.'
+                : $certificadoFacturacion['message'],
             'done' => $firmaFacturaOk,
             'url' => route('settings'),
             'action' => 'Configurar',
@@ -165,13 +193,7 @@ class Dashboard extends Component
             ];
         }
 
-        $items[] = [
-            'label' => 'Catálogo procesal',
-            'description' => 'Materias, procedimientos, asuntos, estados y unidades.',
-            'done' => $catalogoOk,
-            'url' => route('materias'),
-            'action' => 'Revisar',
-        ];
+        $items = array_merge($items, $this->menusProcesales());
 
         $items[] = [
             'label' => 'Firma del despacho',
@@ -181,9 +203,9 @@ class Dashboard extends Component
             'action' => 'Configurar',
         ];
 
-        $this->configItems = $items;
         $this->configTotal = count($items);
         $this->configCompletos = collect($items)->where('done', true)->count();
+        $this->configItems = collect($items)->where('done', false)->values()->all();
         $this->configPorcentaje = $this->configTotal > 0
             ? (int) round($this->configCompletos * 100 / $this->configTotal)
             : 0;

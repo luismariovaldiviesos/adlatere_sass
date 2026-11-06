@@ -15,10 +15,79 @@ class Reports extends Component
     public $search, $startDate, $endDate, $userId= 'TODOS', $details = [];
     private $pagination = 100;
 
+    public $casosActivos = 0;
+    public $audienciasPeriodo = 0;
+    public $actuacionesPeriodo = 0;
+    public $tareasPendientes = 0;
+    public $firmasPendientes = 0;
+    public $periodoLabel = '';
+    public $cargaAbogados = [];
+    public $proximasAudiencias = [];
+    public $tareasCriticas = [];
+
+    public function mount()
+    {
+        if (!$this->startDate) {
+            $this->startDate = Carbon::now()->startOfMonth()->format('Y-m-d');
+        }
+        if (!$this->endDate) {
+            $this->endDate = Carbon::now()->format('Y-m-d');
+        }
+    }
 
     public function render()
     {
         $query = $this->getQuery();
+
+        $from = Carbon::parse($this->startDate)->startOfDay();
+        $to = Carbon::parse($this->endDate)->endOfDay();
+
+        $this->casosActivos = \App\Models\Juicio::count();
+        $this->audienciasPeriodo = \App\Models\Audiencia::whereBetween('fecha_hora', [$from, $to])->count();
+        $this->actuacionesPeriodo = \App\Models\Actividad::whereBetween('fecha_actividad', [$from, $to])->count();
+        $this->tareasPendientes = \App\Models\Tarea::whereIn('estado', ['pendiente', 'en_proceso'])->count();
+        $this->firmasPendientes = \App\Models\Actividad::where('estado_firma', 'pendiente')->count();
+        $this->periodoLabel = $from->format('d/m/Y') . ' al ' . $to->format('d/m/Y');
+
+        $abogados = User::where('profile', 'Abogado')
+            ->where('status', 'ACTIVE')
+            ->orderBy('name')
+            ->get();
+
+        if ($this->userId !== 'TODOS' && str_contains($this->userId, '|')) {
+            $uid = (int) trim(explode('|', $this->userId)[1]);
+            $abogados = $abogados->where('id', $uid);
+        }
+
+        $this->cargaAbogados = $abogados->map(function ($abogado) use ($from, $to) {
+            return [
+                'id' => $abogado->id,
+                'name' => $abogado->name,
+                'casos' => \App\Models\Juicio::whereHas('abogados', fn ($q) => $q->where('user_id', $abogado->id))->count(),
+                'audiencias' => \App\Models\Audiencia::whereHas('juicio.abogados', fn ($q) => $q->where('user_id', $abogado->id))
+                    ->whereBetween('fecha_hora', [$from, $to])->count(),
+                'actuaciones' => \App\Models\Actividad::where('user_id', $abogado->id)
+                    ->whereBetween('fecha_actividad', [$from, $to])->count(),
+                'tareas' => \App\Models\Tarea::where('asignado_a', $abogado->id)
+                    ->whereIn('estado', ['pendiente', 'en_proceso'])->count(),
+            ];
+        })->values()->toArray();
+
+        $this->proximasAudiencias = \App\Models\Audiencia::with(['juicio:id,cod_satje'])
+            ->where('estado', 'Programada')
+            ->whereBetween('fecha_hora', [now(), now()->copy()->addDays(14)])
+            ->orderBy('fecha_hora')
+            ->limit(8)
+            ->get();
+
+        $this->tareasCriticas = \App\Models\Tarea::with(['asignado:id,name', 'juicio:id,cod_satje'])
+            ->whereIn('estado', ['pendiente', 'en_proceso'])
+            ->whereNotNull('fecha_limite')
+            ->whereDate('fecha_limite', '<=', now()->copy()->addDays(7))
+            ->orderBy('fecha_limite')
+            ->limit(8)
+            ->get();
+
         
         // Calcular Ventas Netas (Restando Notas de Crédito '04')
         $totalSales = $query->clone()->selectRaw("SUM(CASE WHEN codDoc = '04' THEN -total ELSE total END) as net_total")->value('net_total');

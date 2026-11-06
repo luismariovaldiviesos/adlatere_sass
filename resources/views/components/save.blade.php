@@ -1,4 +1,5 @@
 <button
+type="button"
 wire:click="Store"
 wire:loading.attr="disabled"
 {{ $attributes->merge(['class' => 'btn btn-primary']) }}

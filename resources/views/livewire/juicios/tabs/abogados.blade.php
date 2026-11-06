@@ -28,9 +28,12 @@
             </div>
         </div>
 
-        <div class="col-span-12 md:col-span-4">
-            <button class="btn btn-primary text-lg px-8 py-2.5 w-full h-12 flex justify-center items-center" wire:click="addAbogado">
-                <i class="fas fa-plus mr-2"></i> Asignar Patrocinador
+        <div class="col-span-12 md:col-span-4 flex gap-2">
+            <button class="btn btn-primary text-lg px-4 py-2.5 flex-1 h-12 flex justify-center items-center" wire:click="addAbogado">
+                <i class="fas fa-plus mr-2"></i> Asignar
+            </button>
+            <button type="button" class="btn btn-outline-primary text-lg px-4 py-2.5 h-12 flex justify-center items-center" wire:click="showQuickAbogado">
+                <i class="fas fa-user-plus mr-2"></i> Nuevo
             </button>
         </div>
     </div>

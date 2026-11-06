@@ -55,8 +55,10 @@ class Juicios extends Component
     public $rol = ''; // 'actor', 'demandado' (igual que el ENUM en base)
     public $es_cliente = false; // marca cliente del despacho en este juicio
     // --- CREACIÓN RÁPIDA (QUICK CUSTOMER) ---
-    public $showCreateCustomer = false; 
-    public $q_businame, $q_valueidenti, $q_typeidenti = 'cedula', $q_address, $q_phone, $q_email;
+    public $showCreateCustomer = false;
+    public $q_businame, $q_valueidenti, $q_typeidenti = 'ci', $q_address, $q_phone, $q_email;
+    public $q_estado_civil, $q_profesion_ocupacion, $q_canton_id, $q_notes;
+    public $q_cantones = [];
     // --- EDICIÓN DE PARTICIPANTE ---
     public $editModeSujeto = false;
     public $editModeJuicio = false;
@@ -108,6 +110,14 @@ class Juicios extends Component
     public $abogado_id = null;
     public $showAbogadoDropdown = false;
 
+    // creación rápida de abogados y funcionarios
+    public $showQuickAbogado = false;
+    public $qa_name = '', $qa_ci = '', $qa_phone = '', $qa_email = '', $qa_password = '', $qa_password_confirmation = '';
+
+    public $showQuickFuncionario = false;
+    public $qf_nombre = '', $qf_cargo = '', $qf_telefono = '', $qf_email = '', $qf_rol_en_juicio = '';
+    public $qf_unidad_nombre = '';
+
 
     // para el roadmap de actividades
     public $historialRoadmap = [];
@@ -132,6 +142,7 @@ class Juicios extends Component
         // Solo cargamos Materias al inicio. Es una lista corta y fija.
         $this->materias = Materia::orderBy('nombre', 'asc')->get();
         $this->estados_procesales = EstadoProcesal::orderBy('id', 'asc')->get();
+        $this->q_cantones = \App\Models\Canton::orderBy('nombre', 'asc')->get();
         
         if($this->selected_id > 0) {
             $this->cargarJuicioMaestro($this->selected_id, true);
@@ -752,8 +763,8 @@ class Juicios extends Component
        public function  addNew()
     {
         if (auth()->user()->cannot('agregar_juicio')) return;
-        if (\App\Models\Materia::count() < 1 || \App\Models\Asunto::count() < 1 || \App\Models\EstadoProcesal::count() < 1 || \App\Models\Unidad::count() < 1) {
-            $this->noty('Primero carga el archivo datos_cliente (catálogo vacío: materias, asuntos, estados, unidades).', 'noty', false, 'error');
+        if (!app(\App\Services\CatalogoProcesalService::class)->completo()) {
+            $this->noty(\App\Services\CatalogoProcesalService::MENSAJE_VACIO, 'noty', false, 'error');
             return;
         }
         $this->resetUI();
@@ -1081,8 +1092,11 @@ class Juicios extends Component
     public function showCreateCustomer(){
          $this->showDropdown = false; // CIERRA INMEDIATAMENTE LA CAJA AL DAR CLIC
         $this->showCreateCustomer = true;
-        $this->reset(['q_businame', 'q_valueidenti', 'q_address', 'q_phone', 'q_email']);
-        $this->q_typeidenti = 'cedula';
+        $this->reset([
+            'q_businame', 'q_valueidenti', 'q_address', 'q_phone', 'q_email',
+            'q_estado_civil', 'q_profesion_ocupacion', 'q_canton_id', 'q_notes',
+        ]);
+        $this->q_typeidenti = 'ci';
          // Autocompletamos lo que estaba intentando buscar
         if(is_numeric($this->searchCustomer)) {
             $this->q_valueidenti = $this->searchCustomer;
@@ -1098,9 +1112,14 @@ class Juicios extends Component
     public function saveQuickCustomer(){
         //dd($this->q_businame, $this->q_valueidenti, $this->q_typeidenti, $this->q_address, $this->q_phone, $this->q_email);
         $this->validate([
-        'q_businame' => 'required|min:3',
-        'q_valueidenti' => 'required|unique:customers,valueidenti',
-        'q_typeidenti' => 'required',
+            'q_businame' => 'required|min:3',
+            'q_valueidenti' => 'required|unique:customers,valueidenti',
+            'q_typeidenti' => 'required|in:ci,ruc,06',
+            'q_email' => 'nullable|email',
+            'q_estado_civil' => 'nullable|string|max:50',
+            'q_profesion_ocupacion' => 'nullable|string|max:150',
+            'q_canton_id' => 'nullable|exists:cantones,id',
+            'q_notes' => 'nullable|string|max:250',
         ]);
 
         try {
@@ -1108,10 +1127,13 @@ class Juicios extends Component
             'businame' => $this->q_businame,
             'valueidenti' => $this->q_valueidenti,
             'typeidenti' => $this->q_typeidenti,
-            'address' => $this->q_address ?? 'S/N',
-            'email' => $this->q_email ?? $this->q_valueidenti . '@adlatere.ec',
-             'phone' => $this->q_phone ?? '0000000000',
-             'notes' => 'Creado desde Juicios',
+            'address' => $this->q_address ?: 'S/N',
+            'estado_civil' => $this->q_estado_civil ?: null,
+            'profesion_ocupacion' => $this->q_profesion_ocupacion ?: null,
+            'canton_id' => $this->q_canton_id ?: null,
+            'email' => $this->q_email ?: $this->q_valueidenti . '@adlatere.ec',
+            'phone' => $this->q_phone ?: '0000000000',
+            'notes' => $this->q_notes ?: 'Creado desde Juicios',
         ]);
          // Lo autoseleccionamos para el juicio
         $this->selectCustomer($customer->id, $customer->businame);
@@ -1918,6 +1940,127 @@ public function editParticipanteEnJuicio(){
     }
 
 
+    private function asignarFuncionarioAlJuicio(\App\Models\Funcionario $funcionario, string $rol): bool
+    {
+        $juicio = $this->cargarJuicioMaestro();
+        if (!$juicio) {
+            $this->noty('No tiene permiso para ver este juicio.', 'noty', false, 'error');
+            return false;
+        }
+
+        if ($juicio->funcionarios()->where('funcionario_id', $funcionario->id)->exists()) {
+            $this->noty('Este funcionario ya está asignado al juicio.', 'noty', false);
+            return false;
+        }
+
+        $juicio->funcionarios()->attach($funcionario->id, ['rol_en_juicio' => $rol]);
+
+        \App\Models\JuicioHistorialEstado::create([
+            'juicio_id' => $this->selected_id,
+            'user_id' => auth()->id(),
+            'estado_procesal_id' => $this->estado_procesal_id,
+            'tipo_movimiento' => 'funcionario_asignado',
+            'referencia_tipo' => 'Funcionario',
+            'referencia_id' => $funcionario->id,
+            'descripcion' => 'Se asignó un funcionario con el rol de: ' . $rol,
+        ]);
+
+        if ($this->juicio) {
+            $this->juicio->load('funcionarios');
+        }
+
+        return true;
+    }
+
+    public function showQuickFuncionario()
+    {
+        if (!$this->selected_id || $this->selected_id <= 0) {
+            $this->noty('Debe guardar el juicio primero.', 'noty', false);
+            return;
+        }
+        if (!$this->usuarioPuedeTramitar()) return;
+        if (!$this->unidad_id) {
+            $this->noty('Seleccione y guarde la Unidad Judicial antes de crear un funcionario.', 'noty', false, 'error');
+            return;
+        }
+
+        $this->resetValidation();
+        $this->reset(['qf_nombre', 'qf_cargo', 'qf_telefono', 'qf_email', 'qf_rol_en_juicio']);
+        $this->qf_unidad_nombre = \App\Models\Unidad::whereKey($this->unidad_id)->value('nombre') ?? '';
+        $this->showQuickFuncionario = true;
+    }
+
+    public function closeQuickFuncionario()
+    {
+        $this->showQuickFuncionario = false;
+        $this->resetValidation();
+    }
+
+    public function updatedQfCargo($value)
+    {
+        $mapa = [
+            'Juez' => 'Juez Ponente',
+            'Secretario' => 'Secretario',
+            'Ayudante' => 'Ayudante Judicial',
+            'Citador' => 'Citador',
+        ];
+
+        if (isset($mapa[$value])) {
+            $this->qf_rol_en_juicio = $mapa[$value];
+        }
+    }
+
+    public function saveQuickFuncionario()
+    {
+        if (!$this->selected_id || $this->selected_id <= 0) {
+            $this->noty('Debe guardar el juicio primero.', 'noty', false);
+            return;
+        }
+        if (!$this->usuarioPuedeTramitar()) return;
+        if (!$this->exigirBaseProcesal()) return;
+        if (!$this->unidad_id) {
+            $this->noty('Seleccione y guarde la Unidad Judicial antes de crear un funcionario.', 'noty', false, 'error');
+            return;
+        }
+
+        $this->validate([
+            'qf_nombre' => 'required|min:3|max:50|unique:funcionarios,nombre',
+            'qf_cargo' => 'required|in:Juez,Secretario,Ayudante,Citador,Otro',
+            'qf_telefono' => 'nullable|string|max:20',
+            'qf_email' => 'nullable|email|max:255|unique:funcionarios,email',
+            'qf_rol_en_juicio' => 'required|string|max:100',
+        ], [
+            'qf_nombre.required' => 'Ingrese el nombre del funcionario.',
+            'qf_nombre.min' => 'El nombre debe tener al menos 3 caracteres.',
+            'qf_nombre.unique' => 'El funcionario ya existe en el sistema.',
+            'qf_cargo.required' => 'Seleccione el cargo.',
+            'qf_email.email' => 'Ingrese un correo válido.',
+            'qf_email.unique' => 'El correo ya está registrado.',
+            'qf_rol_en_juicio.required' => 'Seleccione el rol en el juicio.',
+        ]);
+
+        try {
+            $funcionario = \App\Models\Funcionario::create([
+                'nombre' => $this->qf_nombre,
+                'cargo' => $this->qf_cargo,
+                'telefono' => $this->qf_telefono ?: null,
+                'email' => $this->qf_email ?: null,
+            ]);
+            $funcionario->unidades()->sync([$this->unidad_id]);
+
+            if (!$this->asignarFuncionarioAlJuicio($funcionario, $this->qf_rol_en_juicio)) {
+                return;
+            }
+
+            $this->showQuickFuncionario = false;
+            $this->reset(['qf_nombre', 'qf_cargo', 'qf_telefono', 'qf_email', 'qf_rol_en_juicio']);
+            $this->noty('Funcionario creado y asignado al juicio.', 'noty', false);
+        } catch (\Throwable $e) {
+            \Log::error('[QUICK_FUNCIONARIO] ' . $e->getMessage());
+            $this->noty('No se pudo crear el funcionario: ' . $e->getMessage(), 'noty', false, 'error');
+        }
+    }
+
     public function updatedSearchFuncionario($value){
 
     $this->funcionario_id = null; //reseteamos el id del funcionario seleccionado
@@ -1977,27 +2120,15 @@ public function editParticipanteEnJuicio(){
         return;
         }
 
-        $juicio = $this->cargarJuicioMaestro();
-        if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
-        //validar duplicados 
-        if($juicio->funcionarios()->where('funcionario_id', $this->funcionario_id)->exists()){
-            $this->noty( 'Este funcionario ya está asignado al juicio.', 'noty', false);
-            return; 
+        $funcionario = \App\Models\Funcionario::find($this->funcionario_id);
+        if (!$funcionario) {
+            $this->noty('El funcionario seleccionado no existe.', 'noty', false, 'error');
+            return;
         }
-        //guardar en la tabla pivote
-        $juicio->funcionarios()->attach($this->funcionario_id, ['rol_en_juicio' => $this->rol_en_juicio]);
-        if ($this->juicio) $this->juicio->load('funcionarios');
-        \App\Models\JuicioHistorialEstado::create([
-        'juicio_id'          => $this->selected_id,
-        'user_id'            => auth()->id(),
-        'estado_procesal_id' => $this->estado_procesal_id,
-        'tipo_movimiento'    => 'funcionario_asignado',
-        'referencia_tipo'    => 'Funcionario',
-        'referencia_id'      => $this->funcionario_id,
-        'descripcion'        => 'Se asignó un funcionario con el rol de: ' . $this->rol_en_juicio,
-    ]);
+
+        if (!$this->asignarFuncionarioAlJuicio($funcionario, $this->rol_en_juicio)) return;
+
         $this->noty('Funcionario asignado con éxito.', 'noty', false);
-           // Resetear campos
         $this->reset(['funcionario_id', 'searchFuncionario', 'rol_en_juicio', 'funcionarios_list']);
     }
 
@@ -2084,6 +2215,141 @@ public function descargarPdf(Audiencia $audiencia)
 }
 
 
+    private function asignarAbogadoAlJuicio(\App\Models\User $abogado): bool
+    {
+        $juicio = $this->cargarJuicioMaestro();
+        if (!$juicio) {
+            $this->noty('No tiene permiso para ver este juicio.', 'noty', false, 'error');
+            return false;
+        }
+
+        if ($juicio->abogados()->where('user_id', $abogado->id)->exists()) {
+            $this->noty('Este abogado ya está asignado al juicio.', 'noty', false);
+            return false;
+        }
+
+        $juicio->abogados()->attach($abogado->id, ['rol_en_juicio' => 'Abogado Patrocinador']);
+
+        \App\Services\Notificador::enviar(
+            \App\Services\Notificador::sinActor([$abogado->id]),
+            \App\Services\Notificador::payload(
+                'Caso asignado',
+                'Se te asignó el caso ' . ($juicio->cod_satje ?: '#' . $juicio->id) . '.',
+                '/juicios',
+                'juicio',
+                'fas fa-gavel',
+                'info',
+                'juicio',
+                $juicio->id
+            ),
+            "juicio:{$juicio->id}:asignado:{$abogado->id}"
+        );
+
+        \App\Services\Notificador::enviar(
+            \App\Services\Notificador::sinActor(\App\Services\Notificador::admins()),
+            \App\Services\Notificador::payload(
+                'Caso asignado a abogado',
+                'Se asignó el caso ' . ($juicio->cod_satje ?: '#' . $juicio->id) . " a {$abogado->name}.",
+                '/juicios',
+                'juicio',
+                'fas fa-gavel',
+                'info',
+                'juicio',
+                $juicio->id
+            ),
+            "juicio:{$juicio->id}:asignado_admin:{$abogado->id}"
+        );
+
+        \App\Models\JuicioHistorialEstado::create([
+            'juicio_id' => $this->selected_id,
+            'user_id' => auth()->id(),
+            'estado_procesal_id' => $this->estado_procesal_id,
+            'tipo_movimiento' => 'abogado_asignado',
+            'referencia_tipo' => 'User',
+            'referencia_id' => $abogado->id,
+            'descripcion' => 'Se asignó un abogado patrocinador al juicio.',
+        ]);
+
+        if ($this->juicio) {
+            $this->juicio->load('abogados');
+        }
+
+        return true;
+    }
+
+    public function showQuickAbogado()
+    {
+        if (!$this->selected_id || $this->selected_id <= 0) {
+            $this->noty('Debe guardar el juicio primero.', 'noty', false);
+            return;
+        }
+        if (!$this->usuarioPuedeGestionarPatrocinador()) return;
+
+        $this->resetValidation();
+        $this->reset(['qa_name', 'qa_ci', 'qa_phone', 'qa_email', 'qa_password', 'qa_password_confirmation']);
+        $this->showQuickAbogado = true;
+    }
+
+    public function closeQuickAbogado()
+    {
+        $this->showQuickAbogado = false;
+        $this->resetValidation();
+    }
+
+    public function saveQuickAbogado()
+    {
+        if (!$this->selected_id || $this->selected_id <= 0) {
+            $this->noty('Debe guardar el juicio primero.', 'noty', false);
+            return;
+        }
+        if (!$this->usuarioPuedeGestionarPatrocinador()) return;
+
+        $this->validate([
+            'qa_name' => 'required|min:3|max:50|unique:users,name',
+            'qa_ci' => 'required|min:10|max:13|unique:users,ci',
+            'qa_phone' => 'required|string|max:20',
+            'qa_email' => 'required|email|max:255|unique:users,email',
+            'qa_password' => 'required|string|min:8|confirmed',
+        ], [
+            'qa_name.required' => 'Ingrese el nombre del abogado.',
+            'qa_name.min' => 'El nombre debe tener al menos 3 caracteres.',
+            'qa_name.unique' => 'Ya existe un usuario con ese nombre.',
+            'qa_ci.required' => 'Ingrese la cédula o RUC.',
+            'qa_ci.unique' => 'La cédula o RUC ya está registrada.',
+            'qa_phone.required' => 'Ingrese el teléfono.',
+            'qa_email.required' => 'Ingrese el correo.',
+            'qa_email.email' => 'Ingrese un correo válido.',
+            'qa_email.unique' => 'El correo ya está registrado.',
+            'qa_password.required' => 'Ingrese una contraseña temporal.',
+            'qa_password.min' => 'La contraseña debe tener al menos 8 caracteres.',
+            'qa_password.confirmed' => 'Las contraseñas no coinciden.',
+        ]);
+
+        try {
+            $abogado = \App\Models\User::create([
+                'name' => $this->qa_name,
+                'ci' => $this->qa_ci,
+                'phone' => $this->qa_phone,
+                'email' => $this->qa_email,
+                'profile' => 'Abogado',
+                'status' => 'ACTIVE',
+                'password' => \Illuminate\Support\Facades\Hash::make($this->qa_password),
+            ]);
+            $abogado->syncRoles('Abogado');
+
+            if (!$this->asignarAbogadoAlJuicio($abogado)) {
+                return;
+            }
+
+            $this->showQuickAbogado = false;
+            $this->reset(['qa_name', 'qa_ci', 'qa_phone', 'qa_email', 'qa_password', 'qa_password_confirmation']);
+            $this->noty('Abogado creado y asignado al juicio.', 'noty', false);
+        } catch (\Throwable $e) {
+            \Log::error('[QUICK_ABOGADO] ' . $e->getMessage());
+            $this->noty('No se pudo crear el abogado: ' . $e->getMessage(), 'noty', false, 'error');
+        }
+    }
+
     // metodos de abogados patrocinadores de los juicios
   public function updatedSearchAbogado($value){
     $this->abogado_id = null;
@@ -2131,55 +2397,9 @@ public function descargarPdf(Audiencia $audiencia)
             return;
         }
 
-        $juicio = $this->cargarJuicioMaestro();
-        if (!$juicio) { $this->noty('No tiene permiso para ver este juicio.', 'noty', false); return; }
-        
-        if($juicio->abogados()->where('user_id', $this->abogado_id)->exists()){
-            $this->noty('Este abogado ya está asignado al juicio.', 'noty', false);
-            return; 
-        }
-
-        $juicio->abogados()->attach($this->abogado_id, ['rol_en_juicio' => 'Abogado Patrocinador']);
-        \App\Services\Notificador::enviar(\App\Services\Notificador::sinActor([$this->abogado_id]), \App\Services\Notificador::payload(
-            'Caso asignado',
-            'Se te asignó el caso ' . ($juicio->cod_satje ?: '#' . $juicio->id) . '.',
-            '/juicios',
-            'juicio',
-            'fas fa-gavel',
-            'info',
-            'juicio',
-            $juicio->id
-        ), "juicio:{$juicio->id}:asignado:{$this->abogado_id}");
-
-        $nombreAbogado = $abogado->name ?? 'un abogado';
-        \App\Services\Notificador::enviar(
-            \App\Services\Notificador::sinActor(\App\Services\Notificador::admins()),
-            \App\Services\Notificador::payload(
-                'Caso asignado a abogado',
-                'Se asignó el caso ' . ($juicio->cod_satje ?: '#' . $juicio->id) . " a {$nombreAbogado}.",
-                '/juicios',
-                'juicio',
-                'fas fa-gavel',
-                'info',
-                'juicio',
-                $juicio->id
-            ),
-            "juicio:{$juicio->id}:asignado_admin:{$this->abogado_id}"
-        );
+        if (!$this->asignarAbogadoAlJuicio($abogado)) return;
 
         $this->noty('Abogado asignado con éxito.', 'noty', false);
-        
-        \App\Models\JuicioHistorialEstado::create([
-            'juicio_id'          => $this->selected_id,
-            'user_id'            => auth()->id(),
-            'estado_procesal_id' => $this->estado_procesal_id,
-            'tipo_movimiento'    => 'abogado_asignado',
-            'referencia_tipo'    => 'User',
-            'referencia_id'      => $this->abogado_id,
-            'descripcion'        => 'Se asignó un abogado patrocinador al juicio.',
-        ]);
-
-        if ($this->juicio) $this->juicio->load('abogados');
         $this->reset(['abogado_id', 'searchAbogado', 'abogados_list']);
     }
 

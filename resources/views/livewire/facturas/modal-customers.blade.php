@@ -70,40 +70,10 @@
                 </div>
                 @else
                 {{-- FORMULARIO DE CREACIÓN RÁPIDA --}}
-                <div wire:key="create-view-saas" class="grid grid-cols-12 gap-4 p-5">
-                    <div class="col-span-12 sm:col-span-6">
-                        <label class="form-label">Tipo Identificación</label>
-                        <select wire:model="q_typeidenti" class="form-select">
-                            <option value="cedula">Cédula</option>
-                            <option value="ruc">RUC</option>
-                            <option value="pasaporte">Pasaporte</option>
-                        </select>
-                    </div>
-                    <div class="col-span-12 sm:col-span-6">
-                        <label class="form-label">Identificación</label>
-                        <input wire:model="q_valueidenti" type="text" class="form-control" placeholder="Ej: 0102030405">
-                        @error('q_valueidenti') <span class="text-theme-6">{{ $message }}</span> @enderror
-                    </div>
-                    <div class="col-span-12">
-                        <label class="form-label">Nombre / Razón Social</label>
-                        <input wire:model="q_businame" type="text" class="form-control" placeholder="Ej: Juan Perez">
-                        @error('q_businame') <span class="text-theme-6">{{ $message }}</span> @enderror
-                    </div>
-                    <div class="col-span-12 sm:col-span-6">
-                        <label class="form-label">Teléfono</label>
-                        <input wire:model="q_phone" type="text" class="form-control" placeholder="Ej: 0987654321">
-                    </div>
-                    <div class="col-span-12 sm:col-span-6">
-                        <label class="form-label">Email</label>
-                        <input wire:model="q_email" type="email" class="form-control" placeholder="Ej: cliente@gmail.com">
-                        @error('q_email') <span class="text-theme-6">{{ $message }}</span> @enderror
-                    </div>
-                    <div class="col-span-12">
-                        <label class="form-label">Dirección</label>
-                        <textarea wire:model="q_address" class="form-control" rows="2" placeholder="Ej: Av. Las Americas 1-23"></textarea>
-                    </div>
-                    
-                    <div class="col-span-12 text-center mt-5">
+                <div wire:key="create-view-saas" class="p-5">
+                    <x-customer-fields prefix="q_" :cantones="$q_cantones" context="billing" />
+
+                    <div class="text-center mt-5">
                         <button wire:click="saveQuickCustomer" class="btn btn-primary w-full py-3 font-bold">
                             <i class="fas fa-save mr-2"></i> GUARDAR Y SELECCIONAR
                         </button>

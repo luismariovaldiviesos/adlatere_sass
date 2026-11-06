@@ -265,8 +265,8 @@ class Consultas extends Component
     public function addNew()
     {
         if (!$this->puedeAdministrar()) return; // el abogado no crea consultas
-        if (\App\Models\Materia::count() < 1 || \App\Models\Asunto::count() < 1) {
-            $this->dispatchBrowserEvent('noty', ['msg' => 'Primero carga el archivo datos_cliente (catálogo vacío: materias, asuntos).', 'type' => 'error', 'action' => '']);
+        if (!app(\App\Services\CatalogoProcesalService::class)->completo()) {
+            $this->dispatchBrowserEvent('noty', ['msg' => \App\Services\CatalogoProcesalService::MENSAJE_VACIO, 'type' => 'error', 'action' => '']);
             return;
         }
         $this->resetForm();
@@ -784,7 +784,7 @@ class Consultas extends Component
         try {
             $estadoInicial = EstadoProcesal::orderBy('id', 'asc')->first();
             if (!$estadoInicial) {
-                throw new \Exception('No hay estados procesales registrados. Carga Fases y Estados del Excel datos_cliente.');
+                throw new \Exception(\App\Services\CatalogoProcesalService::MENSAJE_VACIO);
             }
 
             // Código temporal único (la carátula exige cod_satje único al editar)

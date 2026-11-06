@@ -10,7 +10,7 @@
             <div class="preview">
                 <div x-data="{}" x-init="setTimeout(() => { refs.first.focus() }, 900  )">
                     <label class="form-label" >Nombre</label>
-                    <input type="text" wire:model="nombre" x-ref="first" id="nombre"
+                    <input type="text" wire:model.defer="nombre" x-ref="first" id="nombre"
                     class="form-control kioskboard {{ $errors->first('nombre') ?  "border-theme-6" : "" }}"
                     placeholder="nombre de la provincia"
                     >

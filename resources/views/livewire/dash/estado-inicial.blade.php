@@ -142,7 +142,7 @@
             <div class="dash-checklist-head">
                 <div>
                     <div class="dash-kicker">Configuración mínima</div>
-                    <h3>{{ $configCompleta ? 'Sistema listo para operar' : 'Completa los datos esenciales' }}</h3>
+                    <h3>{{ $configCompleta ? 'Configuración básica OK' : 'Completa los datos esenciales' }}</h3>
                 </div>
                 <div class="dash-progress {{ $configCompleta ? 'complete' : '' }}">
                     <div class="dash-progress-track">
@@ -152,6 +152,7 @@
                 </div>
             </div>
 
+            @if(count($configItems))
             <ul class="dash-checklist-list">
                 @foreach($configItems as $item)
                     <li class="dash-check-item">
@@ -176,9 +177,10 @@
                     </li>
                 @endforeach
             </ul>
+            @endif
 
             @if($configCompleta)
-                <div class="dash-complete-note">✓ La configuración mínima está completa. El sistema puede facturar y firmar actividades.</div>
+                <div class="dash-complete-note">Configuración básica OK. Todos los datos esenciales están cargados.</div>
             @endif
         </section>
     </div>

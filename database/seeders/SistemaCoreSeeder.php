@@ -9,15 +9,14 @@ use App\Models\PrioridadAlerta;
 use App\Models\Product;
 use App\Models\Provincia;
 use App\Models\Canton;
-use App\Models\TipoActividad;
 use Illuminate\Database\Seeder;
 use Spatie\Permission\Models\Permission;
 use Spatie\Permission\Models\Role;
 
 // Carga inicial de SISTEMA: datos iguales para todo cliente.
 // 100% idempotente (firstOrCreate/updateOrCreate por claves naturales).
-// NO incluye: materias/procedimientos/asuntos/fases/estados/unidades/settings/usuarios
-// (van por Excel 0_base), ni juicios/clientes demo, ni planes (solo SaaS central).
+// NO incluye: materias/procedimientos/asuntos/fases/estados/unidades/tipos de actividades/settings/usuarios
+// (van por Excel 0_base o se configuran desde Gestión procesal), ni juicios/clientes demo, ni planes (solo SaaS central).
 class SistemaCoreSeeder extends Seeder
 {
     public const PERMISOS = [
@@ -128,10 +127,6 @@ class SistemaCoreSeeder extends Seeder
             'stock' => 0, 'minstock' => 0, 'es_servicio' => true,
         ]);
         if ($iva0) $sc->impuestos()->syncWithoutDetaching([$iva0->id]);
-
-        foreach (['Escrito','Providencia','Audiencia','Oficio','Contrato','Notificación','Diligencia'] as $t) {
-            TipoActividad::updateOrCreate(['nombre' => $t]);
-        }
 
         foreach ([
             ['prioridad' => 'Urgente', 'dias_verde' => 1, 'dias_amarillo' => 2, 'dias_rojo' => 3],

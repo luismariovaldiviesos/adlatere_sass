@@ -36,6 +36,7 @@ class Payator extends Component
 
     protected $rules = [
         'company_name' => 'required|string|min:3|max:255',
+        'name' => 'nullable|string|min:3|max:255',
         'tenant_id' => 'required|string|alpha_dash|min:3|max:50|unique:tenants,id',
         'email' => 'required|email|max:255',
         'password' => 'required|string|min:8|confirmed',
@@ -99,6 +100,7 @@ class Payator extends Component
             // We store critical registration data to create the admin user ONLY after payment.
             $tenant->update([
                 'pending_data' => [
+                    'admin_name' => $this->name ?: null,
                     'admin_email' => $this->email,
                     'admin_password' => $this->password, // Will be hashed during actual user creation
                     'admin_ci' => $this->ci,

@@ -153,33 +153,32 @@
                         </td>
                         <td class="text-slate-500">{{ $act->descripcion }}</td>
                         <td class="text-slate-500">{{ \Carbon\Carbon::parse($act->updated_at)->format('d/m/Y H:i') }}</td>
-                        <td class="table-report__action w-52 py-3 align-middle">
-                            <div class="flex justify-center items-center gap-1.5 flex-wrap">
+                        <td class="py-3 align-middle" style="min-width: 310px;">
+                            <div class="flex justify-center items-center gap-2 flex-wrap">
                                 @php $bloqueada = strtolower($act->estado_firma ?? 'no_requerida') === 'firmada'; @endphp
 
                                 @if($bloqueada)
-                                    <span class="inline-flex items-center px-2 py-1 rounded bg-slate-100 text-slate-500 text-xs font-semibold" title="Firmada digitalmente: no editable">
+                                    <span class="inline-flex items-center px-2 py-1 rounded bg-slate-100 text-slate-500 text-xs font-semibold whitespace-nowrap" title="Firmada digitalmente: no editable">
                                         <i data-lucide="lock" class="w-3.5 h-3.5 mr-1"></i> Firmada
                                     </span>
                                 @elseif($puedeTramitar ?? false)
-                                    <button type="button" wire:click="editActividad({{ $act->id }})" class="btn btn-sm btn-primary" title="Editar actividad">
-                                        <i data-lucide="edit" class="w-4 h-4"></i>
+                                    <button type="button" wire:click="editActividad({{ $act->id }})" class="btn btn-sm btn-primary whitespace-nowrap" title="Editar actividad">
+                                        <i data-lucide="edit" class="w-4 h-4 mr-1"></i> Editar
                                     </button>
-                                    <button type="button" wire:click="destroyActividad({{ $act->id }})" class="btn btn-sm btn-danger" title="Eliminar actividad"
+                                    <button type="button" wire:click="destroyActividad({{ $act->id }})" class="btn btn-sm btn-danger whitespace-nowrap" title="Eliminar actividad"
                                         onclick="confirm('¿Eliminar esta actividad?') || event.stopImmediatePropagation()">
-                                        <i data-lucide="trash-2" class="w-4 h-4"></i>
+                                        <i data-lucide="trash-2" class="w-4 h-4 mr-1"></i> Eliminar
                                     </button>
                                 @endif
 
-                                <button type="button" wire:click="abrirDocumentosActividad({{ $act->id }})" class="btn btn-sm btn-info text-white" title="Documentos de esta actividad ({{ $act->documentos->count() }})">
-                                    <i data-lucide="folder-open" class="w-4 h-4"></i>
-                                    <span class="ml-1 text-xs font-bold">{{ $act->documentos->count() }}</span>
+                                <button type="button" wire:click="abrirDocumentosActividad({{ $act->id }})" class="btn btn-sm btn-info text-white whitespace-nowrap" title="Documentos de esta actividad ({{ $act->documentos->count() }})">
+                                    <i data-lucide="folder-open" class="w-4 h-4 mr-1"></i> Documentos ({{ $act->documentos->count() }})
                                 </button>
-                                <button type="button" wire:click="descargarActividadPdf({{ $act->id }})" class="btn btn-sm btn-outline-danger" title="Descargar en PDF">
-                                    <i data-lucide="file-text" class="w-4 h-4"></i>
+                                <button type="button" wire:click="descargarActividadPdf({{ $act->id }})" class="btn btn-sm btn-outline-danger whitespace-nowrap" title="Descargar en PDF">
+                                    <i data-lucide="file-text" class="w-4 h-4 mr-1"></i> PDF
                                 </button>
-                                <button type="button" wire:click="descargarActividadWord({{ $act->id }})" class="btn btn-sm btn-outline-primary" title="Descargar en Word">
-                                    <i data-lucide="file" class="w-4 h-4"></i>
+                                <button type="button" wire:click="descargarActividadWord({{ $act->id }})" class="btn btn-sm btn-outline-primary whitespace-nowrap" title="Descargar en Word">
+                                    <i data-lucide="file" class="w-4 h-4 mr-1"></i> Word
                                 </button>
                             </div>
                         </td>

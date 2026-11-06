@@ -13,7 +13,7 @@
                     <div class="sm:grid grid-cols-2 gap-5">
                         <div>
                             <label  class="form-label">Nombre Actividad</label>
-                            <input wire:model='nombre' id="nombre" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
+                            <input wire:model.defer='nombre' id="nombre" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
                             @error('nombre')
                                 <x-alert msg="{{ $message }}" />
                             @enderror
@@ -21,7 +21,7 @@
 
                       <div div class="sm:grid grid-cols-2 gap-5">
                             <label class="form-label flex items-center gap-2 cursor-pointer">
-                                <input type="checkbox" wire:model='es_firmable' class="form-check-input mt-1" value="1">
+                                <input type="checkbox" wire:model.defer='es_firmable' class="form-check-input mt-1" value="1">
                                 <span class="form-label mb-0">¿Es firmable electrónicamente?</span>
                             </label>
                             @error('es_firmable')

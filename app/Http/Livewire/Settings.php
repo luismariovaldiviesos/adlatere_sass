@@ -14,11 +14,18 @@ class Settings extends Component
 
     use WithFileUploads;
 
-    public $logo, $leyend, $printer, $selected_id, $logoPreview, $annulment_days, $enable_caja, $secuencial_factura;
-    public $rimpe_type, $agente_retencion; // [NEW]
+    public $logo, $leyend, $printer, $selected_id, $logoPreview;
+    public $annulment_days = 15, $enable_caja = false, $secuencial_factura = 1;
+    public $razonSocial, $nombreComercial, $ruc;
+    public $estab = '001', $ptoEmi = '001', $dirMatriz, $dirEstablecimiento;
+    public $telefono, $email;
+    public $ambiente = '1', $tipoEmision = '1';
+    public $contribuyenteEspecial = 'NO', $obligadoContabilidad = 'NO';
+    public $rimpe_type = 'Ninguno', $agente_retencion; // [NEW]
     public $cert_file, $cert_password;
     public $firma_actividades_modo = 'manual';
     public $firma_actividades_mismo_certificado = true;
+    public $firma_actividades_personal_abogados = false;
     public $firma_actividades_cert_file;
     public $firma_actividades_cert_password;
 
@@ -59,6 +66,7 @@ class Settings extends Component
             $this->firma_actividades_mismo_certificado = $info->firma_actividades_mismo_certificado === null
                 ? true
                 : (bool) $info->firma_actividades_mismo_certificado;
+            $this->firma_actividades_personal_abogados = (bool) ($info->firma_actividades_personal_abogados ?? false);
             $this->firma_actividades_cert_file = $info->firma_actividades_cert_file;
             $this->firma_actividades_cert_password = null;
         }
@@ -122,11 +130,14 @@ class Settings extends Component
             'tipoEmision' => 'required|max:1',
             'contribuyenteEspecial' => 'required|max:13',
             'obligadoContabilidad' => 'required|max:2',
+            'annulment_days' => 'required|integer|min:0',
+            'secuencial_factura' => 'required|integer|min:1',
             'cert_file' => 'nullable', // Add basic rule to allow file processing
             'rimpe_type' => 'required', // [NEW]
             'agente_retencion' => 'nullable|max:20', // [NEW]
             'firma_actividades_modo' => 'required|in:manual,predeterminado,automatico',
             'firma_actividades_mismo_certificado' => 'boolean',
+            'firma_actividades_personal_abogados' => 'boolean',
             'firma_actividades_cert_file' => 'nullable',
             'firma_actividades_cert_password' => 'nullable|string',
 
@@ -154,6 +165,12 @@ class Settings extends Component
             'contribuyenteEspecial.max' => 'El codigo contribuyente especial debe tener máximo 13 caracteres',
             'obligadoContabilidad.required' => 'Campo requerido',
             'obligadoContabilidad.max' => 'El campo debe tener máximo 2 caracteres',
+            'annulment_days.required' => 'Ingrese los días para anular.',
+            'annulment_days.integer' => 'Los días para anular deben ser un número entero.',
+            'annulment_days.min' => 'Los días para anular no pueden ser negativos.',
+            'secuencial_factura.required' => 'Ingrese el próximo número de factura.',
+            'secuencial_factura.integer' => 'El próximo número de factura debe ser un número entero.',
+            'secuencial_factura.min' => 'El próximo número de factura debe ser mayor o igual a 1.',
             'firma_actividades_modo.required' => 'Seleccione la política de firma de actividades.',
             'firma_actividades_modo.in' => 'La política de firma seleccionada no es válida.',
 
@@ -170,7 +187,7 @@ class Settings extends Component
         $archivoActividadesActual = $config->firma_actividades_cert_file ?? null;
         $passwordActividadesActual = $config->firma_actividades_cert_password ?? null;
 
-        if (!$this->firma_actividades_mismo_certificado) {
+        if (!$this->firma_actividades_mismo_certificado && !$this->firma_actividades_personal_abogados) {
             if (!$nuevoCertificadoActividades && !$archivoActividadesActual) {
                 $this->addError('firma_actividades_cert_file', 'Seleccione el certificado para firmar actividades.');
             }
@@ -239,6 +256,7 @@ class Settings extends Component
             'agente_retencion' => $this->agente_retencion, // [NEW]
             'firma_actividades_modo' => $this->firma_actividades_modo,
             'firma_actividades_mismo_certificado' => $this->firma_actividades_mismo_certificado ? 1 : 0,
+            'firma_actividades_personal_abogados' => $this->firma_actividades_personal_abogados ? 1 : 0,
             'firma_actividades_cert_file' => $firmaCertFileName,
             'firma_actividades_cert_password' => $firmaCertPassword,
         ];

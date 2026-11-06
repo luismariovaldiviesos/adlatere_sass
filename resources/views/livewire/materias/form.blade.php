@@ -13,7 +13,7 @@
                     <div class="sm:grid grid-cols-2 gap-5">
                         <div>
                             <label  class="form-label">Nombre Materia</label>
-                            <input wire:model='nombre' id="nombre" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
+                            <input wire:model.defer='nombre' id="nombre" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
                             @error('nombre')
                                 <x-alert msg="{{ $message }}" />
                             @enderror

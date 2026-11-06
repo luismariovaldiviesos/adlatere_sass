@@ -45,7 +45,9 @@ class Facturas extends Component
 
     // Registro rápido de cliente
     public $showCreateCustomer = false;
-    public $q_businame, $q_valueidenti, $q_typeidenti = 'cedula', $q_address, $q_phone, $q_email;
+    public $q_businame, $q_valueidenti, $q_typeidenti = 'ci', $q_address, $q_phone, $q_email;
+    public $q_estado_civil, $q_profesion_ocupacion, $q_canton_id, $q_notes;
+    public $q_cantones = [];
 
     // mostrar y activar panels
     public $showListProducts = false, $tabProducts =  true, $tabCategories = false;
@@ -77,6 +79,8 @@ class Facturas extends Component
      public $estadoCaja;
      public $sinEmpresa = false; // true cuando aún no hay datos de empresa configurados
 
+     public $sinCertificado = false; // true cuando el certificado de facturación no es válido
+     public $certificadoMensaje = '';
      public $monto_externo = null;
      public $pago_juicio_id = null; // ID del pago de juicios que se está facturando
      public $consulta_id = null; // ID de la consulta que se está facturando
@@ -87,11 +91,17 @@ class Facturas extends Component
       public function mount()
      {
 
-         if (!\App\Models\Setting::first()) {
-             $this->sinEmpresa = true;
-             return;
-         }
-         $fact  = new Factura();
+        $empresa = app(\App\Services\EmpresaConfiguracionService::class)->empresa();
+        if (!$empresa['ok']) {
+            $this->sinEmpresa = true;
+            return;
+        }
+
+        $certificado = app(\App\Services\CertificadoFacturacionService::class)->estado();
+        $this->sinCertificado = !$certificado['ok'];
+        $this->certificadoMensaje = $certificado['message'];
+
+        $fact  = new Factura();
          $this->claveAcceso = $fact->claveAcceso();
          $this->secuencial = $fact->secuencial();
         $this->validaCaja();
@@ -173,6 +183,13 @@ class Facturas extends Component
              return view('livewire.facturas.sin-empresa')
                  ->layout('layouts.theme.app');
          }
+
+         if ($this->sinCertificado) {
+             return view('livewire.facturas.sin-certificado', [
+                 'mensaje' => $this->certificadoMensaje,
+             ])->layout('layouts.theme.app');
+         }
+
          $this->fechaFactura =  Carbon::now()->format('d-m-Y');
 
       // dd($this->secuencial , $this->claveAcceso);
@@ -347,6 +364,9 @@ class Facturas extends Component
       {
           $this->showCreateCustomer = true;
           $this->resetQuickCustomer();
+          if (empty($this->q_cantones)) {
+              $this->q_cantones = \App\Models\Canton::orderBy('nombre', 'asc')->get();
+          }
           if($this->searchCustomer && is_numeric($this->searchCustomer)) {
               $this->q_valueidenti = $this->searchCustomer;
           } elseif($this->searchCustomer) {
@@ -361,8 +381,11 @@ class Facturas extends Component
 
       public function resetQuickCustomer()
       {
-          $this->reset('q_businame', 'q_valueidenti', 'q_typeidenti', 'q_address', 'q_phone', 'q_email');
-          $this->q_typeidenti = 'cedula';
+          $this->reset(
+              'q_businame', 'q_valueidenti', 'q_typeidenti', 'q_address', 'q_phone', 'q_email',
+              'q_estado_civil', 'q_profesion_ocupacion', 'q_canton_id', 'q_notes'
+          );
+          $this->q_typeidenti = 'ci';
       }
 
       public function saveQuickCustomer()
@@ -370,8 +393,12 @@ class Facturas extends Component
           $this->validate([
               'q_businame' => 'required|min:3',
               'q_valueidenti' => 'required|unique:customers,valueidenti',
-              'q_typeidenti' => 'required',
-              'q_email' => 'nullable|email|unique:customers,email'
+              'q_typeidenti' => 'required|in:ci,ruc,06',
+              'q_email' => 'nullable|email|unique:customers,email',
+              'q_estado_civil' => 'nullable|string|max:50',
+              'q_profesion_ocupacion' => 'nullable|string|max:150',
+              'q_canton_id' => 'nullable|exists:cantones,id',
+              'q_notes' => 'nullable|string|max:250',
           ], [
               'q_businame.required' => 'El nombre es requerido',
               'q_valueidenti.required' => 'La identificación es requerida',
@@ -385,10 +412,13 @@ class Facturas extends Component
                   'businame' => $this->q_businame,
                   'valueidenti' => $this->q_valueidenti,
                   'typeidenti' => $this->q_typeidenti,
-                  'address' => $this->q_address ?? 'S/N',
-                  'phone' => $this->q_phone ?? '0000000000',
-                  'email' => $this->q_email ??  $this->q_valueidenti . '@facta.ec', // Usar ID para evitar duplicados si no hay mail
-                  'notes' => 'Registro rápido desde Facturación'
+                  'address' => $this->q_address ?: 'S/N',
+                  'estado_civil' => $this->q_estado_civil ?: null,
+                  'profesion_ocupacion' => $this->q_profesion_ocupacion ?: null,
+                  'canton_id' => $this->q_canton_id ?: null,
+                  'phone' => $this->q_phone ?: '0000000000',
+                  'email' => $this->q_email ?: $this->q_valueidenti . '@adlatere.ec',
+                  'notes' => $this->q_notes ?: 'Registro rápido desde Facturación'
               ]);
 
               if($customer) {
@@ -504,10 +534,18 @@ class Facturas extends Component
       // guardar venta
        public function storeSale($print = false)
        {
-        if (!\App\Models\Setting::first()) {
-            $this->dispatchBrowserEvent('noty', ['msg' => 'Para poder facturar debes configurar los datos de la empresa antes.', 'type' => 'error', 'action' => '']);
+        $empresa = app(\App\Services\EmpresaConfiguracionService::class)->empresa();
+        if (!$empresa['ok']) {
+            $this->dispatchBrowserEvent('noty', ['msg' => \App\Services\EmpresaConfiguracionService::MENSAJE_INCOMPLETA, 'type' => 'error', 'action' => '']);
             return;
         }
+
+        $certificado = app(\App\Services\CertificadoFacturacionService::class)->estado();
+        if (!$certificado['ok']) {
+            $this->dispatchBrowserEvent('noty', ['msg' => 'No se puede facturar sin un certificado válido. ' . $certificado['message'], 'type' => 'error', 'action' => '']);
+            return;
+        }
+
         Log::info('Inicio storeSale en Facturas', ['tenant' => function_exists('tenant') ? tenant('id') : 'local', 'user' => Auth::id()]);
 
         if ($this->getItemsCart() <= 0) {
@@ -532,9 +570,9 @@ class Facturas extends Component
         DB::beginTransaction();
         try
         {
-            if ($this->customerSelected !=  'Seleccionar Cliente') {
-                $customer = Customer::where('businame', $this->customerSelected)->first();
-            } else{
+            if ($this->customer_id) {
+                $customer = Customer::find($this->customer_id);
+            } else {
                 $customer = Customer::where('businame', 'consumidor final')->first();
                 // Fallback flexible
                 if (!$customer) {
@@ -563,7 +601,9 @@ class Facturas extends Component
 
             //$customer =  Customer::find($this->customer_id); // Redundant found above
             $tipo = $customer->typeidenti;
-            $tipeIDenti = ($tipo == 'ruc') ? '04' : '05'; // default to cedula
+            $tipeIDenti = $tipo === 'ruc'
+                ? '04'
+                : (($tipo === '06' || $tipo === 'pasaporte') ? '06' : '05');
 
             // F1: un abono se factura una sola vez (anti doble-facturación)
             if ($this->pago_juicio_id) {

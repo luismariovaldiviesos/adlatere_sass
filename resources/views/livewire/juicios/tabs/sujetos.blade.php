@@ -97,7 +97,7 @@
     <div class="grid grid-cols-12 gap-6 items-end">
         
         {{-- BUSCADOR DINÁMICO DE CUSTOMERS Y BOTÓN NUEVO --}}
-        <div class="col-span-12 md:col-span-6 relative">
+        <div class="col-span-12 md:col-span-5 relative">
             <label class="form-label text-base font-bold">Buscar Sujeto (Nombre o Cédula/RUC)</label>
             <div class="relative">
                 <!-- Buscador principal -->
@@ -118,12 +118,8 @@
                                 <small class="text-gray-500 block">{{ $c->valueidenti }}</small>
                             </div>
                         @empty
-                            <!-- EL BOTÓN MÁGICO SI NO ENCUENTRA A NADIE -->
-                            <div class="p-4 text-center bg-gray-50">
-                                <p class="text-gray-600 mb-2">No se encontró el sujeto en la base de datos.</p>
-                                <button type="button" wire:click="showCreateCustomer" class="btn btn-primary btn-sm w-full h-10 shadow-md">
-                                    <i class="fas fa-plus mr-2"></i> Crear como Nuevo Sujeto
-                                </button>
+                            <div class="p-4 text-center bg-gray-50 text-gray-600">
+                                No se encontró el sujeto. Usa el botón <strong>Nuevo sujeto</strong> para crearlo.
                             </div>
                         @endforelse
 
@@ -134,7 +130,7 @@
         </div>
 
         {{-- SELECT DE ROL (Arreglado a minúsculas por tu ENUM) --}}
-        <div class="col-span-12 md:col-span-4">
+        <div class="col-span-12 md:col-span-3">
             <label class="form-label text-base font-bold">Rol en el Juicio</label>
             <select wire:model.defer="rol" class="form-select h-12 text-lg">
                 <option value="">Seleccione…</option>
@@ -148,21 +144,22 @@
             </div>
         </div>
 
-        {{-- BOTON AGREGAR AL JUICIO --}}
-       
-        <div class="col-span-12 md:col-span-2">
-             @if(!$editModeSujeto)
-                <button class="btn btn-primary text-lg px-8 py-2.5" wire:click="addParticipante">
-                    <i class="fas fa-plus mr-2"></i> Agregar
-                </button>
+        {{-- BOTONES AGREGAR / NUEVO --}}
+        <div class="col-span-12 md:col-span-4">
+            <div class="flex flex-col sm:flex-row gap-2">
+                @if(!$editModeSujeto)
+                    <button class="btn btn-primary text-base px-4 py-2.5 flex-1 whitespace-nowrap" wire:click="addParticipante">
+                        <i class="fas fa-plus mr-2"></i> Agregar
+                    </button>
                 @else
-                 <button type="button"
-                class="btn btn-primary text-lg px-8 py-2.5"
-               wire:click="editParticipanteEnJuicio">
-                 <i class="fas fa-edit mr-2"></i >
-                Editar Sujeto
-              </button>
+                    <button type="button" class="btn btn-primary text-base px-4 py-2.5 flex-1 whitespace-nowrap" wire:click="editParticipanteEnJuicio">
+                        <i class="fas fa-edit mr-2"></i> Editar sujeto
+                    </button>
                 @endif
+                <button type="button" class="btn btn-outline-primary text-base px-4 py-2.5 flex-1 whitespace-nowrap" wire:click="showCreateCustomer">
+                    <i class="fas fa-user-plus mr-2"></i> Nuevo sujeto
+                </button>
+            </div>
         </div>
     </div>
     @endif

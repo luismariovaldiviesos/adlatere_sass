@@ -12,7 +12,7 @@
 
             <div class="col-span-4">
                 <label  class="form-label">Razon Social</label>
-                <input wire:model="razonSocial"  id="razonSocial" type="text"
+                <input wire:model.defer="razonSocial"  id="razonSocial" type="text"
                 class="form-control  kioskboard"  placeholder="" />
                 @error('razonSocial')
                 <x-alert msg="{{ $message }}" />
@@ -21,7 +21,7 @@
 
             <div class="col-span-4">
                 <label  class="form-label">Nombre del negocio</label>
-                <input wire:model="nombreComercial"  id="nombreComercial" type="text"
+                <input wire:model.defer="nombreComercial"  id="nombreComercial" type="text"
                 class="form-control  kioskboard"  placeholder="" />
                 @error('nombreComercial')
                 <x-alert msg="{{ $message }}" />
@@ -30,7 +30,7 @@
 
             <div class="col-span-2">
                 <label  class="form-label">Ruc</label>
-                <input wire:model="ruc"  id="ruc" type="text"
+                <input wire:model.defer="ruc"  id="ruc" type="text"
                 class="form-control  kioskboard"  placeholder="" />
                 @error('ruc')
                 <x-alert msg="{{ $message }}" />
@@ -38,7 +38,7 @@
             </div>
             <div class="col-span-2">
                 <label  class="form-label">Establecimiento</label>
-                <input wire:model="estab"  id="estab" type="text"
+                <input wire:model.defer="estab"  id="estab" type="text"
                 class="form-control  kioskboard"  placeholder="eje: 001" />
                 @error('estab')
                 <x-alert msg="{{ $message }}" />
@@ -47,7 +47,7 @@
 
             <div class="col-span-4">
                 <label  class="form-label">Matriz</label>
-                <input wire:model="dirMatriz"  id="dirMatriz" type="text"
+                <input wire:model.defer="dirMatriz"  id="dirMatriz" type="text"
                 class="form-control  kioskboard"  placeholder="dirección" />
                 @error('dirMatriz')
                 <x-alert msg="{{ $message }}" />
@@ -56,7 +56,7 @@
 
             <div class="col-span-4">
                 <label  class="form-label">Sucursal</label>
-                <input wire:model="dirEstablecimiento"  id="dirEstablecimiento" type="text"
+                <input wire:model.defer="dirEstablecimiento"  id="dirEstablecimiento" type="text"
                 class="form-control  kioskboard"  placeholder="dirección" />
                 @error('dirEstablecimiento')
                 <x-alert msg="{{ $message }}" />
@@ -65,7 +65,7 @@
 
             <div class="col-span-2">
                 <label  class="form-label">Pto Emision</label>
-                <input wire:model="ptoEmi"  id="ptoEmi" type="text"
+                <input wire:model.defer="ptoEmi"  id="ptoEmi" type="text"
                 class="form-control  kioskboard"  placeholder="eje:001" />
                 @error('ptoEmi')
                 <x-alert msg="{{ $message }}" />
@@ -73,7 +73,7 @@
             </div>
             <div class="col-span-2">
                 <label  class="form-label">telefono</label>
-                <input wire:model="telefono"  id="telefono" type="text"
+                <input wire:model.defer="telefono"  id="telefono" type="text"
                 class="form-control  kioskboard"  placeholder="" />
                 @error('telefono')
                 <x-alert msg="{{ $message }}" />
@@ -83,7 +83,7 @@
 
             <div class="col-span-2">
                 <label  class="form-label">email</label>
-                <input wire:model="email"  id="email" type="text"
+                <input wire:model.defer="email"  id="email" type="text"
                 class="form-control  kioskboard"  placeholder="" />
                 @error('email')
                 <x-alert msg="{{ $message }}" />
@@ -92,7 +92,7 @@
 
             <div class="col-span-2">
                 <label  class="form-label">Ambiente 1 pruebas -2 prod  </label>
-                <input wire:model="ambiente"  id="ambiente" type="text"
+                <input wire:model.defer="ambiente"  id="ambiente" type="text"
                 class="form-control  kioskboard"  placeholder="ejem1" />
                 @error('ambiente')
                 <x-alert msg="{{ $message }}" />
@@ -101,7 +101,7 @@
 
             <div class="col-span-2">
                 <label  class="form-label">tipo Emision</label>
-                <input wire:model="tipoEmision"  id="tipoEmision" type="text"
+                <input wire:model.defer="tipoEmision"  id="tipoEmision" type="text"
                 class="form-control  kioskboard"  placeholder="eje: fastFOOD" />
                 @error('tipoEmision')
                 <x-alert msg="{{ $message }}" />
@@ -109,7 +109,7 @@
             </div>
             <div class="col-span-2">
                 <label  class="form-label">Contribuyente especial revisar</label>
-                <input wire:model="contribuyenteEspecial"  id="contribuyenteEspecial" type="text"
+                <input wire:model.defer="contribuyenteEspecial"  id="contribuyenteEspecial" type="text"
                 class="form-control  kioskboard"  placeholder="eje: 001" />
                 @error('contribuyenteEspecial')
                 <x-alert msg="{{ $message }}" />
@@ -117,7 +117,7 @@
             </div>
             <div class="col-span-2">
                 <label  class="form-label">Conta select</label>
-                <input wire:model="obligadoContabilidad"  id="obligadoContabilidad" type="text"
+                <input wire:model.defer="obligadoContabilidad"  id="obligadoContabilidad" type="text"
                 class="form-control  kioskboard"  placeholder="eje: 001" />
                 @error('obligadoContabilidad')
                 <x-alert msg="{{ $message }}" />
@@ -126,7 +126,7 @@
 
             <div class="col-span-2">
                 <label  class="form-label text-theme-1">Próximo nro. de Factura</label>
-                <input wire:model="secuencial_factura"  id="secuencial_factura" type="number"
+                <input wire:model.defer="secuencial_factura"  id="secuencial_factura" type="number"
                 class="form-control  kioskboard border-theme-1"  placeholder="eje: 101" />
                 @error('secuencial_factura')
                 <x-alert msg="{{ $message }}" />
@@ -135,7 +135,7 @@
             
              <div class="col-span-12 md:col-span-4">
                 <label  class="form-label text-theme-1">Régimen RIMPE</label>
-                <select wire:model="rimpe_type" class="form-control kioskboard border-theme-1">
+                <select wire:model.defer="rimpe_type" class="form-control kioskboard border-theme-1">
                     <option value="Ninguno">Ninguno</option>
                     <option value="Contribuyente Régimen RIMPE">Contribuyente Régimen RIMPE (Emprendedor)</option>
                     <option value="Negocio Popular">Negocio Popular</option>
@@ -147,7 +147,7 @@
 
             <div class="col-span-12 md:col-span-4">
                 <label  class="form-label text-theme-1">Agente de Retención (Resolución)</label>
-                <input wire:model="agente_retencion"  type="text"
+                <input wire:model.defer="agente_retencion"  type="text"
                 class="form-control  kioskboard border-theme-1"  placeholder="Resolución No. 1" />
                 @error('agente_retencion')
                 <x-alert msg="{{ $message }}" />
@@ -163,7 +163,7 @@
             </div>
             <div class="col-span-4">
                 <label  class="form-label">Contraseña PKC</label>
-                <input wire:model="cert_password"  id="cert_password" type="password"
+                <input wire:model.defer="cert_password"  id="cert_password" type="password"
                 class="form-control  kioskboard" />
                 @error('cert_password')
                 <x-alert msg="{{ $message }}" />
@@ -175,7 +175,7 @@
                 <div class="grid grid-cols-12 gap-4">
                     <div class="col-span-12 md:col-span-4">
                         <label class="form-label">Política de firma</label>
-                        <select wire:model="firma_actividades_modo" class="form-control">
+                        <select wire:model.defer="firma_actividades_modo" class="form-control">
                             <option value="manual">Manual: el abogado elige el certificado</option>
                             <option value="predeterminado">Predeterminado: despacho, pero puede cambiarlo</option>
                             <option value="automatico">Automático: siempre certificado del despacho</option>
@@ -189,6 +189,18 @@
                         <label class="flex items-center gap-2 text-sm">
                             <input type="checkbox" wire:model="firma_actividades_mismo_certificado" class="form-check-input">
                             Usar el mismo certificado de facturación para firmar actividades
+                        </label>
+                    </div>
+
+                    <div class="col-span-12 md:col-span-8 flex items-center">
+                        <label class="flex items-start gap-2 text-sm">
+                            <input type="checkbox" wire:model.defer="firma_actividades_personal_abogados" class="form-check-input mt-1">
+                            <span>
+                                Los abogados subirán su archivo personal para firmar actividades del despacho
+                                <small class="block text-xs text-gray-500 mt-1">
+                                    Si está marcado, el certificado institucional será opcional. Aplica con política de firma Manual o Predeterminado.
+                                </small>
+                            </span>
                         </label>
                     </div>
 
@@ -206,7 +218,7 @@
                         </div>
                         <div class="col-span-12 md:col-span-4">
                             <label class="form-label">Contraseña del certificado para actividades</label>
-                            <input type="password" wire:model="firma_actividades_cert_password" class="form-control" autocomplete="new-password">
+                            <input type="password" wire:model.defer="firma_actividades_cert_password" class="form-control" autocomplete="new-password">
                             @error('firma_actividades_cert_password')
                                 <x-alert msg="{{ $message }}" />
                             @enderror
@@ -228,7 +240,7 @@
 
             <div class="col-span-4">
                 <label  class="form-label">Días para anular</label>
-                <input wire:model="annulment_days"  type="text"
+                <input wire:model.defer="annulment_days"  type="text"
                 class="form-control  kioskboard" />
                 @error('annulment_days')
                 <x-alert msg="{{ $message }}" />
@@ -236,7 +248,7 @@
             </div>
             <div class="col-span-4">
                 <label  class="form-label">Leyenda:</label>
-                <input wire:model="leyend"  id="leyend" type="text"
+                <input wire:model.defer="leyend"  id="leyend" type="text"
                 class="form-control  kioskboard"  placeholder="eje: gracias por su compra" />
                 @error('leyend')
                 <x-alert msg="{{ $message }}" />
@@ -247,7 +259,7 @@
             <div class="col-span-4 flex items-center mt-5">
                 <div class="form-check form-switch w-full sm:w-auto sm:ml-auto mt-3 sm:mt-0">
                     <label class="form-check-label ml-0 sm:ml-2" for="show-example-1">Habilitar Control de Cajas</label>
-                    <input wire:model="enable_caja" id="show-example-1" class="show-code form-check-input mr-0 ml-3" type="checkbox">
+                    <input wire:model.defer="enable_caja" id="show-example-1" class="show-code form-check-input mr-0 ml-3" type="checkbox">
                 </div>
             </div>
 

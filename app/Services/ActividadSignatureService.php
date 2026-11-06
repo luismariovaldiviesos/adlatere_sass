@@ -25,11 +25,17 @@ class ActividadSignatureService
         $esAdmin = $this->esAdmin($operador);
         $esPatrocinador = $this->esPatrocinador($actividad, $operador);
 
-        $puedePersonal = $operador->can('firmar_actividad') && ($esAdmin || $esPatrocinador);
+        $puedePersonal = $this->permitePersonal($config)
+            && $operador->can('firmar_actividad')
+            && ($esAdmin || $esPatrocinador);
         $puedeDespacho = $esAdmin
             || ($esPatrocinador && (bool) $operador->puede_firmar_despacho);
 
         $personal = $this->infoCertificadoPersonal($operador, $puedePersonal, $personalPath);
+
+        if (!$this->permitePersonal($config)) {
+            $personal['motivo'] = 'El despacho no ha habilitado la firma con certificado personal.';
+        }
         $despacho = $this->infoCertificadoDespacho($config, $puedeDespacho);
 
         if ($modo === 'automatico') {
@@ -443,6 +449,11 @@ class ActividadSignatureService
     {
         $modo = $config->firma_actividades_modo ?? 'manual';
         return in_array($modo, ['manual', 'predeterminado', 'automatico'], true) ? $modo : 'manual';
+    }
+
+    private function permitePersonal(?Setting $config): bool
+    {
+        return (bool) ($config->firma_actividades_personal_abogados ?? false);
     }
 
     private function esAdmin(User $user): bool

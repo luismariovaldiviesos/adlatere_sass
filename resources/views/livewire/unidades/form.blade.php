@@ -13,7 +13,7 @@
                     <div class="sm:grid grid-cols-2 gap-5">
                         <div>
                             <label  class="form-label">Nombre Unidad</label>
-                            <input wire:model='nombre' id="nombre" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
+                            <input wire:model.defer='nombre' id="nombre" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
                             @error('nombre')
                                 <x-alert msg="{{ $message }}" />
                             @enderror
@@ -22,7 +22,7 @@
                         <div class="grid grid-cols-6">
                             <div class="col-end-2 bg-amber-500">
                                 <label class="form-label">Cantón</label>
-                                <select wire:model='canton_id' class="form-select form-select-lg sm:mr-2">
+                                <select wire:model.defer='canton_id' class="form-select form-select-lg sm:mr-2">
                                    <option selected="elegir">Elegir</option>
                                    @foreach ($cantones as $canton )
                                    <option value="{{ $canton->id }}">{{ $canton->nombre }}</option>

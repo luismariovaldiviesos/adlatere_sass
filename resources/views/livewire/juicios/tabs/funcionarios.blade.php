@@ -3,7 +3,7 @@
     <div class="grid grid-cols-12 gap-6 items-end">
         
         {{-- BUSCADOR DINÁMICO DE FUNCIONARIOS --}}
-        <div class="col-span-12 md:col-span-6 relative">
+        <div class="col-span-12 md:col-span-4 relative">
             <label class="form-label text-base font-bold">Buscar Funcionario Judicial</label>
             <div class="relative">
                 <input type="text" 
@@ -25,11 +25,8 @@
                                 <small class="text-gray-500 block">Cargo base: {{ $func->cargo }} | {{ $func->email ?? 'Sin correo' }}</small>
                             </div>
                         @empty
-                            <div class="p-4 text-center bg-gray-50">
-                                <p class="text-gray-600">No se encontró el funcionario en la base de datos.</p>
-                                <a href="{{ route('funcionarios') }}" target="_blank" class="btn btn-outline-secondary btn-sm mt-2">
-                                    <i class="fas fa-plus mr-2"></i> Registrar en catálogo de Funcionarios
-                                </a>
+                            <div class="p-4 text-center bg-gray-50 text-gray-600">
+                                No se encontró el funcionario. Usa el botón <strong>Nuevo funcionario</strong> para crearlo.
                             </div>
                         @endforelse
                     </div>
@@ -39,7 +36,7 @@
         </div>
 
         {{-- SELECCIONAR O ESCRIBIR EL ROL EN EL JUICIO --}}
-        <div class="col-span-12 md:col-span-4">
+        <div class="col-span-12 md:col-span-3">
             <label class="form-label text-base font-bold">Rol en el Juicio</label>
             <select wire:model.defer="rol_en_juicio" class="form-select h-12 text-lg">
                 <option value="">Seleccione…</option>
@@ -52,11 +49,16 @@
             @error('rol_en_juicio') <span class="text-theme-6 mt-1">{{ $message }}</span> @enderror
         </div>
 
-        {{-- BOTÓN AGREGAR --}}
-        <div class="col-span-12 md:col-span-2">
-            <button class="btn btn-primary text-lg px-8 py-2.5 w-full h-12 flex justify-center items-center" wire:click="addFuncionario">
-                <i class="fas fa-plus mr-2"></i> Asignar
-            </button>
+        {{-- BOTONES ASIGNAR / NUEVO --}}
+        <div class="col-span-12 md:col-span-5">
+            <div class="flex flex-col sm:flex-row gap-2">
+                <button class="btn btn-primary text-base px-4 py-2.5 flex-1 h-12 flex justify-center items-center whitespace-nowrap" wire:click="addFuncionario">
+                    <i class="fas fa-plus mr-2"></i> Asignar
+                </button>
+                <button type="button" class="btn btn-outline-primary text-base px-4 py-2.5 flex-1 h-12 flex justify-center items-center whitespace-nowrap" wire:click="showQuickFuncionario">
+                    <i class="fas fa-user-plus mr-2"></i> Nuevo funcionario
+                </button>
+            </div>
         </div>
     </div>
 

@@ -4,7 +4,6 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Models\Tenant;
-use App\Models\Setting;
 use App\Mail\WelcomeTenant;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Hash;
@@ -35,7 +34,7 @@ class TenantSetupService
             // 3. Crear/Actualizar Usuario Admin (Heredar ID 1 de seeder si existe)
             $user = User::first();
             $userData = [
-                'name' => $data['company_name'] ?? $tenant->name,
+                'name' => !empty($data['admin_name']) ? $data['admin_name'] : 'Administrador',
                 'email' => $data['admin_email'],
                 'password' => Hash::make($data['admin_password']),
                 'ci' => $data['admin_ci'] ?? '9999999999',
@@ -53,27 +52,8 @@ class TenantSetupService
             }
             $user->syncRoles($adminRole);
 
-            // 4. Inicializar Configuración de Empresa
-            Log::info('[SETUP_SERVICE] Updating Settings');
-            Setting::updateOrCreate(
-                ['id' => 1],
-                [
-                    'razonSocial' => $data['company_name'] ?? $tenant->name,
-                    'nombreComercial' => $data['company_name'] ?? $tenant->name,
-                    'ruc' => $data['admin_ci'] ?? '9999999999',
-                    'estab' => '001',
-                    'ptoEmi' => '001',
-                    'dirMatriz' => 's/n',
-                    'dirEstablecimiento' => 's/n',
-                    'email' => $data['admin_email'],
-                    'ambiente' => 1,
-                    'tipoEmision' => 1,
-                    'contribuyenteEspecial' => 'NO',
-                    'obligadoContabilidad' => 'NO',
-                    'annulment_days' => 15,
-                    'enable_caja' => false,
-                ]
-            );
+            // 4. La empresa se configura en Configuración > Empresa o con el Excel datos_cliente.
+            // No se crean datos ficticios en Settings al registrar el tenant.
 
             // 5. Enviar Email de Bienvenida (Vía API para saltar bloqueos de puerto)
             $this->sendWelcomeEmail($tenant, $user, $data);

@@ -83,6 +83,12 @@
                                     @error('company_name') <span class="text-danger small">{{ $message }}</span> @enderror
                                 </div>
 
+                                <div class="mb-3 full">
+                                    <label class="form-label">Nombre del administrador</label>
+                                    <input type="text" class="form-control" wire:model="name" placeholder="Ej. Ana Pérez">
+                                    @error('name') <span class="text-danger small">{{ $message }}</span> @enderror
+                                </div>
+
                                 <div class="mb-3">
                                     <label class="form-label">Subdominio</label>
                                     <div class="input-group">

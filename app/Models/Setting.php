@@ -17,7 +17,8 @@ class Setting extends Model
         'contribuyenteEspecial','obligadoContabilidad', 'cert_file','cert_password','logo','leyend',
         'printer','annulment_days', 'enable_caja', 'secuencial_factura', 'rimpe_type', 'agente_retencion',
         'firma_actividades_modo', 'firma_actividades_mismo_certificado',
-        'firma_actividades_cert_file', 'firma_actividades_cert_password' ];
+        'firma_actividades_cert_file', 'firma_actividades_cert_password',
+        'firma_actividades_personal_abogados' ];
 
     public function getCertPasswordAttribute($value)
     {

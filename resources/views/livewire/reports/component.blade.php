@@ -3,8 +3,7 @@
     <div class=" col-span-12">
         <div class="intro-y box">
             <h2 class="text-lg font-medium text-center text-theme-1 py-4">
-                REPORTE DE FACTURACIÓN
-            </h2>
+                REPORTES DEL DESPACHO</h2>
 
             <div class="grid grid-cols-12 gap-5 p-5">
 
@@ -43,7 +42,13 @@
 
             </div>
 
+            @include('livewire.reports.operativo')
+
             <div class="p-5" id="striped-rows-table">
+                <div class="d-flex align-items-center justify-content-between mb-3" style="display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:12px;">
+                    <h4 style="margin:0;font-size:15px;font-weight:800;color:#1d2f4f;">Detalle de facturación</h4>
+                    <span style="font-size:11px;color:#8995a8;">Comprobantes emitidos en el período</span>
+                </div>
                 <div class="preview">
                     <div class="overflow-x-auto">
                         <table class="table">
