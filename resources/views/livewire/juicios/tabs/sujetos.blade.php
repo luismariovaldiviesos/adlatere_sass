@@ -69,7 +69,7 @@
     </div>
 
     <div class="col-span-12 flex justify-end">
-        <button class="btn btn-primary text-lg px-8 py-2.5" wire:click="saveFicha">
+        <button type="button" class="btn btn-primary text-lg px-8 py-2.5" wire:click="saveFicha">
             Guardar
         </button>
     </div>
@@ -148,7 +148,7 @@
         <div class="col-span-12 md:col-span-4">
             <div class="flex flex-col sm:flex-row gap-2">
                 @if(!$editModeSujeto)
-                    <button class="btn btn-primary text-base px-4 py-2.5 flex-1 whitespace-nowrap" wire:click="addParticipante">
+                    <button type="button" class="btn btn-primary text-base px-4 py-2.5 flex-1 whitespace-nowrap" wire:click="addParticipante">
                         <i class="fas fa-plus mr-2"></i> Agregar
                     </button>
                 @else
@@ -201,11 +201,11 @@
                     </td>
                     <td class="p-4 text-center border-b">
                         @if(!$soloLecturaBase)
-                        <button class="btn btn-outline-primary btn-sm mr-2" wire:click="editParticipante({{ $p->id }})" title="Editar Rol">
+                        <button type="button" class="btn btn-outline-primary btn-sm mr-2" wire:click="editParticipante({{ $p->id }})" title="Editar Rol">
                             <i class="fas fa-edit"></i>
 
                         </button>
-                        <button class="btn btn-outline-danger btn-sm" wire:click="removeParticipante({{ $p->id }})" title="Remover del Juicio">
+                        <button type="button" class="btn btn-outline-danger btn-sm" wire:click="removeParticipante({{ $p->id }})" title="Remover del Juicio">
                             <i class="fas fa-trash"></i>
                         </button>
                         @else

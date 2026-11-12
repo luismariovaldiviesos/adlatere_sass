@@ -182,6 +182,29 @@
             @if($configCompleta)
                 <div class="dash-complete-note">Configuración básica OK. Todos los datos esenciales están cargados.</div>
             @endif
+
+            @if(!empty($firmaPendientes))
+                <div class="mt-5 pt-4 border-t border-slate-200">
+                    <div class="dash-kicker">Pendientes de firma</div>
+                    <ul class="dash-checklist-list" style="margin-top:12px;">
+                        @foreach($firmaPendientes as $fp)
+                            <li class="dash-check-item">
+                                <span class="dash-check-icon pending">!</span>
+                                <div class="dash-check-copy">
+                                    <strong>Juicio {{ $fp['codigo'] }}</strong>
+                                    <span>
+                                        {{ $fp['total'] }} {{ $fp['total'] === 1 ? 'actividad pendiente' : 'actividades pendientes' }} de firma
+                                        @if($fp['tipos']) · {{ $fp['tipos'] }} @endif
+                                    </span>
+                                </div>
+                                <div class="dash-check-action">
+                                    <a href="{{ $fp['url'] }}">Revisar →</a>
+                                </div>
+                            </li>
+                        @endforeach
+                    </ul>
+                </div>
+            @endif
         </section>
     </div>
 </div>

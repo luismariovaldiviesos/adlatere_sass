@@ -57,7 +57,7 @@
                                                 <!-- Botón para eliminar -->
                                                 @if($factura->estado == 'pendiente')
                                                 @can('procesar_factura_anulada')
-                                                <button class="btn btn-danger text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-danger text-white border-0 ml-3"
                                                         wire:click.prevent="deletesri({{ $factura->id }})"
                                                         type="button"
                                                         title="Eliminar Factura">

@@ -108,14 +108,14 @@
                                                         $esAsignado = (int) $t->asignado_a === (int) auth()->id();
                                                     @endphp
                                                     <!-- Ver detalles de la tarea (todos los perfiles) -->
-                                                    <button class="btn text-white border-0"
+                                                    <button type="button" class="btn text-white border-0"
                                                         style="background-color:#475569;"
                                                         wire:click.prevent="verDetalles({{ $t->id }})" title="Ver detalles de la tarea">
                                                         <i class="fas fa-eye"></i>
                                                     </button>
                                                     <!-- Ver detalles de actividad si existe -->
                                                     @if($t->actividad_id)
-                                                    <button class="btn text-white border-0"
+                                                    <button type="button" class="btn text-white border-0"
                                                         style="background-color:#0891b2;"
                                                         wire:click.prevent="verDetallesActividad({{ $t->actividad_id }})" title="Ver detalles de actividad">
                                                         <i class="fas fa-list"></i>
@@ -123,7 +123,7 @@
                                                     @endif
                                                     <!-- Cambiar fecha de vencimiento (Admin/Asistente) -->
                                                     @if($puedeEditarFecha && in_array($t->estado, ['pendiente', 'en_proceso'], true))
-                                                    <button class="btn text-white border-0"
+                                                    <button type="button" class="btn text-white border-0"
                                                         style="background-color:#7c3aed;"
                                                         wire:click.prevent="abrirFechaVencimiento({{ $t->id }})" title="Cambiar fecha de vencimiento">
                                                         <i class="fas fa-calendar-alt"></i>
@@ -131,37 +131,37 @@
                                                     @endif
                                                     @if($esAsignado)
                                                     @if($t->estado === 'en_proceso' && !$t->esta_vencida)
-                                                    <button class="btn btn-warning text-white border-0"
+                                                    <button type="button" class="btn btn-warning text-white border-0"
                                                         wire:click.prevent="Edit({{ $t->id }})" title="Ver / Editar">
                                                         <i class="fas fa-edit"></i>
                                                     </button>
                                                     @endif
                                                     @if($t->estado === 'pendiente')
-                                                    <button class="btn btn-primary text-white border-0"
+                                                    <button type="button" class="btn btn-primary text-white border-0"
                                                         wire:click.prevent="cambiarEstado({{ $t->id }}, 'en_proceso')" title="Iniciar">
                                                         <i class="fas fa-play"></i>
                                                     </button>
                                                     @endif
                                                     @if($t->estado === 'en_proceso' && $t->esta_vencida)
-                                                    <button class="btn btn-secondary text-white border-0" disabled
+                                                    <button type="button" class="btn btn-secondary text-white border-0" disabled
                                                         title="Tarea vencida: no se puede editar ni completar. Solicite ampliar la fecha límite.">
                                                         <i class="fas fa-lock"></i>
                                                     </button>
                                                     @elseif($t->estado === 'en_proceso' && (trim(strip_tags($t->contenido ?? '')) !== '' || ($t->adjuntos_count ?? 0) > 0))
-                                                    <button class="btn btn-success text-white border-0"
+                                                    <button type="button" class="btn btn-success text-white border-0"
                                                         wire:click.prevent="cambiarEstado({{ $t->id }}, 'completada')" title="Marcar completada">
                                                         <i class="fas fa-check"></i>
                                                     </button>
                                                     @endif
                                                     @if($t->estado === 'completada' && $t->tipo === 'juicio' && !$t->actividad_id)
-                                                    <button class="btn btn-info text-white border-0 fw-bold"
+                                                    <button type="button" class="btn btn-info text-white border-0 fw-bold"
                                                         wire:click.prevent="abrirConvertir({{ $t->id }})" title="Convertir en actividad" style="background:#0dcaf0; border-color:#0dcaf0;">
                                                         <i class="fas fa-gavel"></i> Convertir
                                                     </button>
                                                     @endif
                                                     @endif
                                                     @if($puedeEliminar && !$t->actividad_id)
-                                                    <button class="btn btn-danger text-white border-0"
+                                                    <button type="button" class="btn btn-danger text-white border-0"
                                                         wire:click.prevent="destroy({{ $t->id }})" title="Eliminar">
                                                         <i class="fas fa-trash"></i>
                                                     </button>

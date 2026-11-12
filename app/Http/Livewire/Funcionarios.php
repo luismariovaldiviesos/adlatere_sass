@@ -25,7 +25,7 @@ class Funcionarios extends Component
 
     public function render()
     {
-        if (strlen($this->search) > 0)
+        if (strlen((string) $this->search) > 0)
             $info = Funcionario::where('nombre', 'like', "%{$this->search}%")->paginate($this->pagination);
         else
             $info = Funcionario::paginate($this->pagination);
@@ -102,8 +102,6 @@ class Funcionarios extends Component
 
     public function Store()
     {
-        sleep(1);
-
         $this->validate(Funcionario::rules($this->selected_id), Funcionario::$messages);
 
         $funcionario = Funcionario::updateOrCreate(

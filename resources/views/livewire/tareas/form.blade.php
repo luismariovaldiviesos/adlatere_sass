@@ -1,7 +1,7 @@
 <div class="intro-y box p-5">
     <div class="flex justify-between items-center mb-5">
         <h2 class="text-lg font-medium">{{ $action }} tarea</h2>
-        <button wire:click.prevent="CloseModal" class="btn btn-outline-secondary">Volver</button>
+        <button type="button" wire:click.prevent="CloseModal" class="btn btn-outline-secondary">Volver</button>
     </div>
 
     @if($puedeGestionar)
@@ -64,8 +64,8 @@
     </div>
 
     <div class="text-right mt-5">
-        <button wire:click.prevent="CloseModal" class="btn btn-outline-secondary mr-1">Cancelar</button>
-        <button wire:click.prevent="Store" class="btn btn-primary">Guardar</button>
+        <button type="button" wire:click.prevent="CloseModal" class="btn btn-outline-secondary mr-1">Cancelar</button>
+        <button type="button" wire:click.prevent="Store" class="btn btn-primary">Guardar</button>
     </div>
     @else
     <div class="bg-gray-100 rounded p-3 text-sm">
@@ -74,7 +74,7 @@
         <p class="mt-1 text-gray-500">Use los botones de estado en la tabla para avanzar esta tarea.</p>
     </div>
     <div class="text-right mt-5">
-        <button wire:click.prevent="CloseModal" class="btn btn-outline-secondary mr-1">Volver</button>
+        <button type="button" wire:click.prevent="CloseModal" class="btn btn-outline-secondary mr-1">Volver</button>
     </div>
     @endif
 

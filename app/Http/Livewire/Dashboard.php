@@ -24,6 +24,7 @@ class Dashboard extends Component
     public $year, $salesByMonth_Data = [], $top5Data =[], $weekSales_Data=[], $listYears=[], $salesByPaymentMethod_Data = [];
     // Estadísticas de juicios (sección propia, todos ven todo)
     public $kpiJuicios = 0, $kpiAudiencias7 = 0, $kpiFirmasPendientes = 0, $kpiPorCobrar = 0;
+    public $firmaPendientes = [];
     public $juiciosByMonth_Data = [], $juiciosByMateria_Data = [], $juiciosByEstado_Data = [], $audiencias14_Data = [], $audiencias14_Labels = [];
     public $tenantid;
     public $modalOpen = false;
@@ -91,6 +92,9 @@ class Dashboard extends Component
     private function menusProcesales(): array
     {
         $menus = [
+            ['label' => 'provincias', 'route' => 'provincias', 'exists' => \App\Models\Provincia::exists()],
+            ['label' => 'cantones', 'route' => 'cantones', 'exists' => \App\Models\Canton::exists()],
+            ['label' => 'unidades judiciales', 'route' => 'unidades', 'exists' => \App\Models\Unidad::exists()],
             ['label' => 'materias', 'route' => 'materias', 'exists' => \App\Models\Materia::exists()],
             ['label' => 'procedimientos', 'route' => 'procedimientos', 'exists' => \App\Models\Procedimiento::exists()],
             ['label' => 'asuntos', 'route' => 'asuntos', 'exists' => \App\Models\Asunto::exists()],
@@ -100,9 +104,6 @@ class Dashboard extends Component
             ['label' => 'tipos de actividades', 'route' => 'tipoactividad', 'exists' => \App\Models\TipoActividad::exists()],
             ['label' => 'plantillas de actividades', 'route' => 'plantillas-tipos-actividad', 'exists' => \App\Models\PlantillaTipoActividad::exists()],
             ['label' => 'alertas de juicios', 'route' => 'prioridad-alertas', 'exists' => \App\Models\PrioridadAlerta::exists()],
-            ['label' => 'provincias', 'route' => 'provincias', 'exists' => \App\Models\Provincia::exists()],
-            ['label' => 'cantones', 'route' => 'cantones', 'exists' => \App\Models\Canton::exists()],
-            ['label' => 'unidades judiciales', 'route' => 'unidades', 'exists' => \App\Models\Unidad::exists()],
         ];
 
         $items = [];
@@ -182,6 +183,13 @@ class Dashboard extends Component
             'url' => route('settings'),
             'action' => 'Configurar',
         ];
+          $items[] = [
+            'label' => 'Firma del despacho',
+            'description' => 'Certificado institucional o firma personal de un abogado.',
+            'done' => $firmaDespachoOk,
+            'url' => route('settings'),
+            'action' => 'Configurar',
+        ];
 
         if (!$this->esSaas) {
             $items[] = [
@@ -193,15 +201,27 @@ class Dashboard extends Component
             ];
         }
 
-        $items = array_merge($items, $this->menusProcesales());
-
-        $items[] = [
-            'label' => 'Firma del despacho',
-            'description' => 'Certificado institucional o firma personal de un abogado.',
-            'done' => $firmaDespachoOk,
-            'url' => route('settings'),
-            'action' => 'Configurar',
+        $materiasSinUnidad = \App\Models\Materia::whereDoesntHave('unidades')->count();
+        $itemUnidadesMaterias = [
+            'label' => 'Asignar unidades a materias',
+            'description' => $materiasSinUnidad > 0
+                ? $materiasSinUnidad . ' materia(s) sin unidad judicial. Asígnalas desde Sitios > Unidades para que aparezcan en carátula.'
+                : 'Todas las materias tienen al menos una unidad judicial.',
+            'done' => $materiasSinUnidad === 0,
+            'url' => route('unidades'),
+            'action' => 'Ir a Unidades',
         ];
+
+        $itemsProcesales = $this->menusProcesales();
+        $indiceMaterias = collect($itemsProcesales)->search(fn ($item) => $item['url'] === route('materias'));
+
+        if ($indiceMaterias === false) {
+            $itemsProcesales[] = $itemUnidadesMaterias;
+        } else {
+            array_splice($itemsProcesales, $indiceMaterias + 1, 0, [$itemUnidadesMaterias]);
+        }
+
+        $items = array_merge($items, $itemsProcesales);
 
         $this->configTotal = count($items);
         $this->configCompletos = collect($items)->where('done', true)->count();
@@ -312,7 +332,35 @@ class Dashboard extends Component
         $this->kpiAudiencias7 = Audiencia::where('estado', 'Programada')
             ->whereBetween('fecha_hora', [Carbon::now(), Carbon::now()->copy()->addDays(7)])
             ->count();
-        $this->kpiFirmasPendientes = Actividad::where('estado_firma', 'pendiente')->count();
+        $this->kpiFirmasPendientes = Actividad::where('estado_firma', 'pendiente')
+            ->whereHas('tipoActividad', fn ($q) => $q->where('es_firmable', true))
+            ->count();
+
+        $this->firmaPendientes = Actividad::with(['juicio', 'tipoActividad'])
+            ->where('estado_firma', 'pendiente')
+            ->whereHas('tipoActividad', fn ($q) => $q->where('es_firmable', true))
+            ->get()
+            ->groupBy('juicio_id')
+            ->map(function ($actividades) {
+                $primera = $actividades->first();
+                $codigo = $primera->juicio->cod_satje ?? ('#' . $primera->juicio_id);
+                $tipos = $actividades->pluck('tipoActividad.nombre')
+                    ->filter()
+                    ->unique()
+                    ->take(3)
+                    ->implode(', ');
+
+                return [
+                    'juicio_id' => $primera->juicio_id,
+                    'codigo' => $codigo,
+                    'total' => $actividades->count(),
+                    'tipos' => $tipos,
+                    'url' => '/juicios?juicio=' . $primera->juicio_id,
+                ];
+            })
+            ->values()
+            ->all();
+
         $pactado = (float) FinanzasJuicio::selectRaw('COALESCE(SUM(honorarios_totales),0) + COALESCE(SUM(gastos_extras),0) as t')->value('t');
         $cobrado = (float) PagosJuicio::where('estado', 'Aprobado')->sum('monto');
         $this->kpiPorCobrar = max(0, $pactado - $cobrado);

@@ -139,9 +139,9 @@ class Juicios extends Component
     public function mount()
     {
         $this->provincias = \App\Models\Provincia::orderBy('nombre', 'asc')->get();
-        // Solo cargamos Materias al inicio. Es una lista corta y fija.
-        $this->materias = Materia::orderBy('nombre', 'asc')->get();
-        $this->estados_procesales = EstadoProcesal::orderBy('id', 'asc')->get();
+        // Las materias se cargan al seleccionar la unidad judicial.
+        $this->materias = [];
+        $this->estados_procesales = [];
         $this->q_cantones = \App\Models\Canton::orderBy('nombre', 'asc')->get();
         
         if($this->selected_id > 0) {
@@ -605,7 +605,20 @@ class Juicios extends Component
 
     public function updatedUnidadId($value)
     {
-        // La unidad cambia el universo de funcionarios, no la materia/procedimiento.
+        $this->materias = $value
+            ? Materia::whereHas('unidades', fn ($q) => $q->where('unidads.id', $value))
+                ->orderBy('nombre', 'asc')
+                ->get()
+            : [];
+
+        $this->materia_id = null;
+        $this->procedimiento_id = null;
+        $this->asunto_id = null;
+        $this->procedimientos = [];
+        $this->asuntos = [];
+        $this->estado_procesal_id = null;
+        $this->estados_procesales = [];
+
         $this->funcionario_id = null;
         $this->searchFuncionario = '';
         $this->funcionarios_list = [];
@@ -615,6 +628,15 @@ class Juicios extends Component
     public function updatedMateriaId($value)
     {
         $this->procedimientos = Procedimiento::where('materia_id', $value)->orderBy('nombre', 'asc')->get();
+
+        $this->estados_procesales = $value
+            ? EstadoProcesal::whereHas('fase', fn ($q) => $q->where('materia_id', $value))
+                ->orderBy('fase_id', 'asc')
+                ->orderBy('nombre', 'asc')
+                ->get()
+            : [];
+        $this->estado_procesal_id = null;
+
         //reseteamos los hijos para que no queden huerfanos
         $this->procedimiento_id = null;
         $this->asunto_id = null;
@@ -802,8 +824,10 @@ class Juicios extends Component
         $this->doc_vinculo_tipo = 'expediente';
         $this->cantones = [];
         $this->unidades_judiciales = [];
+        $this->materias = [];
         $this->procedimientos = [];
         $this->asuntos = [];
+        $this->estados_procesales = [];
     }
 
        public function saveJuicio(){
@@ -839,9 +863,19 @@ class Juicios extends Component
             'provincia_id' => 'required|exists:provincias,id',
             'canton_id' => ['required', Rule::exists('cantones', 'id')->where('provincia_id', $this->provincia_id)],
             'unidad_id' => ['required', Rule::exists('unidads', 'id')->where('canton_id', $this->canton_id)],
-            'materia_id' => 'required|exists:materias,id',
+            'materia_id' => [
+                'required',
+                Rule::exists('materia_unidad', 'materia_id')->where('unidad_id', $this->unidad_id),
+            ],
             'procedimiento_id' => ['required', Rule::exists('procedimientos', 'id')->where('materia_id', $this->materia_id)],
             'asunto_id' => ['required', Rule::exists('asuntos', 'id')->where('procedimiento_id', $this->procedimiento_id)],
+            'estado_procesal_id' => [
+                'required',
+                Rule::exists('estados_procesales', 'id')->whereIn(
+                    'fase_id',
+                    \App\Models\Fase::where('materia_id', $this->materia_id)->pluck('id')
+                ),
+            ],
         ]), array_merge(Juicio::messages(), [
             'provincia_id.required' => 'Seleccione la provincia.',
             'canton_id.required' => 'Seleccione el cantón.',
@@ -851,6 +885,7 @@ class Juicios extends Component
             'procedimiento_id.required' => 'Seleccione el procedimiento.',
             'procedimiento_id.exists' => 'El procedimiento no pertenece a la materia seleccionada.',
             'asunto_id.exists' => 'El asunto no pertenece al procedimiento seleccionado.',
+            'estado_procesal_id.exists' => 'El estado procesal no corresponde a la materia seleccionada.',
         ]));
         $idAb = null;
         if ($eraNuevo) {
@@ -962,10 +997,21 @@ class Juicios extends Component
         $this->provincia_id = $juicio->unidadJudicial->canton->provincia_id ?? null;
         if($this->provincia_id) $this->cantones = \App\Models\Canton::where('provincia_id', $this->provincia_id)->orderBy('nombre', 'asc')->get();
         if($this->canton_id) $this->unidades_judiciales = \App\Models\Unidad::where('canton_id', $this->canton_id)->orderBy('nombre', 'asc')->get();
+        $this->materias = $this->unidad_id
+            ? Materia::whereHas('unidades', fn ($q) => $q->where('unidads.id', $this->unidad_id))
+                ->orderBy('nombre', 'asc')
+                ->get()
+            : [];
 
         $this->materia_id = $juicio->asunto->procedimiento->materia_id;
         $this->procedimiento_id = $juicio->asunto->procedimiento_id;
         $this->asunto_id = $juicio->asunto_id;
+        $this->estados_procesales = $this->materia_id
+            ? EstadoProcesal::whereHas('fase', fn ($q) => $q->where('materia_id', $this->materia_id))
+                ->orderBy('fase_id', 'asc')
+                ->orderBy('nombre', 'asc')
+                ->get()
+            : [];
         if($this->materia_id) $this->procedimientos = Procedimiento::where('materia_id', $this->materia_id)->orderBy('nombre', 'asc')->get();
         if($this->procedimiento_id) $this->asuntos = Asunto::where('procedimiento_id', $this->procedimiento_id)->orderBy('nombre', 'asc')->get();
 
@@ -984,7 +1030,14 @@ class Juicios extends Component
     {
         $reglas = [];
         if ($puedeEstado) {
-            $reglas['estado_procesal_id'] = 'required|exists:estados_procesales,id';
+            $materiaId = $this->materia_id ?: ($juicio->asunto->procedimiento->materia_id ?? null);
+            $reglas['estado_procesal_id'] = [
+                'required',
+                Rule::exists('estados_procesales', 'id')->whereIn(
+                    'fase_id',
+                    \App\Models\Fase::where('materia_id', $materiaId)->pluck('id')
+                ),
+            ];
         }
         if ($puedePrioridad) {
             $reglas['prioridad'] = 'required|in:Baja,Media,Alta,Urgente';
@@ -1169,12 +1222,23 @@ class Juicios extends Component
         $this->provincia_id = $juicio->unidadJudicial->canton->provincia_id ?? null;
         if($this->provincia_id) $this->cantones = \App\Models\Canton::where('provincia_id', $this->provincia_id)->orderBy('nombre', 'asc')->get();
         if($this->canton_id) $this->unidades_judiciales = \App\Models\Unidad::where('canton_id', $this->canton_id)->orderBy('nombre', 'asc')->get();
+        $this->materias = $this->unidad_id
+            ? Materia::whereHas('unidades', fn ($q) => $q->where('unidads.id', $this->unidad_id))
+                ->orderBy('nombre', 'asc')
+                ->get()
+            : [];
 
         $this->materia_id = $juicio->asunto->procedimiento->materia_id;
        $this->procedimientos = Procedimiento::where('materia_id', $this->materia_id)->orderBy('nombre', 'asc')->get();
         $this->procedimiento_id = $juicio->asunto->procedimiento_id;
         $this->asuntos = Asunto::where('procedimiento_id', $this->procedimiento_id)->orderBy('nombre', 'asc')->get();
         $this->asunto_id = $juicio->asunto_id;
+        $this->estados_procesales = $this->materia_id
+            ? EstadoProcesal::whereHas('fase', fn ($q) => $q->where('materia_id', $this->materia_id))
+                ->orderBy('fase_id', 'asc')
+                ->orderBy('nombre', 'asc')
+                ->get()
+            : [];
         $this->editModeJuicio = true;
          $this->action = 'Editar';       
         $this->form = true;

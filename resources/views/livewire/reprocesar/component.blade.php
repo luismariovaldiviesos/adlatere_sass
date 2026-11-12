@@ -9,7 +9,7 @@
             </h2>
 
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2 p-4">
-                {{-- <button onclick="openPanel('add')" class="btn btn-primary shadow-md mr-2">Agregar</button> --}}
+                {{-- <button type="button" onclick="openPanel('add')" class="btn btn-primary shadow-md mr-2">Agregar</button> --}}
                 <div class="hidden md:block mx-auto text-gray-600">
                     --
                 </div>
@@ -66,7 +66,7 @@
                                                 @if($xml->secuencial)
                                                     @can('reprocesar')
                                                         @if($xml->estado !== 'devuelto' && !Str::contains(strtoupper($xml->error), 'ERROR SECUENCIAL REGISTRADO'))
-                                                            <button class="btn btn-warning text-white border-0 ml-3"
+                                                            <button type="button" class="btn btn-warning text-white border-0 ml-3"
                                                             wire:click.prevent="retry({{ $xml->id }})"
                                                             type="button">
                                                                 @if($xml->estado === 'creado')
@@ -99,7 +99,7 @@
                                         <td class="dark:border-dark-5 text-center">
                                             <div class="d-flex justify-content-center">
                                                 @can('anular_factura_emitida')
-                                                <button class="btn btn-danger text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-danger text-white border-0 ml-3"
                                                     wire:click="confirmDelete({{ $xml->id }})"
                                                     type="button"
                                                     title="Anular Factura">

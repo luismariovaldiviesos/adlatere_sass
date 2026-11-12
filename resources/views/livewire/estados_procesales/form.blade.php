@@ -25,7 +25,7 @@
                                 <select wire:model.defer='fase_id' class="form-select form-select-lg sm:mr-2">
                                    <option selected="elegir">Elegir</option>
                                    @foreach ($fases as $fase )
-                                   <option value="{{ $fase->id }}">{{ $fase->nombre }}   </option>
+                                   <option value="{{ $fase->id }}">{{ $fase->nombre }} — {{ $fase->materia->nombre ?? 'Sin materia' }}</option>
                                     @endforeach
 
                                 </select>

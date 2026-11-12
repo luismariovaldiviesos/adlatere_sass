@@ -51,7 +51,7 @@
                                             <div class="d-flex justify-content-center">
                                                 @if ($user->facturas->count() < 1)
                                                 @can('eliminar_usuarios')
-                                                    <button class="btn btn-danger text-white border-0"
+                                                    <button type="button" class="btn btn-danger text-white border-0"
                                                     onclick="destroy('users','Destroy', {{ $user->id }})"
                                                     type="button">
                                                         <i class=" fas fa-trash f-2x"></i>
@@ -59,7 +59,7 @@
                                                 @endcan
                                                 @endif
                                                 @can('editar_usuarios')
-                                                <button class="btn btn-warning text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-warning text-white border-0 ml-3"
                                                     wire:click.prevent="Edit({{ $user->id }})"
                                                     type="button">
                                                         <i class=" fas fa-edit f-2x"></i>

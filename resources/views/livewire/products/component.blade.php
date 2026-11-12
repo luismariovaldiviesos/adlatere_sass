@@ -10,7 +10,7 @@
 
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2 p-4">
                 @can('crear_producto')
-                <button onclick="openPanel('add')" class="btn btn-primary shadow-md mr-2">Agregar</button>
+                <button type="button" onclick="openPanel('add')" class="btn btn-primary shadow-md mr-2">Agregar</button>
                 @endcan
                 <div class="hidden md:block mx-auto text-gray-600">
                     --
@@ -90,7 +90,7 @@
                                             <div class="d-flex justify-content-center">
                                                 @if ($product->detalleFacturas->count() < 1)
                                                     @can('eliminar_producto')
-                                                    <button class="btn btn-danger text-white border-0"
+                                                    <button type="button" class="btn btn-danger text-white border-0"
                                                     onclick="destroy('products','Destroy', {{ $product->id }})"
                                                     type="button">
                                                         <i class=" fas fa-trash f-2x"></i>
@@ -98,7 +98,7 @@
                                                     @endcan
                                                 @endif
                                                 @can('editar_producto')
-                                                <button class="btn btn-warning text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-warning text-white border-0 ml-3"
                                                     wire:click.prevent="Edit({{ $product->id }})"
                                                     type="button">
                                                         <i class=" fas fa-edit f-2x"></i>

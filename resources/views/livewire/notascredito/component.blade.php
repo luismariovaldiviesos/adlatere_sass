@@ -9,7 +9,7 @@
             </h2>
 
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2 p-4">
-                {{-- <button onclick="openPanel('add')" class="btn btn-primary shadow-md mr-2">Agregar</button> --}}
+                {{-- <button type="button" onclick="openPanel('add')" class="btn btn-primary shadow-md mr-2">Agregar</button> --}}
                 <div class="hidden md:block mx-auto text-gray-600">
                     --
                 </div>
@@ -65,7 +65,7 @@
                                             <div class="d-flex justify-content-center">
                                                 <!-- Botón para detalles    -->
                                                 @can('ver_detalle_nota_credito')
-                                                <button class="btn btn-dark text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-dark text-white border-0 ml-3"
                                                         wire:click.prevent="show({{ $factura->id }})"
                                                         type="button"
                                                         title="Detalles">
@@ -74,7 +74,7 @@
                                                 </button>
                                                 @endcan
 
-                                                 {{-- <button class="btn btn-warning text-white border-0 ml-3"
+                                                 {{-- <button type="button" class="btn btn-warning text-white border-0 ml-3"
                                                         wire:click.prevent="retry({{ $factura->id }})"
                                                         type="button"
                                                         title="Reenviar PDF">
@@ -83,7 +83,7 @@
 
                                                 <!-- Botón para descargar archivos -->
                                                 @can('descargar_nota_credito')
-                                                <button class="btn btn-primary text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-primary text-white border-0 ml-3"
                                                     wire:click.prevent="downloadFiles({{ $factura->id }})"
                                                     type="button"
                                                     title="Descargar Archivos">
@@ -94,7 +94,7 @@
 
 
                                                 {{-- <!-- Botón para anular factura -->
-                                                <button class="btn btn-danger text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-danger text-white border-0 ml-3"
                                                 wire:click="confirmDelete({{ $factura->id }})"
                                                 type="button"
                                                 title="Anular Factura">
@@ -102,7 +102,7 @@
                                        || </button> --}}
 
                                              <!-- Botón para emitir nota de crédito -->
-                                            {{-- <button class="btn btn-warning text-white border-0 ml-3"
+                                            {{-- <button type="button" class="btn btn-warning text-white border-0 ml-3"
                                                 wire:click="confirmNC({{ $factura->id }})"
                                                 type="button"
                                                 title="Emitir Nota de Crédito">

@@ -59,12 +59,6 @@
         </div>
         <div class="col-span-12 sm:col-span-6 xl:col-span-3">
             <div class="intro-y box p-5 text-center">
-                <div class="text-3xl font-bold leading-8">{{$kpiFirmasPendientes}}</div>
-                <div class="text-base text-gray-600 mt-1">Actividades pendientes de firma</div>
-            </div>
-        </div>
-        <div class="col-span-12 sm:col-span-6 xl:col-span-3">
-            <div class="intro-y box p-5 text-center">
                 <div class="text-3xl font-bold leading-8">${{number_format($kpiPorCobrar, 2)}}</div>
                 <div class="text-base text-gray-600 mt-1">Honorarios por cobrar</div>
             </div>
@@ -107,7 +101,7 @@
         <div class="intro-y box w-11/12 md:w-1/3 p-5 shadow-xl bg-white" style="max-width: 500px;">
              <div class="flex items-center border-b border-gray-200 pb-3 mb-5">
                  <h2 class="font-medium text-base mr-auto">Opciones de Renovación</h2>
-                 <button wire:click="closeModal" class="text-gray-600 hover:text-gray-800"><i data-feather="x" class="w-6 h-6"></i></button>
+                 <button type="button" wire:click="closeModal" class="text-gray-600 hover:text-gray-800"><i data-feather="x" class="w-6 h-6"></i></button>
              </div>
 
              <div class="text-center mb-5">
@@ -117,8 +111,8 @@
 
             <div x-data="{ tab: 'card' }">
                 <div class="flex justify-center border-b border-gray-200 mb-4">
-                    <button @click="tab = 'card'" :class="tab === 'card' ? 'border-theme-1 text-theme-1' : 'border-transparent text-gray-600 hover:text-gray-800'" class="py-2 px-4 border-b-2 font-medium text-sm focus:outline-none transition-all">Tarjeta (PayPhone)</button>
-                    <button @click="tab = 'transfer'" :class="tab === 'transfer' ? 'border-theme-1 text-theme-1' : 'border-transparent text-gray-600 hover:text-gray-800'" class="py-2 px-4 border-b-2 font-medium text-sm focus:outline-none transition-all">Transferencia</button>
+                    <button type="button" @click="tab = 'card'" :class="tab === 'card' ? 'border-theme-1 text-theme-1' : 'border-transparent text-gray-600 hover:text-gray-800'" class="py-2 px-4 border-b-2 font-medium text-sm focus:outline-none transition-all">Tarjeta (PayPhone)</button>
+                    <button type="button" @click="tab = 'transfer'" :class="tab === 'transfer' ? 'border-theme-1 text-theme-1' : 'border-transparent text-gray-600 hover:text-gray-800'" class="py-2 px-4 border-b-2 font-medium text-sm focus:outline-none transition-all">Transferencia</button>
                 </div>
 
                 <!-- PayPhone Content -->

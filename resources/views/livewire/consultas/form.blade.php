@@ -1,7 +1,7 @@
 <div class="intro-y box p-5">
     <div class="flex justify-between items-center mb-5">
         <h2 class="text-lg font-medium">{{ $action }} consulta</h2>
-        <button wire:click.prevent="CloseModal" class="btn btn-outline-secondary">Volver</button>
+        <button type="button" wire:click.prevent="CloseModal" class="btn btn-outline-secondary">Volver</button>
     </div>
 
     @if($soloLectura)
@@ -157,12 +157,12 @@
     </div>
 
     <div class="text-right mt-5">
-        <button wire:click.prevent="CloseModal" class="btn btn-outline-secondary mr-1">{{ $soloLectura ? 'Cerrar' : 'Cancelar' }}</button>
+        <button type="button" wire:click.prevent="CloseModal" class="btn btn-outline-secondary mr-1">{{ $soloLectura ? 'Cerrar' : 'Cancelar' }}</button>
         @if($puedeAdministrar && !$soloLectura)
-        <button wire:click.prevent="Store" class="btn btn-primary">Guardar datos</button>
+        <button type="button" wire:click.prevent="Store" class="btn btn-primary">Guardar datos</button>
         @endif
         @if($puedeVerNotas && !$soloLectura)
-        <button wire:click.prevent="guardarNotas" class="btn btn-success text-white">Guardar notas</button>
+        <button type="button" wire:click.prevent="guardarNotas" class="btn btn-success text-white">Guardar notas</button>
         @endif
     </div>
 </div>

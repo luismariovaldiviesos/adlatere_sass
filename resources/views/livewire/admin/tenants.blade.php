@@ -11,10 +11,10 @@
             <div class="report-box zoom-in">
                 <div class="box p-5">
                     <div class="flex">
-                        <i data-feather="users" class="report-box__icon text-theme-10"></i> 
+                        <i data-feather="users" class="report-box__icon text-theme-10"></i>
                         <div class="ml-auto">
-                            <div class="report-box__indicator bg-theme-9 tooltip cursor-pointer" title="Total Registrados"> 
-                                {{ $records }} <i data-feather="chevron-up" class="w-4 h-4 ml-0.5"></i> 
+                            <div class="report-box__indicator bg-theme-9 tooltip cursor-pointer" title="Total Registrados">
+                                {{ $records }} <i data-feather="chevron-up" class="w-4 h-4 ml-0.5"></i>
                             </div>
                         </div>
                     </div>
@@ -27,7 +27,7 @@
             <div class="report-box zoom-in">
                 <div class="box p-5">
                     <div class="flex">
-                        <i data-feather="dollar-sign" class="report-box__icon text-theme-9"></i> 
+                        <i data-feather="dollar-sign" class="report-box__icon text-theme-9"></i>
                     </div>
                     <div class="text-3xl font-bold leading-8 mt-6">${{ number_format($total_collected, 2) }}</div>
                     <div class="text-base text-gray-600 mt-1">Total Recaudado</div>
@@ -50,14 +50,14 @@
     <div class="grid grid-cols-12 gap-6 mt-5">
         <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
             <div class="w-full sm:w-auto mt-3 sm:mt-0 sm:ml-auto md:ml-0">
-                <button wire:click="openCreateModal" class="btn btn-primary shadow-md mr-2">
+                <button type="button" wire:click="openCreateModal" class="btn btn-primary shadow-md mr-2">
                     <i data-feather="plus" class="w-4 h-4 mr-2"></i> Crear Manualmente
                 </button>
             </div>
             <div class="w-full sm:w-auto mt-3 sm:mt-0 sm:ml-auto md:ml-0">
                 <div class="w-56 relative text-gray-700 dark:text-gray-300">
                     <input wire:model.debounce.500ms="search" type="text" class="form-control w-56 box pr-10 placeholder-theme-13" placeholder="Buscar empresa...">
-                    <i class="w-4 h-4 absolute my-auto inset-y-0 mr-3 right-0" data-feather="search"></i> 
+                    <i class="w-4 h-4 absolute my-auto inset-y-0 mr-3 right-0" data-feather="search"></i>
                 </div>
             </div>
             <div class="mx-auto hidden md:block text-gray-600"></div>
@@ -85,7 +85,7 @@
                     @forelse($tenants as $tenant)
                     <tr class="intro-x">
                         <td>
-                            <a href="#" class="font-medium whitespace-nowrap">{{ $tenant->name }}</a> 
+                            <a href="#" class="font-medium whitespace-nowrap">{{ $tenant->name }}</a>
                             <div class="text-gray-600 text-xs whitespace-nowrap mt-0.5">{{ $tenant->id }}</div>
                             <div class="text-xs text-theme-1 mt-1">
                                 @foreach($tenant->domains as $d)
@@ -127,18 +127,18 @@
                             <div class="flex items-center justify-center {{ $tenant->status == 1 ? 'text-theme-9' : 'text-theme-6' }}">
                                 <i data-feather="check-square" class="w-4 h-4 mr-2"></i> {{ $tenant->status == 1 ? 'Activo' : 'Inactivo' }}
                             </div>
-                            <button wire:click="setStatus('{{ $tenant->id }}')" class="btn btn-sm btn-secondary mt-1 w-24">
+                            <button type="button" wire:click="setStatus('{{ $tenant->id }}')" class="btn btn-sm btn-secondary mt-1 w-24">
                                 {{ $tenant->status == 1 ? 'Bloquear' : 'Activar' }}
                             </button>
                         </td>
                         <td class="table-report__action w-56">
                             <div class="flex justify-center items-center">
-                                <button wire:click="editTenant('{{ $tenant->id }}')" class="flex items-center mr-3 text-theme-1"> 
-                                    <i data-feather="edit" class="w-4 h-4 mr-1"></i> Editar 
+                                <button type="button" wire:click="editTenant('{{ $tenant->id }}')" class="flex items-center mr-3 text-theme-1">
+                                    <i data-feather="edit" class="w-4 h-4 mr-1"></i> Editar
                                 </button>
-                                            
+
                                 <!-- Backup Action -->
-                                <button wire:click="backupTenant('{{ $tenant->id }}')" class="flex items-center mr-3 text-theme-9" title="Respaldo (ZIP)">
+                                <button type="button" wire:click="backupTenant('{{ $tenant->id }}')" class="flex items-center mr-3 text-theme-9" title="Respaldo (ZIP)">
                                     <span wire:loading.remove wire:target="backupTenant('{{ $tenant->id }}')">
                                         <i data-feather="download" class="w-4 h-4 mr-1"></i> Respaldo
                                     </span>
@@ -147,15 +147,15 @@
                                     </span>
                                 </button>
 
-                                            
-                                <button wire:click="viewHistory('{{ $tenant->id }}')" class="flex items-center mr-3 text-theme-1"> 
-                                    <i data-feather="credit-card" class="w-4 h-4 mr-1"></i> Historial 
+
+                                <button type="button" wire:click="viewHistory('{{ $tenant->id }}')" class="flex items-center mr-3 text-theme-1">
+                                    <i data-feather="credit-card" class="w-4 h-4 mr-1"></i> Historial
                                 </button>
-                                
+
                                 <!-- Delete / Baja -->
-                                <button wire:click="prepareOffboarding('{{ $tenant->id }}')" 
-                                        class="flex items-center text-theme-6" title="Dar de Baja / Eliminar"> 
-                                    <i data-feather="trash-2" class="w-4 h-4 mr-1"></i> Eliminar 
+                                <button type="button" wire:click="prepareOffboarding('{{ $tenant->id }}')"
+                                        class="flex items-center text-theme-6" title="Dar de Baja / Eliminar">
+                                    <i data-feather="trash-2" class="w-4 h-4 mr-1"></i> Eliminar
                                 </button>
                             </div>
                         </td>
@@ -182,7 +182,7 @@
                  <h2 class="font-medium text-base mr-auto">
                      Historial de Pagos: <span class="text-theme-1">{{ $selectedTenant->name }}</span>
                  </h2>
-                 <button wire:click="closeHistory" class="text-gray-600 hover:text-gray-800">
+                 <button type="button" wire:click="closeHistory" class="text-gray-600 hover:text-gray-800">
                     <i data-feather="x" class="w-6 h-6"></i>
                  </button>
              </div>
@@ -196,7 +196,7 @@
                     <input wire:model.defer="newPaymentAmount" type="number" step="0.01" class="form-control col-span-12 sm:col-span-3" placeholder="Monto (0.00)">
                     <input wire:model.defer="newPaymentDate" type="date" class="form-control col-span-12 sm:col-span-3">
                     <input wire:model.defer="newPaymentReference" type="text" class="form-control col-span-12 sm:col-span-3" placeholder="Ref / ID">
-                    <button wire:click="storeManualPayment" class="btn btn-primary col-span-12 sm:col-span-3">
+                    <button type="button" wire:click="storeManualPayment" class="btn btn-primary col-span-12 sm:col-span-3">
                         + Agregar
                     </button>
                 </div>
@@ -237,9 +237,9 @@
                     @endforelse
                 </tbody>
             </table>
-             
+
              <div class="mt-5 text-right">
-                 <button wire:click="closeHistory" class="btn btn-outline-secondary w-20">Cerrar</button>
+                 <button type="button" wire:click="closeHistory" class="btn btn-outline-secondary w-20">Cerrar</button>
              </div>
          </div>
     </div>
@@ -249,7 +249,7 @@
     @if($showOffboardingModal)
     <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10001; display: flex; align-items: center; justify-content: center; background-color: rgba(0, 0, 0, 0.7);">
         <div class="intro-y box w-11/12 md:w-1/2 lg:w-1/3 p-5 shadow-xl text-center">
-            
+
             <div class="flex justify-center mb-5">
                 <div class="w-16 h-16 bg-theme-6 rounded-full flex items-center justify-center">
                     <i data-feather="alert-triangle" class="w-8 h-8 text-white"></i>
@@ -257,7 +257,7 @@
             </div>
 
             <h2 class="text-2xl font-bold text-gray-800 mb-2">Dar de Baja: {{ $selectedTenant->name }}</h2>
-            
+
             <div class="mt-4 mb-6 text-left p-4 bg-gray-100 rounded-lg">
                 @if($offboardingStep === 1)
                     <p class="text-gray-600 mb-3">Estás a punto de iniciar el proceso de baja:</p>
@@ -278,7 +278,7 @@
                         </div>
                         <div class="text-center mb-4">
                             @if($backupUrl)
-                            <button wire:click="downloadBackup" class="btn btn-primary w-full">
+                            <button type="button" wire:click="downloadBackup" class="btn btn-primary w-full">
                                 <i data-feather="download" class="w-4 h-4 mr-2"></i> Descargar .ZIP
                             </button>
                             @else
@@ -295,55 +295,55 @@
 
             <div class="flex justify-center gap-2">
                 @if($offboardingStep === 1)
-                    <button wire:click="startOffboardingBackup" class="btn btn-primary">Generar Respaldo</button>
+                    <button type="button" wire:click="startOffboardingBackup" class="btn btn-primary">Generar Respaldo</button>
                 @elseif($offboardingStep === 2 && !$isBackingUp)
-                    <button wire:click="confirmTenantDeletion" class="btn btn-danger">Confirmar Eliminación</button>
+                    <button type="button" wire:click="confirmTenantDeletion" class="btn btn-danger">Confirmar Eliminación</button>
                 @endif
-                
+
                 @if(!$isBackingUp)
-                    <button wire:click="cancelOffboarding" class="btn btn-outline-secondary">Cancelar</button>
+                    <button type="button" wire:click="cancelOffboarding" class="btn btn-outline-secondary">Cancelar</button>
                 @endif
             </div>
 
         </div>
     </div>
     @endif
-    
+
     {{-- CREATE TENANT MODAL --}}
     @if($createModalOpen)
     <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10000; display: flex; align-items: center; justify-content: center; background-color: rgba(0, 0, 0, 0.5);">
         <div class="intro-y box w-11/12 md:w-1/2 p-5 shadow-xl">
              <div class="flex items-center border-b border-gray-200 pb-5 mb-5">
                  <h2 class="font-medium text-base mr-auto">Crear Tenant Manualmente</h2>
-                 <button wire:click="closeModals" class="text-gray-600 hover:text-gray-800"><i data-feather="x" class="w-6 h-6"></i></button>
+                 <button type="button" wire:click="closeModals" class="text-gray-600 hover:text-gray-800"><i data-feather="x" class="w-6 h-6"></i></button>
              </div>
              <form wire:submit.prevent="createTenant">
                 <div class="grid grid-cols-12 gap-4">
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">Nombre Empresa</label>
-                        <input wire:model="t_name" type="text" class="form-control">
+                        <input wire:model.defer="t_name" type="text" class="form-control">
                         @error('t_name') <span class="text-theme-6 text-xs">{{ $message }}</span> @enderror
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">Subdominio (ID)</label>
                         <div class="input-group">
-                            <input wire:model="t_subdomain" type="text" class="form-control" placeholder="ej: cliente1">
+                            <input wire:model.defer="t_subdomain" type="text" class="form-control" placeholder="ej: cliente1">
                         </div>
                         @error('t_subdomain') <span class="text-theme-6 text-xs">{{ $message }}</span> @enderror
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">Email Admin</label>
-                        <input wire:model="t_email" type="email" class="form-control">
+                        <input wire:model.defer="t_email" type="email" class="form-control">
                         @error('t_email') <span class="text-theme-6 text-xs">{{ $message }}</span> @enderror
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">Contraseña Admin</label>
-                        <input wire:model="t_password" type="password" class="form-control">
+                        <input wire:model.defer="t_password" type="password" class="form-control">
                         @error('t_password') <span class="text-theme-6 text-xs">{{ $message }}</span> @enderror
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">Plan Inicial</label>
-                        <select wire:model="t_plan" class="form-select">
+                        <select wire:model.defer="t_plan" class="form-select">
                             <option value="">Seleccione...</option>
                             @foreach($plans as $p)
                                 <option value="{{ $p->name }}">{{ $p->name }}</option>
@@ -353,7 +353,7 @@
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">Precio Acordado ($)</label>
-                        <input wire:model="t_amount" type="number" step="0.01" class="form-control">
+                        <input wire:model.defer="t_amount" type="number" step="0.01" class="form-control">
                         @error('t_amount') <span class="text-theme-6 text-xs">{{ $message }}</span> @enderror
                     </div>
                 </div>
@@ -372,21 +372,21 @@
         <div class="intro-y box w-11/12 md:w-1/2 p-5 shadow-xl">
              <div class="flex items-center border-b border-gray-200 pb-5 mb-5">
                  <h2 class="font-medium text-base mr-auto">Editar Tenant</h2>
-                 <button wire:click="closeModals" class="text-gray-600 hover:text-gray-800"><i data-feather="x" class="w-6 h-6"></i></button>
+                 <button type="button" wire:click="closeModals" class="text-gray-600 hover:text-gray-800"><i data-feather="x" class="w-6 h-6"></i></button>
              </div>
              <form wire:submit.prevent="updateTenant">
                 <div class="grid grid-cols-12 gap-4">
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">Nombre Empresa</label>
-                        <input wire:model="t_name" type="text" class="form-control">
+                        <input wire:model.defer="t_name" type="text" class="form-control">
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                          <label class="form-label">Subdominio (Solo Lectura)</label>
-                         <input wire:model="t_subdomain" type="text" class="form-control" disabled>
+                         <input wire:model.defer="t_subdomain" type="text" class="form-control" disabled>
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">Plan Actual</label>
-                         <select wire:model="t_plan" class="form-select">
+                         <select wire:model.defer="t_plan" class="form-select">
                             @foreach($plans as $p)
                                 <option value="{{ $p->name }}">{{ $p->name }}</option>
                             @endforeach
@@ -394,11 +394,11 @@
                     </div>
                     <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">Precio ($)</label>
-                        <input wire:model="t_amount" type="number" step="0.01" class="form-control">
+                        <input wire:model.defer="t_amount" type="number" step="0.01" class="form-control">
                     </div>
                      <div class="col-span-12 sm:col-span-6">
                         <label class="form-label">Próximo Vencimiento</label>
-                        <input wire:model="t_bill_date" type="date" class="form-control">
+                        <input wire:model.defer="t_bill_date" type="date" class="form-control">
                     </div>
                 </div>
                 <div class="text-right mt-5">
@@ -409,12 +409,12 @@
          </div>
     </div>
     @endif
-    
+
     <script>
         // Re-initialize feather icons after Livewire updates
         document.addEventListener('livewire:load', function () {
             feather.replace();
-            
+
             // Listen for Tenant Created Redirect
             @this.on('tenant-created', (url) => {
                 console.log('Redirecting to tenant: ' + url);

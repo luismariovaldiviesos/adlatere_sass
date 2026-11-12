@@ -36,7 +36,7 @@
                                     </td>
                                     <td class="border px-4 py-2">{{ $tenant->created_at->format('d/m/Y') }}</td>
                                     <td class="border px-4 py-2">
-                                        <button class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded">Ver</button>
+                                        <button type="button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-1 px-2 rounded">Ver</button>
                                     </td>
                                 </tr>
                                 @endforeach

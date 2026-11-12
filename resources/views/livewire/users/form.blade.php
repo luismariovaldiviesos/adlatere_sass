@@ -13,7 +13,7 @@
                     <div class="sm:grid grid-cols-3 gap-5">
                         <div>
                             <label  class="form-label">Nombre</label>
-                            <input wire:model='name' id="name" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
+                            <input wire:model.defer='name' id="name" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
                             @error('name')
                                 <x-alert msg="{{ $message }}" />
                             @enderror
@@ -21,14 +21,14 @@
 
                         <div>
                             <label  class="form-label">RUC</label>
-                            <input wire:model='ci' id="ci" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
+                            <input wire:model.defer='ci' id="ci" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
                             @error('ci')
                                 <x-alert msg="{{ $message }}" />
                             @enderror
                         </div>
                         <div>
                             <label  class="form-label">Teléfono</label>
-                            <input wire:model='phone' id="phone" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
+                            <input wire:model.defer='phone' id="phone" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
                             @error('phone')
                                 <x-alert msg="{{ $message }}" />
                             @enderror
@@ -40,7 +40,7 @@
                 <div class="sm:grid grid-cols-3 gap-5">
                     <div>
                         <label  class="form-label">Email</label>
-                        <input wire:model='email' id="email" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
+                        <input wire:model.defer='email' id="email" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
                         @error('email')
                             <x-alert msg="{{ $message }}" />
                         @enderror
@@ -91,7 +91,7 @@
 
                     <div>
                         <label  class="form-label">Password</label>
-                        <input wire:model='password' id="password" type="password" data-kioskboard-type="numpad" class="form-control form-control-lg border-start-0 kioskboard" maxlength="13">
+                        <input wire:model.defer='password' id="password" type="password" data-kioskboard-type="numpad" class="form-control form-control-lg border-start-0 kioskboard" maxlength="13">
                         @error('password')
                             <x-alert msg="{{ $message }}" />
                         @enderror
@@ -99,12 +99,12 @@
                     <div>
     <label class="form-label">PKC (.p12/.pfx)</label>
     <input type="file" wire:model="firma_archivo" accept=".p12,.pfx">
-    
+
     {{-- Indicador de subida en curso --}}
     <div wire:loading wire:target="firma_archivo" class="text-primary mt-1 flex items-center gap-1">
         <i class="fas fa-spinner fa-spin"></i> <span>Subiendo certificado, espere...</span>
     </div>
-    
+
     {{-- Archivo listo (subida terminó OK) --}}
     @if($firma_archivo)
         <div class="text-success mt-1 text-sm flex items-center gap-1">
@@ -116,7 +116,7 @@
             <i class="fas fa-key"></i> Ya tiene certificado (suba uno nuevo solo para reemplazarlo).
         </div>
     @endif
-    
+
     @error('firma_archivo')
         <x-alert msg="{{ $message }}" />
     @enderror
@@ -124,7 +124,7 @@
 
 <div>
     <label class="form-label">Contraseña de la Firma</label>
-    <input type="password" wire:model="firma_password" autocomplete="new-password">
+    <input type="password" wire:model.defer="firma_password" autocomplete="new-password">
     @error('firma_password')
         <x-alert msg="{{ $message }}" />
     @enderror
@@ -144,15 +144,15 @@
              <div class="mt-4">
                 <div class="flex items-center justify-between">
                     <div class="relative text-gray-700">
-                        <input wire:model.live="searchEspecialidad" type="text" 
-                            class="form-control form-control-sm w-56 box pr-10" 
+                        <input wire:model.debounce.400ms="searchEspecialidad" type="text"
+                            class="form-control form-control-sm w-56 box pr-10"
                             placeholder="Buscar especialidad o materia...">
                         <i class="w-4 h-4 absolute my-auto inset-y-0 mr-3 right-0 fas fa-search text-gray-500"></i>
                     </div>
                 </div>
                 <br>
                 <label class="form-label font-bold text-theme-1">Especialidades del Usuario</label>
-        
+
                 <div class="border border-gray-200 rounded-md overflow-hidden mt-2" style="max-height: 400px; overflow-y: auto;">
                     <table class="table table-report table-sm mb-0">
                         <thead>
@@ -171,14 +171,14 @@
                                         <i class="fas fa-gavel mr-2"></i> {{ $materia }}
                                     </td>
                                 </tr>
-                                
+
                                 @foreach($items as $esp)
                                     <tr class="hover:bg-gray-100 transition duration-200">
                                         <td class="w-10 text-center border-b dark:border-dark-5">
-                                            <input 
-                                                type="checkbox" 
-                                                wire:model="especialidadesSeleccionadas" 
-                                                value="{{ $esp->id }}" 
+                                            <input
+                                                type="checkbox"
+                                                wire:model="especialidadesSeleccionadas"
+                                                value="{{ $esp->id }}"
                                                 id="esp_{{ $esp->id }}"
                                                 class="form-check-input"
                                             >

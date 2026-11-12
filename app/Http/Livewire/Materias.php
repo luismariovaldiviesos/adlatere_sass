@@ -12,7 +12,7 @@ class Materias extends Component
 
 use WithPagination;
 
-    public $nombre = '', $selected_id = 0, $materia="";
+    public $nombre = '', $selected_id = 0, $materia = "";
     public $action = 'Listado', $componentName = 'Listado de Materias ', $search, $form = false;
     private $pagination = 20;
     protected $paginationTheme = 'tailwind';
@@ -22,7 +22,7 @@ use WithPagination;
     public function render()
     {
         // 1. Iniciamos la consulta base con el conteo de procedimientos
-        $query = Materia::withCount('procedimientos');
+        $query = Materia::withCount(['procedimientos', 'unidades']);
             // ->orderBy('materias.nombre', 'asc');
 
         // 2. Aplicamos el filtro de búsqueda solo si hay texto
@@ -81,7 +81,7 @@ use WithPagination;
         // regresar a la página inicial del componente
         $this->resetPage();
         // regresar propiedades a su valor por defecto
-        $this->reset('nombre', 'selected_id', 'search', 'action', 'componentName', 'form','materia');
+        $this->reset('nombre', 'selected_id', 'search', 'action', 'componentName', 'form', 'materia');
     }
 
        public function Edit(Materia $materia)
@@ -105,8 +105,6 @@ use WithPagination;
                 'nombre' => $this->nombre,
             ]
         );
-
-        // image
 
         $this->noty($this->selected_id < 1 ? 'Materia Registrada' : 'Materia Actualizada', 'noty', false, 'close-modal');
         $this->resetUI();

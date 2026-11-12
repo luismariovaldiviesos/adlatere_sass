@@ -22,14 +22,14 @@ class ActividadSignatureService
 
         $config = Setting::first();
         $modo = $this->modoFirma($config);
-        $esAdmin = $this->esAdmin($operador);
-        $esPatrocinador = $this->esPatrocinador($actividad, $operador);
+        $esAbogado = $this->esAbogado($operador);
+        $esPatrocinador = $esAbogado && $this->esPatrocinador($actividad, $operador);
 
         $puedePersonal = $this->permitePersonal($config)
             && $operador->can('firmar_actividad')
-            && ($esAdmin || $esPatrocinador);
-        $puedeDespacho = $esAdmin
-            || ($esPatrocinador && (bool) $operador->puede_firmar_despacho);
+            && $esPatrocinador;
+        $puedeDespacho = $esPatrocinador
+            && (bool) $operador->puede_firmar_despacho;
 
         $personal = $this->infoCertificadoPersonal($operador, $puedePersonal, $personalPath);
 
@@ -71,6 +71,8 @@ class ActividadSignatureService
             $mensaje = 'Este tipo de actividad no permite firma electrónica.';
         } elseif ($yaFirmada) {
             $mensaje = 'La actividad ya está firmada.';
+        } elseif (!$esPatrocinador) {
+            $mensaje = 'Solo el abogado patrocinador del juicio puede firmar esta actividad.';
         } elseif ($modo === 'automatico' && !$despacho['disponible']) {
             $mensaje = 'La política del despacho exige el certificado institucional, pero no está disponible.';
         } elseif (!$personal['permitido'] && !$despacho['disponible']) {
@@ -456,10 +458,10 @@ class ActividadSignatureService
         return (bool) ($config->firma_actividades_personal_abogados ?? false);
     }
 
-    private function esAdmin(User $user): bool
+    private function esAbogado(User $user): bool
     {
-        return ($user->profile ?? null) === 'Admin'
-            || (method_exists($user, 'hasRole') && $user->hasRole('Admin'));
+        return ($user->profile ?? null) === 'Abogado'
+            || (method_exists($user, 'hasRole') && $user->hasRole('Abogado'));
     }
 
     private function esPatrocinador(Actividad $actividad, User $user): bool

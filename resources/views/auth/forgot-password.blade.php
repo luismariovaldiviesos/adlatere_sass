@@ -50,7 +50,7 @@
                         <input type="email" name="email" class="intro-x login__input form-control py-3 px-4 border-gray-300 block" placeholder="Correo Electrónico" value="{{ old('email') }}" required autofocus>
                         
                         <div class="intro-x mt-5 xl:mt-8 text-center xl:text-left">
-                            <button class="btn btn-primary py-3 px-4 w-full xl:w-64 xl:mr-3 align-top">Enviar enlace de recuperación</button>
+                            <button type="submit" class="btn btn-primary py-3 px-4 w-full xl:w-64 xl:mr-3 align-top">Enviar enlace de recuperación</button>
                         </div>
                         <div class="intro-x mt-4 text-center xl:text-left">
                              <a href="{{ route('login') }}" class="btn btn-outline-secondary py-3 px-4 w-full xl:w-64 mt-2 xl:mt-0 align-top">Volver al Login</a>

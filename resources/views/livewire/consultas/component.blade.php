@@ -137,7 +137,7 @@
                                             @endif
                                             @if($con->comprobante_ruta)
                                             <div class="mt-1">
-                                                <button class="btn btn-outline-primary btn-sm"
+                                                <button type="button" class="btn btn-outline-primary btn-sm"
                                                     wire:click.prevent="descargarComprobante({{ $con->id }})" title="Descargar comprobante">
                                                     <i class="fas fa-download"></i> Comprobante
                                                 </button>
@@ -151,7 +151,7 @@
                                                 $verSoloDetalle = $con->estaBloqueada();
                                                 @endphp
                                                 @if(auth()->user()->can('editar_datos_consulta') || auth()->user()->can('guardar_notas_consulta'))
-                                                <button class="btn {{ $verSoloDetalle ? 'btn-secondary' : 'btn-warning text-blue' }} border-0"
+                                                <button type="button" class="btn {{ $verSoloDetalle ? 'btn-secondary' : 'btn-warning text-blue' }} border-0"
                                                     wire:click.prevent="Edit({{ $con->id }})"
                                                     title="{{ $verSoloDetalle ? 'Ver detalle' : 'Editar / Atender' }}">
                                                     <i class="fas {{ $verSoloDetalle ? 'fa-eye' : 'fa-edit' }}"></i>
@@ -162,12 +162,12 @@
                                                     && (int) $con->abogado_id === (int) auth()->id()
                                                     && $esAbogado)
                                                 @if($con->tiene_notas)
-                                                <button class="btn btn-primary text-blue border-0"
+                                                <button type="button" class="btn btn-primary text-blue border-0"
                                                     wire:click.prevent="atender({{ $con->id }})" title="Marcar atendida">
                                                     <i class="fas fa-check"></i>
                                                 </button>
                                                 @else
-                                                <button class="btn btn-secondary text-blue border-0" disabled
+                                                <button type="button" class="btn btn-secondary text-blue border-0" disabled
                                                     title="Escriba notas antes de marcar la consulta como atendida">
                                                     <i class="fas fa-check"></i>
                                                 </button>
@@ -176,13 +176,13 @@
                                                 @endcan
                                                 @can('facturar_consulta')
                                                 @if($esAsistente && $con->estado_pago === 'pagada' && !$con->factura_id)
-                                                <button class="btn btn-info text-blue border-0"
+                                                <button type="button" class="btn btn-info text-blue border-0"
                                                     wire:click.prevent="irAFacturar({{ $con->id }})" title="Facturar en carrito (puede cambiar de cliente)">
                                                     <i class="fas fa-file-invoice-dollar"></i>
                                                 </button>
                                                 @endif
                                                 @if($esAsistente && $con->estado_pago === 'en_facturacion' && $con->factura_id)
-                                                <button class="btn btn-success text-white border-0"
+                                                <button type="button" class="btn btn-success text-white border-0"
                                                     wire:click.prevent="emitirFacturaConsulta({{ $con->id }})" title="Emitir borrador al SRI">
                                                     <i class="fas fa-paper-plane"></i>
                                                 </button>
@@ -190,7 +190,7 @@
                                                 @endcan
                                                 @can('marcar_pagada_consulta')
                                                 @if($esAsistente && $con->estado_pago === 'pendiente')
-                                                <button class="btn btn-outline-success border-0"
+                                                <button type="button" class="btn btn-outline-success border-0"
                                                     wire:click.prevent="marcarPagada({{ $con->id }})" title="Marcar pagada">
                                                     <i class="fas fa-dollar-sign"></i>
                                                 </button>
@@ -198,7 +198,7 @@
                                                 @endcan
                                                 @can('convertir_consulta')
                                                 @if($esAdmin && $con->estado_atencion === 'atendida')
-                                                <button class="btn btn-success text-blue border-0"
+                                                <button type="button" class="btn btn-success text-blue border-0"
                                                     wire:click.prevent="convertirAJuicio({{ $con->id }})" title="Convertir en juicio">
                                                     <i class="fas fa-gavel"></i>
                                                 </button>

@@ -9,7 +9,7 @@
             </h2>
 
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2 p-4">
-                {{-- <button onclick="openPanel('add')" class="btn btn-primary shadow-md mr-2">Agregar</button> --}}
+                {{-- <button type="button" onclick="openPanel('add')" class="btn btn-primary shadow-md mr-2">Agregar</button> --}}
                 <div class="hidden md:block mx-auto text-gray-600">
                     --
                 </div>
@@ -50,7 +50,7 @@
                                             <div class="d-flex justify-content-center">
                                                 <!-- Botón para detalles    -->
                                                 @can('ver_detalle_factura_emitida')
-                                                <button class="btn btn-dark text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-dark text-white border-0 ml-3"
                                                         wire:click.prevent="show({{ $factura->id }})"
                                                         type="button"
                                                         title="Detalles">
@@ -60,7 +60,7 @@
                                                 @endcan
                                                 <!-- Botón para reenviar PDF -->
                                                 @can('reenviar_pdf_factura_emitida')
-                                                 <button class="btn btn-warning text-white border-0 ml-3"
+                                                 <button type="button" class="btn btn-warning text-white border-0 ml-3"
                                                         wire:click.prevent="retry({{ $factura->id }})"
                                                         type="button"
                                                         title="Reenviar PDF">
@@ -70,7 +70,7 @@
 
                                                 <!-- Botón para descargar archivos -->
                                                 @can('descargar_archivo_factura_emitida')
-                                                <button class="btn btn-primary text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-primary text-white border-0 ml-3"
                                                 wire:click.prevent="downloadFiles({{ $factura->id }})"
                                                 type="button"
                                                 title="Descargar Archivos">
@@ -86,7 +86,7 @@
                                             @if (now()->lessThanOrEqualTo($fechaLimite))
                                                 <!-- Botón para anular factura -->
                                                 @can('anular_factura_emitida')
-                                                    <button class="btn btn-danger text-white border-0 ml-3"
+                                                    <button type="button" class="btn btn-danger text-white border-0 ml-3"
                                                     wire:click="confirmDelete({{ $factura->id }})"
                                                     type="button"
                                                     title="Anular Factura">
@@ -97,13 +97,13 @@
                                              <!-- Botón para emitir nota de crédito -->
                                              @can('crear_nota_credito')
                                             @if($factura->notasCredito->count() > 0)
-                                                <button class="btn btn-secondary text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-secondary text-white border-0 ml-3"
                                                     disabled
                                                     title="Nota de Crédito ya emitida: {{ $factura->notasCredito->first()->secuencial }}">
                                                     <i class="fas fa-file-invoice-dollar f-2x"></i>
                                                 </button>
                                             @else
-                                                <button class="btn btn-warning text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-warning text-white border-0 ml-3"
                                                     wire:click="confirmNC({{ $factura->id }})"
                                                     type="button"
                                                     title="Emitir Nota de Crédito">

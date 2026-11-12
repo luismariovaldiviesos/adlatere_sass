@@ -22,7 +22,7 @@
                                 <tr class="text-theme-1">
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >ID</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >FASE</th>
-                                 
+                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >MATERIA</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap text-center" >ACCIONES</th>
                                 </tr>
                             </thead>
@@ -37,21 +37,26 @@
 
                                         <td class="dark:border-dark-5">
                                             <h6 class="mb-1 font-medium">{{ $fase->nombre }}</h6>
-                                            {{-- <small class="font-normal">{{ $MATERI->unidades->count() }} unidades en este edificio</small> --}}
-                                        </td>   
+                                        </td>
 
-                                      
+                                        <td class="dark:border-dark-5">
+                                            @if($fase->materia)
+                                                <span class="badge badge-success">{{ $fase->materia->nombre }}</span>
+                                            @else
+                                                <span class="badge badge-danger">Sin materia</span>
+                                            @endif
+                                        </td>
 
                                         <td class="dark:border-dark-5 text-center">
                                             <div class="d-flex justify-content-center">
                                                 @if ($fase->estados_procesales->count() < 1)
-                                                    <button class="btn btn-danger text-white border-0"
+                                                    <button type="button" class="btn btn-danger text-white border-0"
                                                     onclick="destroy('fases','Destroy', {{ $fase->id }})"
                                                     type="button">
                                                         <i class=" fas fa-trash f-2x"></i>
                                                     </button>
                                                 @endif
-                                                <button class="btn btn-warning text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-warning text-white border-0 ml-3"
                                                     wire:click.prevent="Edit({{ $fase->id }})"
                                                     type="button">
                                                         <i class=" fas fa-edit f-2x"></i>
@@ -61,7 +66,7 @@
                                     </tr>
                                 @empty
                                     <tr class="bg-gray-200 dark:bg-dark-1">
-                                        <td colspan="2">
+                                        <td colspan="4">
                                             <h6 class="text-center">    NO HAY FASES REGISTRADAS </h6>
                                         </td>
                                     </tr>

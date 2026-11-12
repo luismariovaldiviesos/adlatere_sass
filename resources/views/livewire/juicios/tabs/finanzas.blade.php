@@ -48,7 +48,7 @@
         </div>
 
         <div class="col-span-12 md:col-span-2 flex justify-end">
-            <button class="btn btn-primary text-lg px-8 py-2.5 w-full" wire:click="saveFinanzas">
+            <button type="button" class="btn btn-primary text-lg px-8 py-2.5 w-full" wire:click="saveFinanzas">
                 Actualizar
             </button>
         </div>
@@ -116,7 +116,7 @@
         </div>
 
         <div class="col-span-12 md:col-span-2 flex justify-end">
-            <button class="btn btn-primary text-lg px-8 py-2.5 w-full" wire:click="savePago" wire:loading.attr="disabled" wire:target="pago_comprobante">
+            <button type="button" class="btn btn-primary text-lg px-8 py-2.5 w-full" wire:click="savePago" wire:loading.attr="disabled" wire:target="pago_comprobante">
                 Guardar Abono
             </button>
         </div>

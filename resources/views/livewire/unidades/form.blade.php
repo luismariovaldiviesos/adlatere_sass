@@ -39,7 +39,26 @@
                     </div>
                 </div>
 
-
+                <div class="mt-4">
+                    <label class="form-label font-bold">Materias que tramita esta unidad</label>
+                    <div class="border border-gray-200 rounded-md bg-white shadow-sm p-4 overflow-y-auto" style="max-height: 280px;">
+                        @forelse($materias as $materia)
+                            <label class="flex items-center gap-2 text-sm py-1.5 cursor-pointer">
+                                <input type="checkbox"
+                                       wire:model.defer="materias_seleccionadas"
+                                       value="{{ $materia->id }}"
+                                       class="form-check-input border-gray-300 rounded focus:ring-primary">
+                                <span>{{ $materia->nombre }}</span>
+                            </label>
+                        @empty
+                            <p class="text-sm text-gray-500 text-center py-2">No hay materias registradas.</p>
+                        @endforelse
+                    </div>
+                    <small class="text-xs text-gray-500 block mt-1">
+                        Solo estas materias estarán disponibles al seleccionar esta unidad en la carátula.
+                    </small>
+                    @error('materias_seleccionadas') <span class="text-theme-6 mt-1 block">{{ $message }}</span> @enderror
+                </div>
 
                 <div class="mt-5">
                     <x-back />

@@ -7,11 +7,11 @@
                     <b class="text-theme-1">{{ $showCreateCustomer ? 'Nuevo Cliente' : 'Elegir Cliente' }}</b>
                 </h2>
                 @if(!$showCreateCustomer)
-                <button wire:click="showCreateCustomer" class="btn btn-primary btn-sm">
+                <button type="button" wire:click="showCreateCustomer" class="btn btn-primary btn-sm">
                     <i class="fas fa-plus mr-1"></i> NUEVO CLIENTE
                 </button>
                 @else
-                <button wire:click="hideCreateCustomer" class="btn btn-secondary btn-sm">
+                <button type="button" wire:click="hideCreateCustomer" class="btn btn-secondary btn-sm">
                     <i class="fas fa-arrow-left mr-1"></i> VOLVER A BUSCAR
                 </button>
                 @endif
@@ -46,14 +46,14 @@
                                                     <small class="text-gray-500">{{ $customer->valueidenti }}</small>
                                                 </td>
                                                 <td class="text-center">
-                                                    <button wire:click.prevent="selectCustomer({{$customer->id}}, '{{$customer->businame}}')" class="btn btn-outline-primary btn-sm">Seleccionar</button>
+                                                    <button type="button" wire:click.prevent="selectCustomer({{$customer->id}}, '{{$customer->businame}}')" class="btn btn-outline-primary btn-sm">Seleccionar</button>
                                                 </td>
                                             </tr>
                                             @empty
                                             <tr>
                                                 <td colspan="2" class="text-center py-5">
                                                     <p>NO SE ENCONTRARON CLIENTES</p>
-                                                    <button wire:click="showCreateCustomer" class="btn btn-primary mt-2">
+                                                    <button type="button" wire:click="showCreateCustomer" class="btn btn-primary mt-2">
                                                         CREAR NUEVO CLIENTE
                                                     </button>
                                                 </td>
@@ -74,7 +74,7 @@
                     <x-customer-fields prefix="q_" :cantones="$q_cantones" context="billing" />
 
                     <div class="text-center mt-5">
-                        <button wire:click="saveQuickCustomer" class="btn btn-primary w-full py-3 font-bold">
+                        <button type="button" wire:click="saveQuickCustomer" class="btn btn-primary w-full py-3 font-bold">
                             <i class="fas fa-save mr-2"></i> GUARDAR Y SELECCIONAR
                         </button>
                     </div>
@@ -83,7 +83,7 @@
             </div>
 
             <div class="modal-footer text-right">
-                <button onclick="closeModalCustomer()" class="btn btn-outline-secondary mr-5">Cerrar Ventana</button>
+                <button type="button" onclick="closeModalCustomer()" class="btn btn-outline-secondary mr-5">Cerrar Ventana</button>
             </div>
 
         </div>

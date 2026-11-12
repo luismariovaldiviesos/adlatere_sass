@@ -29,7 +29,7 @@
         </div>
 
         <div class="col-span-12 md:col-span-4 flex gap-2">
-            <button class="btn btn-primary text-lg px-4 py-2.5 flex-1 h-12 flex justify-center items-center" wire:click="addAbogado">
+            <button type="button" class="btn btn-primary text-lg px-4 py-2.5 flex-1 h-12 flex justify-center items-center" wire:click="addAbogado">
                 <i class="fas fa-plus mr-2"></i> Asignar
             </button>
             <button type="button" class="btn btn-outline-primary text-lg px-4 py-2.5 h-12 flex justify-center items-center" wire:click="showQuickAbogado">
@@ -67,7 +67,7 @@
                     </td>
                     <td class="p-4 text-center border-b">
                         @if($puedeGestionarPatrocinador ?? false)
-                        <button class="btn btn-outline-danger btn-sm" wire:click="removeAbogado({{ $abg->id }})" title="Remover del Juicio">
+                        <button type="button" class="btn btn-outline-danger btn-sm" wire:click="removeAbogado({{ $abg->id }})" title="Remover del Juicio">
                             <i class="fas fa-trash"></i>
                         </button>
                         @else

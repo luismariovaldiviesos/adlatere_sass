@@ -35,7 +35,7 @@
                                                     {{$user->name}}
                                                 </td>
                                                 <td>
-                                                    <button wire:click.prevent="$set('userId', '{{ $user->name . ' | ' . $user->id  }}')"
+                                                    <button type="button" wire:click.prevent="$set('userId', '{{ $user->name . ' | ' . $user->id  }}')"
                                                     class="btn btn-outline-primary">Seleccionar</button>
                                                 </td>
                                             </tr>
@@ -56,7 +56,7 @@
             </div>
 
             <div class="modal-footer text-right">
-                <button onclick="closeModalUser()" class="btn btn-outline-secondary mr-5">Cerrar Ventana</button>
+                <button type="button" onclick="closeModalUser()" class="btn btn-outline-secondary mr-5">Cerrar Ventana</button>
             </div>
 
         </div>

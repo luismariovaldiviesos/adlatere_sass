@@ -57,7 +57,7 @@
             </div>
 
             <div class="modal-footer text-right">
-                <button onclick="closeModalDetail()" class="btn btn-outline-secondary mr-5">Cerrar Ventana</button>
+                <button type="button" onclick="closeModalDetail()" class="btn btn-outline-secondary mr-5">Cerrar Ventana</button>
             </div>
 
         </div>

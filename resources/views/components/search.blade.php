@@ -1,6 +1,6 @@
 <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2 p-4">
 
-    <button wire:click.prevent="addNew" class="btn btn-primary shadow-md mr-2 w-full sm:w-auto">Agregar</button>
+    <button type="button" wire:click.prevent="addNew" class="btn btn-primary shadow-md mr-2 w-full sm:w-auto">Agregar</button>
 
     <div class="hidden md:block mx-auto text-gray-600 "></div>
 

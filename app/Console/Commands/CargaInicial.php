@@ -182,7 +182,7 @@ class CargaInicial extends Command
             $n = $i + 2;
             $nombre = trim((string) ($c[0] ?? ''));
             if ($nombre === '') { $this->err('Materias', $n, 'nombre obligatorio'); continue; }
-            if (!$this->validar) \App\Models\Materia::updateOrCreate(['nombre' => $nombre], ['unidad_id' => null]);
+            if (!$this->validar) \App\Models\Materia::updateOrCreate(['nombre' => $nombre]);
             $this->memorize('materia', $nombre);
             $this->hit();
         }
@@ -213,7 +213,17 @@ class CargaInicial extends Command
             $n = $i + 2;
             $nombre = trim((string) ($c[0] ?? ''));
             if ($nombre === '') { $this->err('Fases', $n, 'nombre obligatorio'); continue; }
-            if (!$this->validar) \App\Models\Fase::updateOrCreate(['nombre' => $nombre]);
+            $materia = null;
+            $materiaNombre = trim((string) ($c[1] ?? ''));
+            if ($materiaNombre !== '') {
+                $materia = $this->lookup(\App\Models\Materia::class, 'nombre', $materiaNombre, 'materia');
+                if (!$materia) { $this->err('Fases', $n, "materia inexistente: {$materiaNombre}"); continue; }
+            }
+            if (!$this->validar) {
+                $datosFase = [];
+                if ($materia) $datosFase['materia_id'] = $materia->id;
+                \App\Models\Fase::updateOrCreate(['nombre' => $nombre], $datosFase);
+            }
             $this->memorize('fase', $nombre);
             $this->hit();
         }
@@ -347,6 +357,16 @@ class CargaInicial extends Command
                 $j->participantes()->attach($cliente->id, ['rol' => $rolCli, 'es_cliente' => true]);
                 if ($contra) $j->participantes()->attach($contra->id, ['rol' => $rolContra, 'es_cliente' => false]);
                 $j->abogados()->attach($abogado->id, ['rol_en_juicio' => 'Abogado Patrocinador']);
+
+                // Si el expediente importado usa esta materia en esta unidad, dejamos
+                // registrada la combinación para la carátula.
+                $materiaId = \App\Models\Procedimiento::whereKey($asunto->procedimiento_id)->value('materia_id');
+                if ($materiaId) {
+                    \App\Models\Materia::find($materiaId)?->unidades()->syncWithoutDetaching([$unidad->id]);
+                    \App\Models\Fase::whereKey($estado->fase_id)
+                        ->whereNull('materia_id')
+                        ->update(['materia_id' => $materiaId]);
+                }
                 $hon = (float) ($c[11] ?? 0); $gas = (float) ($c[12] ?? 0);
                 if ($hon > 0 || $gas > 0 || trim((string) ($c[13] ?? '')) !== '') {
                     \App\Models\FinanzasJuicio::create([

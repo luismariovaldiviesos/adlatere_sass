@@ -18,7 +18,7 @@
             </div>
 
             <div class="modal-footer text-right">
-                <button onclick="closeModal()" class="btn btn-outline-secondary mr-5">Cerrar Ventana</button>
+                <button type="button" onclick="closeModal()" class="btn btn-outline-secondary mr-5">Cerrar Ventana</button>
                 <button type="button" wire:click.prevent="Abrir(document.getElementById('valorInicio').value)"
                 class="btn btn-primary">Guardar</button>
             </div>

@@ -9,7 +9,7 @@
             </h2>
 
             <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2 p-4">
-                {{-- <button onclick="openPanel('add')" class="btn btn-primary shadow-md mr-2">Agregar</button>--}}
+                {{-- <button type="button" onclick="openPanel('add')" class="btn btn-primary shadow-md mr-2">Agregar</button>--}}
                 <div class="hidden md:block mx-auto text-gray-600">
                     --
                 </div>
@@ -82,7 +82,7 @@
                                         <td class="dark:border-dark-5 text-center">
                                             @if (!$arqueo->fecha_cierre)
                                              @can('cerrar_caja') 
-                                            <button class="btn btn-danger text-white border-0"
+                                            <button type="button" class="btn btn-danger text-white border-0"
                                             onclick="CerrarCaja({{ $arqueo->id }})"
                                             type="button">
                                                 Cerrar caja
@@ -90,7 +90,7 @@
                                              @endcan
                                                     {{-- <small class="font-normal ">Cerrar Caja</small> --}}
                                             @else
-                                                <button class="btn btn-warning text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-warning text-white border-0 ml-3"
                                                     wire:click.prevent="downloadArqueo({{ $arqueo->caja_id }})"
                                                     type="button"
                                                     title="Descargar PDF">

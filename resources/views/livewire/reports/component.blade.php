@@ -28,14 +28,14 @@
                 </div>
 
                 <div class="col-span-12 sm:col-span-6 xl:col-span-2 ">
-                    <button onclick="openModalUser()" class="btn btn-dark w-full">{{$userId}}</button>
+                    <button type="button" onclick="openModalUser()" class="btn btn-dark w-full">{{$userId}}</button>
                     <div class="font-normal">Usuario</div>
                 </div>
 
                 <div class="col-span-12 sm:col-span-6 xl:col-span-4 ">
                     @if($startDate !='' && $endDate !='')
-                    <button wire:click.prevent="getReport" class="btn btn-primary " >Consultar</button>
-                    <button wire:click.prevent="ReportPDF" class="btn btn-danger " >PDF</button>
+                    <button type="button" wire:click.prevent="getReport" class="btn btn-primary " >Consultar</button>
+                    <button type="button" wire:click.prevent="ReportPDF" class="btn btn-danger " >PDF</button>
                     @endif
                 </div>
 

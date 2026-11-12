@@ -52,6 +52,11 @@ class ActividadFirmaNotifier
             ->map(fn ($id) => (int) $id)
             ->all();
 
-        return Notificador::sinActor($patrocinadores);
+        // La firma pendiente también debe notificarse a quien la registra
+        // (aunque sea el patrocinador) y a los administradores.
+        return array_values(array_unique(array_merge(
+            $patrocinadores,
+            Notificador::admins()
+        )));
     }
 }

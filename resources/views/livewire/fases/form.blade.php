@@ -9,12 +9,31 @@
         <div class="p-5 ">
             <div class="preview">
 
+                @if ($errors->any())
+                    <div class="alert alert-danger mb-4" role="alert">
+                        No se guardó la fase. Revise los campos marcados.
+                    </div>
+                @endif
+
                 <div class="mt-3">
                     <div class="sm:grid grid-cols-2 gap-5">
                         <div>
                             <label  class="form-label">Nombre Fase</label>
                             <input wire:model.defer='nombre' id="nombre" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
                             @error('nombre')
+                                <x-alert msg="{{ $message }}" />
+                            @enderror
+                        </div>
+
+                        <div>
+                            <label class="form-label">Materia</label>
+                            <select wire:model='materia_id' class="form-select form-select-lg">
+                                <option value="">Seleccione...</option>
+                                @foreach($materias as $materia)
+                                    <option value="{{ $materia->id }}">{{ $materia->nombre }}</option>
+                                @endforeach
+                            </select>
+                            @error('materia_id')
                                 <x-alert msg="{{ $message }}" />
                             @enderror
                         </div>

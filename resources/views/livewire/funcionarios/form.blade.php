@@ -13,7 +13,7 @@
                     <div class="sm:grid grid-cols-2 gap-5">
                         <div>
                             <label  class="form-label">Nombre</label>
-                            <input wire:model='nombre' id="nombre" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
+                            <input wire:model.defer='nombre' id="nombre" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
                             @error('nombre')
                                 <x-alert msg="{{ $message }}" />
                             @enderror
@@ -22,7 +22,7 @@
                         <div class="grid grid-cols-6">
                             <div class="col-end-2 bg-amber-500">
                                 <label class="form-label">Cargo</label>
-                                <select wire:model='cargo' class="form-select form-select-lg sm:mr-2">
+                                <select wire:model.defer='cargo' class="form-select form-select-lg sm:mr-2">
                                    <option selected="elegir">Elegir</option>
                                   
                                    <option value="Juez">Juez </option>
@@ -39,14 +39,14 @@
                         </div>
                          <div>
                             <label  class="form-label">Teléfono</label>
-                            <input wire:model='telefono' id="telefono" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
+                            <input wire:model.defer='telefono' id="telefono" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
                             @error('telefono')
                                 <x-alert msg="{{ $message }}" />
                             @enderror
                         </div>
                             <div>
                                 <label  class="form-label">Email</label>
-                                <input wire:model='email' id="email" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
+                                <input wire:model.defer='email' id="email" type="text" class="form-control form-control-lg border-start-0 kioskboard" maxlength="250">
                                 @error('email')
                                     <x-alert msg="{{ $message }}" />
                                 @enderror  

@@ -22,6 +22,7 @@
                                 <tr class="text-theme-1">
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >ID</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap" >MATERIA</th>
+                                    <th class="border-b-2 dark:border-dark-5 whitespace-nowrap text-center" >UNIDADES</th>
                                     <th class="border-b-2 dark:border-dark-5 whitespace-nowrap text-center" >ACCIONES</th>
                                 </tr>
                             </thead>
@@ -36,19 +37,32 @@
 
                                         <td class="dark:border-dark-5">
                                             <h6 class="mb-1 font-medium">{{ $materia->nombre }}</h6>
-                                            {{-- <small class="font-normal">{{ $MATERI->unidades->count() }} unidades en este edificio</small> --}}
+                                        </td>
+
+                                        <td class="dark:border-dark-5 text-center">
+                                            @if($materia->unidades_count > 0)
+                                                <span class="badge badge-success">
+                                                    {{ $materia->unidades_count }} unidad{{ $materia->unidades_count === 1 ? '' : 'es' }}
+                                                </span>
+                                            @else
+                                                <a href="{{ route('unidades') }}"
+                                                   class="badge badge-danger text-white"
+                                                   title="Asignar esta materia desde Sitios > Unidades">
+                                                    Sin unidad
+                                                </a>
+                                            @endif
                                         </td>
 
                                         <td class="dark:border-dark-5 text-center">
                                             <div class="d-flex justify-content-center">
                                                 @if ($materia->procedimientos->count() < 1)
-                                                    <button class="btn btn-danger text-white border-0"
+                                                    <button type="button" class="btn btn-danger text-white border-0"
                                                     onclick="destroy('materias','Destroy', {{ $materia->id }})"
                                                     type="button">
                                                         <i class=" fas fa-trash f-2x"></i>
                                                     </button>
                                                 @endif
-                                                <button class="btn btn-warning text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-warning text-white border-0 ml-3"
                                                     wire:click.prevent="Edit({{ $materia->id }})"
                                                     type="button">
                                                         <i class=" fas fa-edit f-2x"></i>
@@ -58,7 +72,7 @@
                                     </tr>
                                 @empty
                                     <tr class="bg-gray-200 dark:bg-dark-1">
-                                        <td colspan="2">
+                                        <td colspan="4">
                                             <h6 class="text-center">    NO HAY MATERIAS REGISTRADAS </h6>
                                         </td>
                                     </tr>

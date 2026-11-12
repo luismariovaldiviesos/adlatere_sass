@@ -26,7 +26,7 @@ class EstadosProcesales extends Component
 
         $query = EstadoProcesal::with('fase')
         ->withCount('juicios');
-        if (strlen($this->search) > 0)
+        if (strlen((string) $this->search) > 0)
             $query->where('nombre', 'like', "%{$this->search}%")
             ->orWhereHas('fase', function ($q) {
                 $q->where('nombre', 'like', "%{$this->search}%");
@@ -38,7 +38,7 @@ class EstadosProcesales extends Component
 
         return view('livewire.estados_procesales.component', [
             'estados' => $info,
-            'fases' => Fase::orderBy('nombre', 'asc')->get()
+            'fases' => Fase::with('materia')->orderBy('nombre', 'asc')->get()
         ])->layout('layouts.theme.app');
     }
 
@@ -98,9 +98,7 @@ class EstadosProcesales extends Component
 
     public function Store()
     {
-        sleep(1);
-
-        $this->validate(EstadoProcesal::rules($this->selected_id), EstadoProcesal::$messages);
+        $this->validate(EstadoProcesal::rules($this->selected_id, $this->fase_id), EstadoProcesal::$messages);
 
         $estado = EstadoProcesal::updateOrCreate(
             ['id' => $this->selected_id],

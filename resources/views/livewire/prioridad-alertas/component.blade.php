@@ -64,12 +64,12 @@
 
                                         <td class="dark:border-dark-5 text-center">
                                             <div class="d-flex justify-content-center">
-                                                <button class="btn btn-danger text-white border-0"
+                                                <button type="button" class="btn btn-danger text-white border-0"
                                                     onclick="destroy('prioridad-alertas','Destroy', {{ $alerta->id }})"
                                                     type="button">
                                                         <i class=" fas fa-trash f-2x"></i>
                                                 </button>
-                                                <button class="btn btn-warning text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-warning text-white border-0 ml-3"
                                                     wire:click.prevent="Edit({{ $alerta->id }})"
                                                     type="button">
                                                         <i class=" fas fa-edit f-2x"></i>

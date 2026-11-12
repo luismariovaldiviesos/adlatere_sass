@@ -12,7 +12,7 @@
     {{-- BARRA DE PESTAÑAS --}}
     <div class="intro-y box p-6">
         <div class="flex flex-wrap gap-3 items-center">
-            <button type="button" wire:click="volverListado" wire:loading.attr="disabled" wire:target="volverListado" onclick="this.style.background='#fef3c7';setTimeout(function(){if(document.getElementById('juicio-form')){window.location.reload();}},2000)" title="Volver al listado de juicios" class="px-6 py-2 btn btn-outline-secondary">
+            <button type="button" wire:click="volverListado" wire:loading.attr="disabled" wire:target="volverListado" title="Volver al listado de juicios" class="px-6 py-2 btn btn-outline-secondary">
                 <span wire:loading.remove wire:target="volverListado"><i class="fas fa-arrow-left mr-1"></i> Volver</span>
                 <span wire:loading wire:target="volverListado">Volviendo…</span>
             </button>

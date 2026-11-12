@@ -79,20 +79,20 @@
                             <div class="reg-grid">
                                 <div class="mb-3 full">
                                     <label class="form-label">Nombre del despacho</label>
-                                    <input type="text" class="form-control" wire:model="company_name" placeholder="Ej. Rosales & Tello Abogados" required>
+                                    <input type="text" class="form-control" wire:model.defer="company_name" placeholder="Ej. Rosales & Tello Abogados" required>
                                     @error('company_name') <span class="text-danger small">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div class="mb-3 full">
                                     <label class="form-label">Nombre del administrador</label>
-                                    <input type="text" class="form-control" wire:model="name" placeholder="Ej. Ana Pérez">
+                                    <input type="text" class="form-control" wire:model.defer="name" placeholder="Ej. Ana Pérez">
                                     @error('name') <span class="text-danger small">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label">Subdominio</label>
                                     <div class="input-group">
-                                        <input type="text" class="form-control" wire:model="tenant_id" placeholder="rosalestello" required>
+                                        <input type="text" class="form-control" wire:model.defer="tenant_id" placeholder="rosalestello" required>
                                         <span class="input-group-text">.adlatere.ec</span>
                                     </div>
                                     @error('tenant_id') <span class="text-danger small">{{ $message }}</span> @enderror
@@ -100,31 +100,31 @@
 
                                 <div class="mb-3">
                                     <label class="form-label">Cédula / RUC</label>
-                                    <input type="text" class="form-control" wire:model="ci" placeholder="1712345678" required>
+                                    <input type="text" class="form-control" wire:model.defer="ci" placeholder="1712345678" required>
                                     @error('ci') <span class="text-danger small">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label">Teléfono / Celular</label>
-                                    <input type="text" class="form-control" wire:model="phone" placeholder="0991234567">
+                                    <input type="text" class="form-control" wire:model.defer="phone" placeholder="0991234567">
                                     @error('phone') <span class="text-danger small">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label">Correo del administrador</label>
-                                    <input type="email" class="form-control" wire:model="email" placeholder="admin@rosalestello.com" required>
+                                    <input type="email" class="form-control" wire:model.defer="email" placeholder="admin@rosalestello.com" required>
                                     @error('email') <span class="text-danger small">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label">Contraseña</label>
-                                    <input type="password" class="form-control" wire:model="password" required>
+                                    <input type="password" class="form-control" wire:model.defer="password" required>
                                     @error('password') <span class="text-danger small">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div class="mb-3">
                                     <label class="form-label">Confirmar contraseña</label>
-                                    <input type="password" class="form-control" wire:model="password_confirmation" required>
+                                    <input type="password" class="form-control" wire:model.defer="password_confirmation" required>
                                 </div>
                             </div>
 

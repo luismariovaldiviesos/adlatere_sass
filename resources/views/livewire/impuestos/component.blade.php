@@ -47,7 +47,7 @@
 
                                                 @if($impuesto->productos->count() <= 0)
                                                     @can('eliminar_impuestos')
-                                                    <button class="btn btn-danger text-white border-0"
+                                                    <button type="button" class="btn btn-danger text-white border-0"
                                                     onclick="destroy('impuestos','Destroy', {{ $impuesto->id }})"
                                                     type="button">
                                                         <i class=" fas fa-trash f-2x"></i>
@@ -55,7 +55,7 @@
                                                     @endcan
                                                 @endif
                                                 @can('editar_impuestos')
-                                                <button class="btn btn-warning text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-warning text-white border-0 ml-3"
                                                     wire:click.prevent="Edit({{ $impuesto->id }})"
                                                     type="button">
                                                         <i class=" fas fa-edit f-2x"></i>

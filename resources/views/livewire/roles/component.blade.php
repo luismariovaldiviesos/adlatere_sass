@@ -45,7 +45,7 @@
                                             <div class="d-flex justify-content-center">
                                                 @if ($rol->users->count() < 1)
                                                 @can('eliminar_roles')
-                                                    <button class="btn btn-danger text-white border-0"
+                                                    <button type="button" class="btn btn-danger text-white border-0"
                                                     onclick="destroy('roles','Destroy', {{ $rol->id }})"
                                                     type="button">
                                                         <i class=" fas fa-trash f-2x"></i>
@@ -53,7 +53,7 @@
                                                 @endcan
                                                 @endif
                                                 @can('editar_roles')
-                                                <button class="btn btn-warning text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-warning text-white border-0 ml-3"
                                                     wire:click.prevent="Edit({{ $rol->id }})"
                                                     type="button">
                                                         <i class=" fas fa-edit f-2x"></i>

@@ -47,7 +47,7 @@
                                             <div class="d-flex justify-content-center">
                                                  @if ($caja->arqueos->count() < 1)
                                                     @can('eliminar_caja')
-                                                    <button class="btn btn-danger text-white border-0"
+                                                    <button type="button" class="btn btn-danger text-white border-0"
                                                     onclick="destroy('cajas','Destroy', {{ $caja->id }})"
                                                     type="button">
                                                         <i class=" fas fa-trash f-2x"></i>
@@ -56,7 +56,7 @@
                                                 @endif
 
                                                  @can('editar_caja')
-                                                <button class="btn btn-warning text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-warning text-white border-0 ml-3"
                                                     wire:click.prevent="Edit({{ $caja->id }})"
                                                     type="button">
                                                         <i class=" fas fa-edit f-2x"></i>
@@ -66,7 +66,7 @@
 
                                                 @if ($caja->status == 0 && $caja->user_id == Auth()->user()->id)
                                                 @can('abrir_caja')
-                                                    <button class="btn btn-primary text-white border-0"
+                                                    <button type="button" class="btn btn-primary text-white border-0"
                                                     onclick="Abrircaja({{ $caja->id }})"
                                                     type="button">
                                                     abrir caja
@@ -78,7 +78,7 @@
                                             
                                             @if($caja->status == 1 && Auth()->user()->profile == 'Admin')
                                                 <div class="mt-2 text-center">
-                                                    <button wire:click="ResetCaja({{ $caja->id }})" class="btn btn-secondary btn-sm" title="Forzar Cierre (Reset)"><i class="fas fa-sync-alt"></i> Reset</button>
+                                                    <button type="button" wire:click="ResetCaja({{ $caja->id }})" class="btn btn-secondary btn-sm" title="Forzar Cierre (Reset)"><i class="fas fa-sync-alt"></i> Reset</button>
                                                 </div>
                                             @endif
                                         </td>

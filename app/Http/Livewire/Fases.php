@@ -4,13 +4,16 @@ namespace App\Http\Livewire;
 
 use Livewire\Component;
 use App\Models\Fase;
+use App\Models\Juicio;
+use App\Models\Materia;
 use Livewire\WithPagination;
 use Livewire\WithFileUploads;
+use Illuminate\Validation\ValidationException;
 
 class Fases extends Component
 {
      use WithPagination;
-    public $nombre = '', $selected_id = 0;
+    public $nombre = '', $materia_id, $selected_id = 0;
     public $action = 'Listado', $componentName = 'Listado de Fases', $search, $form = false;
     private $pagination = 10;
     protected $paginationTheme = 'tailwind';
@@ -18,15 +21,18 @@ class Fases extends Component
     
 
     public function render(){
-        if (strlen($this->search) > 0){
+        if (strlen((string) $this->search) > 0){
             $searchTerm = '%' . trim($this->search) . '%';
             $info =  Fase::where('nombre', 'like', $searchTerm)
+            ->with('materia')
             ->withCount('estados_procesales')->paginate($this->pagination);
         }           
         else
-            $info = Fase::withCount('estados_procesales')->paginate($this->pagination);
-        return view('livewire.fases.component', ['fases' => $info])
-        ->layout('layouts.theme.app');
+            $info = Fase::with('materia')->withCount('estados_procesales')->paginate($this->pagination);
+        return view('livewire.fases.component', [
+            'fases' => $info,
+            'materias' => Materia::orderBy('nombre', 'asc')->get(),
+        ])->layout('layouts.theme.app');
     }
 
 
@@ -71,13 +77,14 @@ class Fases extends Component
         // regresar a la página inicial del componente
         $this->resetPage();
         // regresar propiedades a su valor por defecto
-        $this->reset('nombre', 'selected_id', 'search', 'action', 'componentName', 'form');
+        $this->reset('nombre', 'materia_id', 'selected_id', 'search', 'action', 'componentName', 'form');
     }
 
     public function Edit(Fase $fase)
     {
         $this->selected_id = $fase->id;
         $this->nombre = $fase->nombre;
+        $this->materia_id = $fase->materia_id;
         $this->action = 'Editar';
         $this->form = true;
 
@@ -85,13 +92,36 @@ class Fases extends Component
 
     public function Store()
     {
-        sleep(1);
+        try {
+            $this->validate(Fase::rules($this->selected_id), Fase::$messages);
+        } catch (ValidationException $e) {
+            $this->dispatchBrowserEvent('noty', [
+                'msg' => 'No se guardó la fase. Revise los campos marcados.',
+                'type' => 'error',
+                'action' => 'error',
+            ]);
 
-        $this->validate(Fase::rules($this->selected_id), Fase::$messages);
+            throw $e;
+        }
+
+        if ($this->selected_id > 0) {
+            $faseActual = Fase::find($this->selected_id);
+
+            if ($faseActual && (int) $faseActual->materia_id !== (int) $this->materia_id) {
+                $enUsoOtraMateria = Juicio::whereHas('estadoProcesal', fn ($q) => $q->where('fase_id', $faseActual->id))
+                    ->whereHas('asunto.procedimiento', fn ($q) => $q->where('materia_id', '!=', $this->materia_id))
+                    ->exists();
+
+                if ($enUsoOtraMateria) {
+                    $this->noty('No puede cambiar la materia: esta fase tiene expedientes asociados a otra materia.', 'noty', false, 'error');
+                    return;
+                }
+            }
+        }
 
         $fase = Fase::updateOrCreate(
             ['id' => $this->selected_id],
-            ['nombre' => $this->nombre]
+            ['nombre' => $this->nombre, 'materia_id' => $this->materia_id]
         );
 
         // image

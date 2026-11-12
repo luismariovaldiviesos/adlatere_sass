@@ -7,7 +7,7 @@
 
     <div class="grid grid-cols-12 gap-6 mt-5">
         <div class="intro-y col-span-12 flex flex-wrap sm:flex-nowrap items-center mt-2">
-            <button wire:click="openModal" class="btn btn-primary shadow-md mr-2">Agregar Plan</button>
+            <button type="button" wire:click="openModal" class="btn btn-primary shadow-md mr-2">Agregar Plan</button>
             <div class="hidden md:block mx-auto text-gray-600"></div>
             <div class="w-full sm:w-auto mt-3 sm:mt-0 sm:ml-auto md:ml-0">
                 <div class="w-56 relative text-gray-700 dark:text-gray-300">
@@ -46,11 +46,11 @@
                         </td>
                         <td class="table-report__action w-56">
                             <div class="flex justify-center items-center">
-                                <button wire:click="edit({{ $plan->id }})" class="flex items-center mr-3 text-theme-1"> 
-                                    <i data-feather="edit" class="w-4 h-4 mr-1"></i> Editar 
+                                <button type="button" wire:click="edit({{ $plan->id }})" class="flex items-center mr-3 text-theme-1">
+                                    <i data-feather="edit" class="w-4 h-4 mr-1"></i> Editar
                                 </button>
-                                <button wire:click="destroy({{ $plan->id }})" class="flex items-center text-theme-6" onclick="confirm('¿Seguro que deseas eliminar este plan?') || event.stopImmediatePropagation()"> 
-                                    <i data-feather="trash-2" class="w-4 h-4 mr-1"></i> Eliminar 
+                                <button type="button" wire:click="destroy({{ $plan->id }})" class="flex items-center text-theme-6" onclick="confirm('¿Seguro que deseas eliminar este plan?') || event.stopImmediatePropagation()">
+                                    <i data-feather="trash-2" class="w-4 h-4 mr-1"></i> Eliminar
                                 </button>
                             </div>
                         </td>
@@ -77,7 +77,7 @@
                  <h2 class="font-medium text-base mr-auto">
                      {{ $planId ? 'Editar Plan' : 'Crear Nuevo Plan' }}
                  </h2>
-                 <button wire:click="closeModal" class="text-gray-600 hover:text-gray-800">
+                 <button type="button" wire:click="closeModal" class="text-gray-600 hover:text-gray-800">
                     <i data-feather="x" class="w-6 h-6"></i>
                  </button>
              </div>
@@ -86,25 +86,25 @@
                 <div class="grid grid-cols-12 gap-4 gap-y-3">
                     <div class="col-span-12">
                         <label class="form-label">Nombre del Plan</label>
-                        <input wire:model="name" type="text" class="form-control" placeholder="Ej: Emprendedor">
+                        <input wire:model.defer="name" type="text" class="form-control" placeholder="Ej: Emprendedor">
                         @error('name') <span class="text-theme-6 text-xs">{{ $message }}</span> @enderror
                     </div>
-                    
+
                     <div class="col-span-12">
                         <label class="form-label">Límite de Documentos (Dejar vacío para ilimitado)</label>
-                        <input wire:model="invoice_limit" type="number" class="form-control" placeholder="Ej: 30">
+                        <input wire:model.defer="invoice_limit" type="number" class="form-control" placeholder="Ej: 30">
                         @error('invoice_limit') <span class="text-theme-6 text-xs">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="col-span-12">
                         <label class="form-label">Precio ($)</label>
-                        <input wire:model="price" type="number" step="0.01" class="form-control" placeholder="0.00">
+                        <input wire:model.defer="price" type="number" step="0.01" class="form-control" placeholder="0.00">
                         @error('price') <span class="text-theme-6 text-xs">{{ $message }}</span> @enderror
                     </div>
 
                     <div class="col-span-12">
                         <label class="form-label">Descripción o ID Remoto</label>
-                        <textarea wire:model="description" class="form-control" placeholder="Descripción breve..."></textarea>
+                        <textarea wire:model.defer="description" class="form-control" placeholder="Descripción breve..."></textarea>
                     </div>
                 </div>
 
@@ -116,7 +116,7 @@
          </div>
     </div>
     @endif
-    
+
     <script>
         document.addEventListener('livewire:load', function () {
             feather.replace();

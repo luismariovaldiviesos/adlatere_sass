@@ -43,16 +43,16 @@
             <textarea wire:model.defer="aud_acta_resumen" class="form-control text-lg" rows="4"
                       placeholder="Escribe aquí lo ocurrido en la audiencia (completar después si aún no se ha realizado)..."></textarea>
         </div>
-        
+
         {{-- ARCHIVO ADJUNTO --}}
         <div class="col-span-12 md:col-span-6">
             <label class="form-label text-base font-bold">Documento / Acta Resumen (PDF)</label>
             <input type="file" wire:model="aud_archivo" class="form-control h-12 pt-2" accept=".pdf,.doc,.docx">
-            
+
             <div wire:loading wire:target="aud_archivo" class="text-theme-1 mt-2 font-medium">
                 <i class="fas fa-spinner fa-spin mr-1"></i> Cargando archivo temporalmente...
             </div>
-            
+
             @error('aud_archivo') <span class="text-theme-6 mt-1 block">{{ $message }}</span> @enderror
             @if($aud_archivo)
             <div class="text-success mt-1 text-sm">
@@ -141,7 +141,7 @@
                         <td class="font-medium">
                             @if($aud->acta_resumen != null)
                             <div class="flex gap-3">
-                                <button wire:click="descargarWord({{ $aud->id }})" 
+                                <button type="button" wire:click="descargarWord({{ $aud->id }})"
                                         wire:loading.attr="disabled"
                                         title="Descargar Acta en Word"
                                         class="p-2.5 rounded-lg bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white border border-blue-200 transition-all duration-200 shadow-sm flex items-center justify-center">
@@ -150,7 +150,7 @@
                                     </svg>
                                 </button>
 
-                                <button wire:click="descargarPdf({{ $aud->id }})" 
+                                <button type="button" wire:click="descargarPdf({{ $aud->id }})"
                                         wire:loading.attr="disabled"
                                         title="Descargar Acta en PDF"
                                         class="p-2.5 rounded-lg bg-danger/10 text-danger hover:bg-danger hover:text-white border border-danger/20 transition-all duration-200 shadow-sm flex items-center justify-center">
@@ -159,7 +159,7 @@
                                     </svg>
                                 </button>
                             </div>
-                            
+
                             @else
                                 <span class="text-slate-500">—</span>
                             @endif
@@ -170,7 +170,7 @@
                             $documentoActa = $actasMap[$aud->id] ?? null;
                         @endphp
                             @if($documentoActa)
-                                <a href="{{ route('tenant.media', ['path' => $documentoActa->ruta_archivo]) }}" 
+                                <a href="{{ route('tenant.media', ['path' => $documentoActa->ruta_archivo]) }}"
                                 target="_blank" class="btn btn-sm btn-outline-primary mt-2" title="">Ver Archivo</a>
                             @else
                                 <span class="text-gray-400 text-xs mt-2 block italic">Sin archivo</span>

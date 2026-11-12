@@ -78,13 +78,13 @@
                                                 @else
                                                 @can('eliminar_juicio')
                                                     @if(!$juicio->tiene_contenido)
-                                                    <button class="btn btn-danger text-white border-0"
+                                                    <button type="button" class="btn btn-danger text-white border-0"
                                                     onclick="destroy('juicios','Destroy', {{ $juicio->id }})"
                                                     type="button" title="Eliminar definitivo (sin movimientos)">
                                                         <i class=" fas fa-trash f-2x"></i>
                                                     </button>
                                                     @else
-                                                    <button class="btn btn-warning text-white border-0"
+                                                    <button type="button" class="btn btn-warning text-white border-0"
                                                     onclick="destroy('juicios','Destroy', {{ $juicio->id }})"
                                                     type="button" title="Archivar (conserva datos)">
                                                         <i class="fas fa-archive f-2x"></i>
@@ -92,7 +92,7 @@
                                                     @endif
                                                 @endcan
                                                 @can('editar_juicio')
-                                                <button class="btn btn-warning text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-warning text-white border-0 ml-3"
                                                     wire:click.prevent="Edit({{ $juicio->id }})"
                                                     type="button">
                                                         <i class=" fas fa-edit f-2x"></i>

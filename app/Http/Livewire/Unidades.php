@@ -3,6 +3,7 @@
 namespace App\Http\Livewire;
 
 use App\Models\Canton;
+use App\Models\Materia;
 use App\Models\Unidad;
 use Livewire\Component;
 use Livewire\WithPagination;
@@ -12,7 +13,8 @@ class Unidades extends Component
 
     use WithPagination;
 
-    public $nombre = '', $canton_id, $canton,  $selected_id = 0, $unidad="";
+    public $nombre = '', $canton_id, $canton, $selected_id = 0, $unidad = "";
+    public $materias_seleccionadas = [];
     public $action = 'Listado', $componentName = 'Listado de Unidades Judicial', $search, $form = false;
     private $pagination = 20;
     protected $paginationTheme = 'tailwind';
@@ -25,7 +27,7 @@ class Unidades extends Component
             ->withCount('juicios') ;
            // ->orderBy('unidads.nombre', 'asc');
 
-        if (strlen($this->search) > 0) {
+        if (strlen((string) $this->search) > 0) {
             $searchTerm = strtolower(trim($this->search));
             $query->where(function ($q) use ($searchTerm) {
                 $q->whereRaw('LOWER(unidads.nombre) LIKE ?', ["%{$searchTerm}%"])
@@ -38,6 +40,7 @@ class Unidades extends Component
         return view('livewire.unidades.component', [
             'unidades' => $info,
             'cantones' => Canton::orderBy('nombre', 'asc')->get(),
+            'materias' => Materia::orderBy('nombre', 'asc')->get(),
         ])->layout('layouts.theme.app');
     }
 
@@ -81,7 +84,7 @@ class Unidades extends Component
         // regresar a la página inicial del componente
         $this->resetPage();
         // regresar propiedades a su valor por defecto
-        $this->reset('nombre', 'canton_id', 'selected_id', 'search', 'action', 'componentName', 'form','unidad');
+        $this->reset('nombre', 'canton_id', 'selected_id', 'search', 'action', 'componentName', 'form', 'unidad', 'materias_seleccionadas');
     }
 
     public function Edit(Unidad $unidad)
@@ -89,15 +92,15 @@ class Unidades extends Component
         $this->selected_id = $unidad->id;
         $this->nombre = $unidad->nombre;
         $this->canton_id =  $unidad->canton_id;
+        $unidad->loadMissing('materias');
+        $this->materias_seleccionadas = $unidad->materias->pluck('id')->toArray();
         $this->action = 'Editar';
         $this->form = true;
 
     }
     public function Store()
     {
-        sleep(1);
-
-        $this->validate(Unidad::rules($this->selected_id), Unidad::$messages);
+        $this->validate(Unidad::rules($this->selected_id, $this->canton_id), Unidad::$messages);
 
         $unidad = Unidad::updateOrCreate(
             ['id' => $this->selected_id],
@@ -107,7 +110,7 @@ class Unidades extends Component
             ]
         );
 
-        // image
+        $unidad->materias()->sync($this->materias_seleccionadas);
 
         $this->noty($this->selected_id < 1 ? 'Unidad Registrada' : 'UNidad Actualizada', 'noty', false, 'close-modal');
         $this->resetUI();
@@ -116,12 +119,13 @@ class Unidades extends Component
     public function Destroy(Unidad $unidad)
     {
         $enJuicios = \App\Models\Juicio::where('unidad_id', $unidad->id)->exists();
-        $enMaterias = \App\Models\Materia::where('unidad_id', $unidad->id)->exists();
 
-        if ($enJuicios || $enMaterias) {
-            $this->noty('No se puede eliminar la unidad porque está siendo usada por juicios o materias.', 'noty', false, 'error');
+        if ($enJuicios) {
+            $this->noty('No se puede eliminar la unidad porque está siendo usada por juicios.', 'noty', false, 'error');
             return;
         }
+
+        $unidad->materias()->detach();
 
         $unidad->delete();
         $this->noty('Se eliminó la unidad');

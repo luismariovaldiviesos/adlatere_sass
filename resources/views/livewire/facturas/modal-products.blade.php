@@ -37,7 +37,7 @@
                                                     {{ number_format($product->price2, 2) }}
                                                 </td>
                                                 <td>
-                                                    <button wire:click="searchManualProduct({{ $product->id }})" class="btn btn-outline-primary">Seleccionar</button>
+                                                    <button type="button" wire:click="searchManualProduct({{ $product->id }})" class="btn btn-outline-primary">Seleccionar</button>
                                                 </td>
 
                                             </tr>
@@ -58,7 +58,7 @@
             </div>
 
             <div class="modal-footer text-right">
-                <button onclick="closeModalProduct()" class="btn btn-outline-secondary mr-5">Cerrar Ventana</button>
+                <button type="button" onclick="closeModalProduct()" class="btn btn-outline-secondary mr-5">Cerrar Ventana</button>
             </div>
 
         </div>

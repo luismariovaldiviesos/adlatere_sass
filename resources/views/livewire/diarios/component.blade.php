@@ -35,7 +35,7 @@ License: You must have a valid license purchased only from themeforest(the above
                                             <div class="relative text-5xl font-bold mt-12 pl-4"> <span class="absolute text-xl top-0 left-0">$</span>  {{ $totVentas }}</div>
 
                                             <div class="flex items-center sm:ml-auto mt-3 sm:mt-0">
-                                                    {{-- <button wire:click.prevent="ReportPDF"  class="btn btn-danger " >
+                                                    {{-- <button type="button" wire:click.prevent="ReportPDF"  class="btn btn-danger " >
                                                         <i data-feather="file-text" class=" hidden sm:block w-4 h-4 mr-2">
                                                         </i> PDF
                                                     </button> --}}
@@ -133,8 +133,8 @@ License: You must have a valid license purchased only from themeforest(the above
                                         <h2 class="text-lg font-medium truncate mr-auto">
                                            TOMAR EN CUENTA
                                         </h2>
-                                        <button data-carousel="important-notes" data-target="prev" class="tiny-slider-navigator btn px-2 border-gray-400 text-gray-700 dark:text-gray-300 mr-2"> <i data-feather="chevron-left" class="w-4 h-4"></i> </button>
-                                        <button data-carousel="important-notes" data-target="next" class="tiny-slider-navigator btn px-2 border-gray-400 text-gray-700 dark:text-gray-300 mr-2"> <i data-feather="chevron-right" class="w-4 h-4"></i> </button>
+                                        <button type="button" data-carousel="important-notes" data-target="prev" class="tiny-slider-navigator btn px-2 border-gray-400 text-gray-700 dark:text-gray-300 mr-2"> <i data-feather="chevron-left" class="w-4 h-4"></i> </button>
+                                        <button type="button" data-carousel="important-notes" data-target="next" class="tiny-slider-navigator btn px-2 border-gray-400 text-gray-700 dark:text-gray-300 mr-2"> <i data-feather="chevron-right" class="w-4 h-4"></i> </button>
                                     </div>
                                     <div class="mt-5 intro-x">
                                         <div class="box zoom-in">

@@ -52,7 +52,7 @@
         {{-- BOTONES ASIGNAR / NUEVO --}}
         <div class="col-span-12 md:col-span-5">
             <div class="flex flex-col sm:flex-row gap-2">
-                <button class="btn btn-primary text-base px-4 py-2.5 flex-1 h-12 flex justify-center items-center whitespace-nowrap" wire:click="addFuncionario">
+                <button type="button" class="btn btn-primary text-base px-4 py-2.5 flex-1 h-12 flex justify-center items-center whitespace-nowrap" wire:click="addFuncionario">
                     <i class="fas fa-plus mr-2"></i> Asignar
                 </button>
                 <button type="button" class="btn btn-outline-primary text-base px-4 py-2.5 flex-1 h-12 flex justify-center items-center whitespace-nowrap" wire:click="showQuickFuncionario">
@@ -97,7 +97,7 @@
                     </td>
                     <td class="p-4 text-center border-b">
                         @if($puedeTramitar ?? false)
-                        <button class="btn btn-outline-danger btn-sm" wire:click="removeFuncionario({{ $fa->id }})" title="Remover del Juicio">
+                        <button type="button" class="btn btn-outline-danger btn-sm" wire:click="removeFuncionario({{ $fa->id }})" title="Remover del Juicio">
                             <i class="fas fa-trash"></i>
                         </button>
                         @else

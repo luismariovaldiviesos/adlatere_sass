@@ -56,7 +56,7 @@
                                         <td class="dark:border-dark-5 text-center">
                                             <div class="d-flex justify-content-center">
                                                 @can('eliminar_descuentos')
-                                                <button class="btn btn-danger text-white border-0"
+                                                <button type="button" class="btn btn-danger text-white border-0"
                                                 onclick="revoque('descuentos','Revoque', {{ $product->id }})"
                                                 type="button">
                                                     <i class=" fas fa-trash f-2x"></i>

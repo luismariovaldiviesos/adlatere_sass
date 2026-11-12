@@ -10,12 +10,12 @@
 @else
 
 
-    <div x-data="{ processing: false }" 
-         @sale-error.window="processing = false" 
+    <div x-data="{ processing: false }"
+         @sale-error.window="processing = false"
          @open-pdf.window="window.open($event.detail.url, '_blank'); processing = false;"
          class="pos intro-y grid grid-cols-12 gap-5 mt-5">
         <!-- Loading Overlay for storeSale -->
-        <div x-show="processing" 
+        <div x-show="processing"
              style="display: none;"
              class="fixed top-0 left-0 right-0 bottom-0 w-full h-screen z-50 overflow-hidden bg-gray-700 opacity-90 flex flex-col items-center justify-center">
             <div style="border-top-color:transparent" class="w-16 h-16 border-4 border-white border-solid rounded-full animate-spin"></div>
@@ -111,7 +111,7 @@
 
                                                       {{-- DESCRIPCION --}}
                                                     <td class="border-b dark:border-dark-5 ">
-                                                        <button onclick="openModal({{$item->id}},'{{$item->changes}}','{{$item->name}}')" class="btn btn-outline-secondary text-theme-1">{{$item->name}}</button>
+                                                        <button type="button" onclick="openModal({{$item->id}},'{{$item->changes}}','{{$item->name}}')" class="btn btn-outline-secondary text-theme-1">{{$item->name}}</button>
                                                         <div>
                                                             <small>{{$item->changes}}</small>
                                                         </div>
@@ -164,12 +164,12 @@
 
                                                 <td>
                                                     <div class="inline-flex" role="group" style="font-size: 1.6em!important;">
-                                                        <button  wire:click.prevent="removeFromCart({{$item->id}})" class=" btn btn-danger"><i class="fas fa-trash "></i></button>
-                                                        <button  wire:click.prevent="decreaseQty({{$item->id}})" class="btn btn-warning ml-4"><i class="fas fa-minus "></i></button>
+                                                        <button type="button"  wire:click.prevent="removeFromCart({{$item->id}})" class=" btn btn-danger"><i class="fas fa-trash "></i></button>
+                                                        <button type="button"  wire:click.prevent="decreaseQty({{$item->id}})" class="btn btn-warning ml-4"><i class="fas fa-minus "></i></button>
 
 
                                                         {{-- desactivamos el boton ams si als existencias son menores --}}
-                                                        <button  wire:click.prevent="increaseQty({{$item->id}})"
+                                                        <button type="button"  wire:click.prevent="increaseQty({{$item->id}})"
                                                         class="btn btn-success ml-4 " >
                                                         <i class="fas fa-plus"></i>
                                                         </button>
@@ -252,8 +252,8 @@
                 <div>
                     <h2 class="text-2xl text-center mb-3">Resumen de Venta</h2>
                     @if ($estadoCaja != 0)
-                    <button onclick="openModalCustomer()" class="btn btn-outline-dark w-full mb-3">{{$customerSelected}}</button>
-                    <button onclick="openModalProduct()" class="btn btn-outline-dark w-full mb-3">{{$productSelected}}</button>
+                    <button type="button" onclick="openModalCustomer()" class="btn btn-outline-dark w-full mb-3">{{$customerSelected}}</button>
+                    <button type="button" onclick="openModalProduct()" class="btn btn-outline-dark w-full mb-3">{{$productSelected}}</button>
                     @endif
 
                 </div>
@@ -314,15 +314,15 @@
                 </div>
                 <div class="mt-8">
                     @if($totalCart > 0 && ($cash >= $totalCart))
-                        {{-- <button wire:loading.attr="disabled" wire:target="storeSale" wire:click.prevent="storeSale" class="btn btn-primary w-full"><i class="fas fa-database mr-2"></i> Guardar Venta</button> --}}
-                        <button wire:loading.attr="disabled" wire:target="storeSale" 
-                        wire:click.prevent="storeSale(true)" 
+                        {{-- <button type="button" wire:loading.attr="disabled" wire:target="storeSale" wire:click.prevent="storeSale" class="btn btn-primary w-full"><i class="fas fa-database mr-2"></i> Guardar Venta</button> --}}
+                        <button type="button" wire:loading.attr="disabled" wire:target="storeSale"
+                        wire:click.prevent="storeSale(true)"
                         @click="processing = true"
                         class="btn btn-outline-primary w-full mt-5"><i class="fas fa-receipt mr-2"></i> Guardar e Imprimir</button>
                     @endif
 
                     @if($totalCart >0)
-                        <button onclick="Cancel()" class="btn btn-danger w-full mt-5">
+                        <button type="button" onclick="Cancel()" class="btn btn-danger w-full mt-5">
                         <i class="fas fa-trash mr-2"> </i>
                         Cancelar Venta</button>
                     @endif

@@ -18,9 +18,9 @@
             </div>
 
             <div class="modal-footer text-right">
-                <button onclick="closeModal()" class="btn btn-outline-secondary mr-5">Cerrar Ventana</button>
+                <button type="button" onclick="closeModal()" class="btn btn-outline-secondary mr-5">Cerrar Ventana</button>
                 @if(strlen($productChangesSelected) >0)
-                <button wire:click.prevent="removeChanges" class="btn btn-outline-primary mr-5">Quitar Cambios</button>
+                <button type="button" wire:click.prevent="removeChanges" class="btn btn-outline-primary mr-5">Quitar Cambios</button>
                 @endif
                 <button type="button" wire:click.prevent="addChanges(document.getElementById('changesProduct').value)" class="btn btn-primary">Aplicar Cambios</button>
             </div>

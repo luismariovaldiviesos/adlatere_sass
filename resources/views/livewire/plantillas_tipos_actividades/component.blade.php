@@ -49,19 +49,19 @@
                                         <td class="dark:border-dark-5 text-center">
                                             <div class="d-flex justify-content-center">
                                                 {{-- @if ($procedimiento->asuntos->count() < 1) --}}
-                                                    <button class="btn btn-danger text-white border-0"
+                                                    <button type="button" class="btn btn-danger text-white border-0"
                                                     onclick="destroy('plantillas-tipos-actividad','Destroy', {{ $plantilla->id }})"
                                                     type="button">
                                                         <i class=" fas fa-trash f-2x"></i>
                                                     </button>
                                                 {{-- @endif --}}
-                                                <button class="btn btn-primary text-white border-0"
+                                                <button type="button" class="btn btn-primary text-white border-0"
                                                     wire:click.prevent="Preview({{ $plantilla->id }})"
                                                     title="Previsualizar"
                                                     type="button">
                                                         <i class=" fas fa-eye f-2x"></i>
                                                 </button>
-                                                <button class="btn btn-warning text-white border-0 ml-3"
+                                                <button type="button" class="btn btn-warning text-white border-0 ml-3"
                                                     wire:click.prevent="Edit({{ $plantilla->id }})"
                                                     title="Editar"
                                                     type="button">
