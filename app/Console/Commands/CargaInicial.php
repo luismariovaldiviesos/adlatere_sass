@@ -213,16 +213,15 @@ class CargaInicial extends Command
             $n = $i + 2;
             $nombre = trim((string) ($c[0] ?? ''));
             if ($nombre === '') { $this->err('Fases', $n, 'nombre obligatorio'); continue; }
-            $materia = null;
             $materiaNombre = trim((string) ($c[1] ?? ''));
-            if ($materiaNombre !== '') {
-                $materia = $this->lookup(\App\Models\Materia::class, 'nombre', $materiaNombre, 'materia');
-                if (!$materia) { $this->err('Fases', $n, "materia inexistente: {$materiaNombre}"); continue; }
-            }
+            if ($materiaNombre === '') { $this->err('Fases', $n, 'materia_nombre obligatorio'); continue; }
+            $materia = $this->lookup(\App\Models\Materia::class, 'nombre', $materiaNombre, 'materia');
+            if (!$materia) { $this->err('Fases', $n, "materia inexistente: {$materiaNombre}"); continue; }
             if (!$this->validar) {
-                $datosFase = [];
-                if ($materia) $datosFase['materia_id'] = $materia->id;
-                \App\Models\Fase::updateOrCreate(['nombre' => $nombre], $datosFase);
+                \App\Models\Fase::updateOrCreate(
+                    ['nombre' => $nombre],
+                    ['materia_id' => $materia->id]
+                );
             }
             $this->memorize('fase', $nombre);
             $this->hit();
@@ -234,7 +233,12 @@ class CargaInicial extends Command
             $fase = $this->lookup(\App\Models\Fase::class, 'nombre', trim((string) ($c[1] ?? '')), 'fase');
             if ($nombre === '') { $this->err('Estados', $n, 'nombre obligatorio'); continue; }
             if (!$fase) { $this->err('Estados', $n, "fase inexistente: {$c[1]}"); continue; }
-            if (!$this->validar) \App\Models\EstadoProcesal::updateOrCreate(['nombre' => $nombre], ['fase_id' => $fase->id, 'descripcion' => $c[2] ?? null]);
+            if (!$this->validar) {
+                \App\Models\EstadoProcesal::updateOrCreate(
+                    ['nombre' => $nombre, 'fase_id' => $fase->id],
+                    ['descripcion' => $c[2] ?? null]
+                );
+            }
             $this->memorize('estado', $nombre);
             $this->hit();
         }
@@ -245,10 +249,18 @@ class CargaInicial extends Command
             $canton = \App\Models\Canton::where('nombre', trim((string) ($c[1] ?? '')))->first();
             if ($nombre === '') { $this->err('Unidades', $n, 'nombre obligatorio'); continue; }
             if (!$canton) { $this->err('Unidades', $n, "cantón inexistente en sistema: {$c[1]}"); continue; }
-            if (!$this->validar) \App\Models\Unidad::updateOrCreate(['nombre' => $nombre], ['canton_id' => $canton->id]);
+            if (!$this->validar) {
+                \App\Models\Unidad::updateOrCreate(
+                    ['nombre' => $nombre, 'canton_id' => $canton->id],
+                    ['nombre' => $nombre, 'canton_id' => $canton->id]
+                );
+            }
             $this->memorize('unidad', $nombre);
+            $this->memorize('unidad_canton', $canton->id . '|' . $nombre);
             $this->hit();
         }
+        // Materias asignadas a cada unidad judicial
+        $this->cargaMateriasUnidades($sheets);
         // Usuarios
         foreach ($this->filas($sheets, 'Usuarios') as $i => $c) {
             $n = $i + 2;
@@ -258,6 +270,52 @@ class CargaInicial extends Command
         $this->cargaFuncionarios($sheets, 'Funcionarios', '0_base/Funcionarios');
     }
 
+    protected function cargaMateriasUnidades(array $sheets)
+    {
+        foreach ($this->filas($sheets, 'MateriasUnidades') as $i => $c) {
+            $n = $i + 2;
+            $unidadNombre = trim((string) ($c[0] ?? ''));
+            $cantonNombre = trim((string) ($c[1] ?? ''));
+            $materiaNombre = trim((string) ($c[2] ?? ''));
+
+            if ($unidadNombre === '' || $cantonNombre === '' || $materiaNombre === '') {
+                $this->err('MateriasUnidades', $n, 'unidad_nombre, canton_nombre y materia_nombre son obligatorios');
+                continue;
+            }
+
+            $canton = \App\Models\Canton::where('nombre', $cantonNombre)->first();
+            if (!$canton) {
+                $this->err('MateriasUnidades', $n, "cantón inexistente en sistema: {$cantonNombre}");
+                continue;
+            }
+
+            $unidad = \App\Models\Unidad::where('nombre', $unidadNombre)
+                ->where('canton_id', $canton->id)
+                ->first();
+            $claveUnidad = $canton->id . '|' . $unidadNombre;
+
+            if (!$unidad && $this->validar && $this->seen('unidad_canton', $claveUnidad)) {
+                $unidad = (object) ['id' => 0];
+            }
+            if (!$unidad) {
+                $this->err('MateriasUnidades', $n, "unidad inexistente en el cantón {$cantonNombre}: {$unidadNombre}");
+                continue;
+            }
+
+            $materia = $this->lookup(\App\Models\Materia::class, 'nombre', $materiaNombre, 'materia');
+            if (!$materia) {
+                $this->err('MateriasUnidades', $n, "materia inexistente: {$materiaNombre}");
+                continue;
+            }
+
+            if (!$this->validar && $unidad->id) {
+                $materia->unidades()->syncWithoutDetaching([$unidad->id]);
+            }
+
+            $this->hit();
+        }
+    }
+
     protected function cargaUsuario($n, $nombre, $ci, $phone, $email, $perfil)
     {
         $nombre = trim((string) $nombre); $ci = $this->padId($ci);
@@ -265,6 +323,14 @@ class CargaInicial extends Command
         if ($nombre === '' || $ci === '' || $email === '') { $this->err('Usuarios', $n, 'nombre/ci/email obligatorios'); return; }
         if (!in_array($perfil, ['Abogado', 'Asistente'])) { $this->err('Usuarios', $n, "perfil debe ser Abogado o Asistente: {$perfil}"); return; }
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) { $this->err('Usuarios', $n, "email inválido: {$email}"); return; }
+        $existente = \App\Models\User::where('email', $email)->where('ci', $ci)->first();
+        if ($existente) {
+            $this->memorize('uemail', $email);
+            $this->memorize('uci', $ci);
+            $this->hit();
+            return;
+        }
+
         if ($this->dup(\App\Models\User::class, 'email', $email, 'uemail')) { $this->err('Usuarios', $n, "email ya existe: {$email}"); return; }
         if ($this->dup(\App\Models\User::class, 'ci', $ci, 'uci')) { $this->err('Usuarios', $n, "ci ya existe: {$ci}"); return; }
         if (!$this->validar) {
@@ -293,6 +359,16 @@ class CargaInicial extends Command
             if ($typeidenti === '' || $valueidenti === '') { $this->err('Clientes', $n, 'typeidenti/valueidenti obligatorios'); continue; }
             $cliEmail = trim((string) ($c[4] ?? ''));
             if ($cliEmail === '') { $this->err('Clientes', $n, 'email obligatorio'); continue; }
+            $existente = \App\Models\Customer::where('valueidenti', $valueidenti)
+                ->where('email', $cliEmail)
+                ->first();
+            if ($existente) {
+                $this->memorize('cliid', $valueidenti);
+                $this->memorize('cliemail', $cliEmail);
+                $this->hit();
+                continue;
+            }
+
             if ($this->dup(\App\Models\Customer::class, 'valueidenti', $valueidenti, 'cliid')
                 || $this->dup(\App\Models\Customer::class, 'email', $cliEmail, 'cliemail')) {
                 $this->err('Clientes', $n, "duplicado (identi o email): {$valueidenti}"); continue;
@@ -321,31 +397,74 @@ class CargaInicial extends Command
         foreach ($this->filas($sheets, 'Datos') as $i => $c) {
             $n = $i + 2;
             $satje = trim((string) ($c[0] ?? ''));
-            $asunto = $this->lookup(\App\Models\Asunto::class, 'nombre', trim((string) ($c[1] ?? '')), 'asunto');
-            $unidad = $this->lookup(\App\Models\Unidad::class, 'nombre', trim((string) ($c[2] ?? '')), 'unidad');
-            $estado = $this->lookup(\App\Models\EstadoProcesal::class, 'nombre', trim((string) ($c[3] ?? '')), 'estado');
-            $fecha = XlsxReader::toDate($c[4] ?? null);
-            $prioridad = trim((string) ($c[5] ?? '')) ?: 'Media';
-            $cliId = $this->padId($c[6] ?? '');
-            $contraId = $this->padId($c[8] ?? '');
+            $asuntoNombre = trim((string) ($c[1] ?? ''));
+            $unidadNombre = trim((string) ($c[2] ?? ''));
+            $cantonNombre = trim((string) ($c[3] ?? ''));
+            $estadoNombre = trim((string) ($c[4] ?? ''));
+            $asunto = $this->lookup(\App\Models\Asunto::class, 'nombre', $asuntoNombre, 'asunto');
+
+            $unidad = null;
+            if ($unidadNombre !== '') {
+                if ($cantonNombre !== '') {
+                    $canton = \App\Models\Canton::where('nombre', $cantonNombre)->first();
+                    if (!$canton) { $this->err('Juicios', $n, "cantón inexistente: {$cantonNombre}"); continue; }
+
+                    $unidad = \App\Models\Unidad::where('nombre', $unidadNombre)
+                        ->where('canton_id', $canton->id)
+                        ->first();
+                    $claveUnidad = $canton->id . '|' . $unidadNombre;
+                    if (!$unidad && $this->validar && $this->seen('unidad_canton', $claveUnidad)) {
+                        $unidad = (object) ['id' => 0];
+                    }
+                } else {
+                    $candidatas = \App\Models\Unidad::where('nombre', $unidadNombre)->get();
+                    if ($candidatas->count() === 1) {
+                        $unidad = $candidatas->first();
+                    } elseif ($candidatas->count() > 1) {
+                        $this->err('Juicios', $n, "unidad ambigua: {$unidadNombre}. Indique canton_nombre.");
+                        continue;
+                    } elseif ($this->validar && $this->seen('unidad', $unidadNombre)) {
+                        $unidad = (object) ['id' => 0];
+                    }
+                }
+            }
+
+            $materiaId = $asunto
+                ? \App\Models\Procedimiento::whereKey($asunto->procedimiento_id)->value('materia_id')
+                : null;
+
+            $estado = null;
+            if ($estadoNombre !== '' && $materiaId) {
+                $estado = \App\Models\EstadoProcesal::where('nombre', $estadoNombre)
+                    ->whereHas('fase', fn ($q) => $q->where('materia_id', $materiaId))
+                    ->first();
+            }
+            if (!$estado && $this->validar && $this->seen('estado', $estadoNombre)) {
+                $estado = (object) ['id' => 0, 'fase_id' => 0];
+            }
+
+            $fecha = XlsxReader::toDate($c[5] ?? null);
+            $prioridad = trim((string) ($c[6] ?? '')) ?: 'Media';
+            $cliId = $this->padId($c[7] ?? '');
+            $contraId = $this->padId($c[9] ?? '');
             $cliente = $this->lookup(\App\Models\Customer::class, 'valueidenti', $cliId, 'cliid');
-            $rolCli = strtolower(trim((string) ($c[7] ?? ''))) ?: 'actor';
+            $rolCli = strtolower(trim((string) ($c[8] ?? ''))) ?: 'actor';
             $contra = $contraId !== '' ? $this->lookup(\App\Models\Customer::class, 'valueidenti', $contraId, 'cliid') : null;
-            $rolContra = strtolower(trim((string) ($c[9] ?? ''))) ?: ($contra ? ($rolCli === 'actor' ? 'demandado' : 'actor') : null);
-            $abMail = trim((string) ($c[10] ?? ''));
+            $rolContra = strtolower(trim((string) ($c[10] ?? ''))) ?: ($contra ? ($rolCli === 'actor' ? 'demandado' : 'actor') : null);
+            $abMail = trim((string) ($c[11] ?? ''));
             $abogado = \App\Models\User::where('email', $abMail)->where('profile', 'Abogado')->first();
             if (!$abogado && $this->validar && $this->seen('uemail', $abMail)) $abogado = (object) ['id' => 0];
             if ($satje === '') { $this->err('Juicios', $n, 'cod_satje obligatorio'); continue; }
             if ($this->dup(\App\Models\Juicio::class, 'cod_satje', $satje, 'satje')) { $this->err('Juicios', $n, "cod_satje duplicado: {$satje}"); continue; }
-            if (!$asunto) { $this->err('Juicios', $n, "asunto inexistente: {$c[1]}"); continue; }
-            if (!$unidad) { $this->err('Juicios', $n, "unidad inexistente: {$c[2]}"); continue; }
-            if (!$estado) { $this->err('Juicios', $n, "estado inexistente: {$c[3]}"); continue; }
-            if (!$fecha) { $this->err('Juicios', $n, "fecha_inicio inválida: {$c[4]}"); continue; }
+            if (!$asunto) { $this->err('Juicios', $n, "asunto inexistente: {$asuntoNombre}"); continue; }
+            if (!$unidad) { $this->err('Juicios', $n, "unidad inexistente: {$unidadNombre}"); continue; }
+            if (!$estado) { $this->err('Juicios', $n, "estado inexistente para la materia del asunto: {$estadoNombre}"); continue; }
+            if (!$fecha) { $this->err('Juicios', $n, "fecha_inicio inválida: {$c[5]}"); continue; }
             if (!in_array($prioridad, ['Alta', 'Media', 'Baja', 'Urgente'])) { $this->err('Juicios', $n, "prioridad inválida: {$prioridad}"); continue; }
             if (!$cliente) { $this->err('Juicios', $n, "cliente inexistente: {$cliId}"); continue; }
             if (!in_array($rolCli, ['actor', 'demandado'])) { $this->err('Juicios', $n, "rol_cliente inválido: {$rolCli}"); continue; }
             if ($contraId !== '' && !$contra) { $this->err('Juicios', $n, "contraparte inexistente: {$contraId}"); continue; }
-            if (!$abogado) { $this->err('Juicios', $n, "abogado inexistente o no Abogado: {$c[10]}"); continue; }
+            if (!$abogado) { $this->err('Juicios', $n, "abogado inexistente o no Abogado: {$abMail}"); continue; }
             if (!$this->validar) {
                 $j = \App\Models\Juicio::create([
                     'cod_satje' => $satje, 'asunto_id' => $asunto->id, 'unidad_id' => $unidad->id,
@@ -360,18 +479,17 @@ class CargaInicial extends Command
 
                 // Si el expediente importado usa esta materia en esta unidad, dejamos
                 // registrada la combinación para la carátula.
-                $materiaId = \App\Models\Procedimiento::whereKey($asunto->procedimiento_id)->value('materia_id');
                 if ($materiaId) {
                     \App\Models\Materia::find($materiaId)?->unidades()->syncWithoutDetaching([$unidad->id]);
                     \App\Models\Fase::whereKey($estado->fase_id)
                         ->whereNull('materia_id')
                         ->update(['materia_id' => $materiaId]);
                 }
-                $hon = (float) ($c[11] ?? 0); $gas = (float) ($c[12] ?? 0);
-                if ($hon > 0 || $gas > 0 || trim((string) ($c[13] ?? '')) !== '') {
+                $hon = (float) ($c[12] ?? 0); $gas = (float) ($c[13] ?? 0);
+                if ($hon > 0 || $gas > 0 || trim((string) ($c[14] ?? '')) !== '') {
                     \App\Models\FinanzasJuicio::create([
                         'juicio_id' => $j->id, 'honorarios_totales' => $hon,
-                        'gastos_extras' => $gas, 'notas_acuerdo' => $c[13] ?? null,
+                        'gastos_extras' => $gas, 'notas_acuerdo' => $c[14] ?? null,
                     ]);
                 }
             }
@@ -389,8 +507,19 @@ class CargaInicial extends Command
             $cargo = trim((string) ($c[1] ?? ''));
             if (strlen($nombre) < 3) { $this->err($origen, $n, 'nombre min 3'); continue; }
             if (!in_array($cargo, ['Juez', 'Secretario', 'Ayudante', 'Citador', 'Otro'])) { $this->err($origen, $n, "cargo inválido: {$cargo}"); continue; }
-            if ($this->dup(\App\Models\Funcionario::class, 'nombre', $nombre, 'func')) { $this->err($origen, $n, "duplicado: {$nombre}"); continue; }
             $email = trim((string) ($c[3] ?? ''));
+
+            $existente = \App\Models\Funcionario::where('nombre', $nombre)
+                ->when($email !== '', fn ($q) => $q->where('email', $email), fn ($q) => $q->whereNull('email'))
+                ->first();
+            if ($existente) {
+                $this->memorize('func', $nombre);
+                if ($email !== '') $this->memorize('funcemail', $email);
+                $this->hit();
+                continue;
+            }
+
+            if ($this->dup(\App\Models\Funcionario::class, 'nombre', $nombre, 'func')) { $this->err($origen, $n, "duplicado: {$nombre}"); continue; }
             if ($email !== '' && $this->dup(\App\Models\Funcionario::class, 'email', $email, 'funcemail')) { $this->err($origen, $n, "email duplicado: {$email}"); continue; }
             $unidad = trim((string) ($c[4] ?? '')) !== '' ? $this->lookup(\App\Models\Unidad::class, 'nombre', trim((string) $c[4]), 'unidad') : null;
             if (trim((string) ($c[4] ?? '')) !== '' && !$unidad) { $this->err($origen, $n, "unidad inexistente: {$c[4]}"); continue; }
