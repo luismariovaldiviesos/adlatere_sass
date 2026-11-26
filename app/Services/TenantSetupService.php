@@ -72,7 +72,7 @@ class TenantSetupService
             Log::info('[SETUP_SERVICE] Setup Complete for: ' . $tenant->id);
             return true;
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             Log::error('[SETUP_SERVICE] Setup CRASH: ' . $e->getMessage());
             Log::error($e->getTraceAsString());
             return false;

@@ -351,7 +351,7 @@ class Tenants extends Component
             
             $this->emit('tenant-created', $url);
 
-        } catch (\Exception $e) {
+        } catch (\Throwable $e) {
             \Illuminate\Support\Facades\Log::error('Tenant Creation Failed: ' . $e->getMessage());
             \Illuminate\Support\Facades\Log::error($e->getTraceAsString());
 
@@ -360,7 +360,7 @@ class Tenants extends Component
                 try {
                     $tenant->delete();
                     \Illuminate\Support\Facades\Log::info('Rollback: Cleaned up zombie tenant.');
-                } catch (\Exception $ex) {
+                } catch (\Throwable $ex) {
                     \Illuminate\Support\Facades\Log::error('Rollback Failed: ' . $ex->getMessage());
                 }
             }
