@@ -24,9 +24,10 @@ class TenantSetupService
         Log::info('[SETUP_SERVICE] Starting final setup for: ' . $tenant->id);
 
         try {
-            // 1. Inicializar Tenancy (Crea DB y corre migraciones/seeders)
+            // 1. Garantizar base de datos, migraciones y seeders del tenant.
+            app(\App\Services\TenantProvisioner::class)->ensure($tenant);
             tenancy()->initialize($tenant);
-            Log::info('[SETUP_SERVICE] Tenancy Initialized');
+            Log::info('[SETUP_SERVICE] Tenant database ready and tenancy initialized');
 
             // 2. Asegurar que el Rol Admin exista
             $adminRole = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'Admin']);

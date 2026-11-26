@@ -304,7 +304,11 @@ class Tenants extends Component
             ]);
             \Illuminate\Support\Facades\Log::info('Step 2: Tenant Model Created. ID: ' . $tenant->id);
 
-            // 2. Create Domain
+            // 2. Garantizar base de datos, migraciones y seeders del tenant.
+            app(\App\Services\TenantProvisioner::class)->ensure($tenant);
+            \Illuminate\Support\Facades\Log::info('Step 2b: Tenant database ready');
+
+            // 3. Create Domain
             $host = request()->getHost();
             $domain = $tenant->id . '.' . $host;
             $tenant->domains()->create(['domain' => $domain]);
