@@ -47,7 +47,7 @@ use App\Http\Livewire\Tareas;
 use App\Http\Livewire\BandejaNotificaciones;
 use App\Http\Livewire\PrioridadAlertas;
 use App\Http\Livewire\Calendario;
-use App\http\Livewire\TiposActividades;
+use App\Http\Livewire\TiposActividades;
 use App\Http\Livewire\PlantillasTiposActividad;
 use App\Http\Livewire\FinanzasJuicios;
 
