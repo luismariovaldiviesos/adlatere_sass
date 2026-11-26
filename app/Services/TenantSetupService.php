@@ -138,7 +138,9 @@ class TenantSetupService
             if (!empty($resendKey)) {
                 Log::info('[SETUP_SERVICE] Dispatching Welcome Mail via Resend API');
 
-                $url = 'http://' . (optional($tenant->domains->first())->domain ?? '');
+                $scheme = parse_url((string) config('app.url'), PHP_URL_SCHEME)
+                    ?: (request()->isSecure() ? 'https' : 'http');
+                $url = $scheme . '://' . (optional($tenant->domains->first())->domain ?? '');
                 $adminName = $data['admin_name'] ?? $user->name ?? $data['company_name'] ?? 'equipo';
                 $client = new Client();
 

@@ -84,7 +84,7 @@ class PaymentController extends Controller
 
                 Log::info('[PAYMENT_SUCCESS] Renewal Complete. New bill date: ' . $newBillDate);
                 $domain = $tenant->domains->first()->domain;
-                return redirect('http://' . $domain . '/dash')->with('success', 'Tu suscripción ha sido renovada exitosamente hasta el ' . $newBillDate->format('d/m/Y'));
+                return redirect($this->tenantUrl($domain, '/dash'))->with('success', 'Tu suscripción ha sido renovada exitosamente hasta el ' . $newBillDate->format('d/m/Y'));
             }
 
             // 3. Handle NEW REGISTRATION (Status 0)
@@ -107,7 +107,7 @@ class PaymentController extends Controller
             
             $domain = $tenant->domains->first()->domain ?? '/';
             Log::info('[PAYMENT_SUCCESS] Registration Process Finished. Redirecting user.');
-            return redirect('http://' . $domain . '/login')->with('success', 'Pago exitoso. Bienvenido!');
+            return redirect($this->tenantUrl($domain, '/login'))->with('success', 'Pago exitoso. Bienvenido!');
         }
 
         return redirect('/')->with('error', 'Tenant no encontrado.');
@@ -258,7 +258,7 @@ class PaymentController extends Controller
         $hosts = app(\App\Services\LocalHostsService::class)->ensure($domain);
 
         if ($hosts['ok'] || !app()->environment('local')) {
-            return redirect('http://' . $domain . '/login')
+            return redirect($this->tenantUrl($domain, '/login'))
                 ->with('success', 'Tu espacio está listo. Inicia sesión.');
         }
 
@@ -340,7 +340,7 @@ class PaymentController extends Controller
 
             $domain = optional($tenant->domains->first())->domain;
 
-            return redirect('http://' . $domain . '/dash')
+            return redirect($this->tenantUrl($domain, '/dash'))
                 ->with('success', 'Tu suscripción ha sido renovada hasta el ' . $newBillDate->format('d/m/Y'));
         }
 
@@ -371,7 +371,15 @@ class PaymentController extends Controller
             }
         }
 
-        return redirect('http://' . $domain . '/login')
+        return redirect($this->tenantUrl($domain, '/login'))
             ->with('success', 'Pago exitoso. Tu espacio está listo.');
+    }
+
+    private function tenantUrl(string $domain, string $path = ''): string
+    {
+        $scheme = parse_url((string) config('app.url'), PHP_URL_SCHEME)
+            ?: (request()->isSecure() ? 'https' : 'http');
+
+        return $scheme . '://' . $domain . $path;
     }
 }

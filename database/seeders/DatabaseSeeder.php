@@ -2,10 +2,10 @@
 
 namespace Database\Seeders;
 
+use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
-// Arranque limpio. Tenant: SOLO sistema (resto por Excel con carga:inicial).
-// Central: planes oficiales + super admin.
 class DatabaseSeeder extends Seeder
 {
     public function run()
@@ -14,23 +14,32 @@ class DatabaseSeeder extends Seeder
             $this->call(SistemaCoreSeeder::class);
             $this->call(PerfilesSeeder::class);
             $this->call(AdminUserSeeder::class);
-        } else {
-            $this->call(PlanUnicoSeeder::class);
-
-            $email = env('SEED_CENTRAL_ADMIN_EMAIL') ?: 'admin@adlatere.ec';
-            $password = env('SEED_CENTRAL_ADMIN_PASSWORD') ?: 'administardor';
-
-            $admin = \App\Models\User::firstOrCreate(
-                ['email' => $email],
-                ['name' => 'Super Admin', 'profile' => 'Admin', 'password' => bcrypt($password)]
-            );
-
-            // Mantiene operativo el acceso si el seeder se ejecuta de nuevo.
-            $admin->forceFill([
-                'name' => 'Super Admin',
-                'profile' => 'Admin',
-                'password' => bcrypt($password),
-            ])->save();
+            return;
         }
+
+        $this->call(PlanUnicoSeeder::class);
+
+        $email = env('SEED_CENTRAL_ADMIN_EMAIL') ?: 'admin@adlatere.ec';
+        $password = env('SEED_CENTRAL_ADMIN_PASSWORD') ?: 'AdlatereAdmin2026!';
+        $name = env('SEED_CENTRAL_ADMIN_NAME') ?: 'Super Admin';
+
+        $admin = User::firstOrCreate(
+            ['email' => $email],
+            [
+                'name' => $name,
+                'profile' => 'Admin',
+                'password' => Hash::make($password),
+            ]
+        );
+
+        // Mantiene operativo el acceso si el seeder se ejecuta de nuevo.
+        $admin->forceFill([
+            'name' => $name,
+            'profile' => 'Admin',
+            'password' => Hash::make($password),
+        ])->save();
+
+        $this->command?->info("Super admin central: {$email}");
+        $this->command?->info('Contraseña: la configurada en SEED_CENTRAL_ADMIN_PASSWORD o el valor por defecto del seeder.');
     }
 }

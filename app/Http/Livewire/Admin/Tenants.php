@@ -310,28 +310,40 @@ class Tenants extends Component
             $tenant->domains()->create(['domain' => $domain]);
             \Illuminate\Support\Facades\Log::info('Step 3: Domain Created: ' . $domain);
 
-            // 3. Initialize Admin User
+            // 3. Inicializar/actualizar el admin del tenant.
+            // El seeder crea un usuario base; aquí se reemplazan sus credenciales
+            // por las ingresadas en el formulario para no dejar un admin duplicado.
             $tenant->run(function () {
                 $adminRole = \Spatie\Permission\Models\Role::firstOrCreate(['name' => 'Admin']);
-                
-                $user = \App\Models\User::create([
+
+                $user = \App\Models\User::first();
+                $datosAdmin = [
                     'name' => $this->t_name,
                     'email' => $this->t_email,
                     'password' => \Illuminate\Support\Facades\Hash::make($this->t_password),
                     'ci' => '9999999999',
-                    'phone' => '0999999999'
-                ]);
-                
-                $user->assignRole($adminRole);
+                    'phone' => '0999999999',
+                    'profile' => 'Admin',
+                    'status' => 'ACTIVE',
+                ];
+
+                if ($user) {
+                    $user->update($datosAdmin);
+                } else {
+                    $user = \App\Models\User::create($datosAdmin);
+                }
+
+                $user->syncRoles([$adminRole]);
             });
-            \Illuminate\Support\Facades\Log::info('Step 4: Admin User Created inside Tenant Context');
+            \Illuminate\Support\Facades\Log::info('Step 4: Admin User configured inside Tenant Context');
 
             session()->flash('message', 'Tenant creado correctamente: ' . $domain);
             $this->createModalOpen = false;
             $this->resetInputFields();
 
-            $protocol = request()->isSecure() ? 'https://' : 'http://';
-            $url = $protocol . $domain . '/login';
+            $scheme = parse_url((string) config('app.url'), PHP_URL_SCHEME)
+                ?: (request()->isSecure() ? 'https' : 'http');
+            $url = $scheme . '://' . $domain . '/login';
             
             $this->emit('tenant-created', $url);
 

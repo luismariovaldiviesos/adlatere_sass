@@ -169,7 +169,10 @@ class Payator extends Component
                     }
                 }
 
-                return redirect()->to('http://' . $domain . '/login');
+                $scheme = parse_url((string) config('app.url'), PHP_URL_SCHEME)
+                    ?: (request()->isSecure() ? 'https' : 'http');
+
+                return redirect()->to($scheme . '://' . $domain . '/login');
             }
 
         } catch (\Exception $e) {
