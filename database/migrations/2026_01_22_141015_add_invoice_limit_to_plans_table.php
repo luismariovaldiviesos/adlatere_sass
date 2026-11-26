@@ -14,7 +14,9 @@ return new class extends Migration
     public function up()
     {
         Schema::table('plans', function (Blueprint $table) {
-            $table->integer('invoice_limit')->nullable()->after('price');
+            if (!Schema::hasColumn('plans', 'invoice_limit')) {
+                $table->integer('invoice_limit')->nullable()->after('price');
+            }
         });
     }
 
@@ -26,7 +28,9 @@ return new class extends Migration
     public function down()
     {
         Schema::table('plans', function (Blueprint $table) {
-            $table->dropColumn('invoice_limit');
+            if (Schema::hasColumn('plans', 'invoice_limit')) {
+                $table->dropColumn('invoice_limit');
+            }
         });
     }
 };
