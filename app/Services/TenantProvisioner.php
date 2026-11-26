@@ -36,7 +36,11 @@ class TenantProvisioner
             '--tenants' => [$tenant->getTenantKey()],
         ]);
 
-        Log::info('[TENANT_PROVISIONER] Migrations and seeders executed', [
+        // El pipeline original también crea las carpetas storage del tenant.
+        // Si ese pipeline falló, hay que crearlas aquí o el login dará 500.
+        (new \App\Jobs\CreateTenantStorage($tenant))->handle();
+
+        Log::info('[TENANT_PROVISIONER] Migrations, seeders and storage executed', [
             'tenant' => $tenant->getTenantKey(),
             'database' => $databaseName,
         ]);
