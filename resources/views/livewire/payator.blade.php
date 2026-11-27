@@ -93,7 +93,7 @@
                                     <label class="form-label">Subdominio</label>
                                     <div class="input-group">
                                         <input type="text" class="form-control" wire:model.defer="tenant_id" placeholder="rosalestello" required>
-                                        <span class="input-group-text">.adlatere.ec</span>
+                                        <span class="input-group-text">.adlatere.facta.ec</span>
                                     </div>
                                     @error('tenant_id') <span class="text-danger small">{{ $message }}</span> @enderror
                                 </div>

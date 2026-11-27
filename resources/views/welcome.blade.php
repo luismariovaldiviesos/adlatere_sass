@@ -395,7 +395,7 @@
                 <div class="app-window" aria-label="Vista previa del sistema">
                     <div class="app-bar">
                         <span class="dot"></span><span class="dot g"></span><span class="dot b"></span>
-                        <span class="path">panel.adlatere.ec / expedientes</span>
+                        <span class="path">panel.adlatere.facta.ec / expedientes</span>
                     </div>
                     <div class="app-body">
                         <aside class="app-side">
